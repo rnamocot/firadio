@@ -1095,7 +1095,8 @@
 
   function sheetY(state) {
     const H = sheet.clientHeight;
-    return state === "full" ? 0 : state === "half" ? Math.round(H * 0.5) : state === "hidden" ? H + 40 : H - 74;
+    // half = 44%: the sheet runs behind the floating dock, so it sits a bit higher to show 2+ stations
+    return state === "full" ? 0 : state === "half" ? Math.round(H * 0.44) : state === "hidden" ? H + 40 : H - 74 - 84;
   }
   function setSheet(state) {
     if (!isMobile()) return;
@@ -1105,7 +1106,14 @@
   }
   function syncTabs() {
     const active = nowOpen ? "now" : isMobile() ? mView : gridView ? "grid" : "map";
-    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === active));
+    const tabs = [...document.querySelectorAll(".tab")];
+    tabs.forEach((t) => {
+      const on = t.dataset.tab === active;
+      t.classList.toggle("active", on);
+      if (on) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
+    });
+    // The sun-yellow pill slides to the active tab.
+    $("tabbar").style.setProperty("--i", String(Math.max(0, tabs.findIndex((t) => t.dataset.tab === active))));
   }
   function openNow() {
     if (!current) { toast("Tap any station to start listening"); return; }
@@ -1371,11 +1379,15 @@
   $("howInstall").addEventListener("click", (e) => { e.preventDefault(); window.FilGuide?.open({ canPrompt: !!installEvt, onPrompt: nativePrompt }); });
   // Installed app has no browser reload button: offer one (also picks up new versions).
   $("refreshApp").hidden = !standalone;
-  $("refreshApp").addEventListener("click", async () => {
-    $("refreshApp").classList.add("spinning");
+  // Refresh: fetch any new version, then reload. Phones always show it next to the search bar;
+  // desktop shows it only in the installed app (browsers have their own reload button).
+  async function refreshApp(btn) {
+    btn.classList.add("spinning");
     try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch {}
     location.reload();
-  });
+  }
+  $("refreshApp").addEventListener("click", () => refreshApp($("refreshApp")));
+  $("refreshTop").addEventListener("click", () => refreshApp($("refreshTop")));
   addEventListener("appinstalled", () => { $("installBtn").hidden = true; mobileInstall.hidden = true; });
 
   // OFWs and Filipinos abroad: a warm welcome once a week (streams work from any country).

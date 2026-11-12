@@ -1,16 +1,16 @@
 // FilRadio service worker: makes the app installable and loads the shell offline.
 // Audio streams, map tiles and the station API are never cached here.
-const VERSION = "filradio-v49";
+const VERSION = "filradio-v51";
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=49",
-  "./js/app.js?v=49",
-  "./js/places.js?v=49",
-  "./js/install-guide.js?v=49",
-  "./js/traffic.js?v=49",
-  "./js/gtm.js?v=49",
-  "./js/theme.js?v=49",
+  "./css/style.css?v=51",
+  "./js/app.js?v=51",
+  "./js/places.js?v=51",
+  "./js/install-guide.js?v=51",
+  "./js/traffic.js?v=51",
+  "./js/gtm.js?v=51",
+  "./js/theme.js?v=51",
   "./data/stations.json",
   "./manifest.webmanifest",
   "./icon.svg",

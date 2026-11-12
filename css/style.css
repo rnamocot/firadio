@@ -24,7 +24,7 @@
   --mono: "Share Tech Mono", ui-monospace, monospace;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --tab-h: calc(64px + var(--safe-bottom));
+  --tab-h: calc(82px + var(--safe-bottom)); /* floating dock 64px + 10px gap + breathing room */
   --ease: cubic-bezier(.2, .8, .2, 1);
   color-scheme: light;
 }
@@ -1220,4 +1220,83 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
   .sheet-filters { flex-wrap: nowrap !important; overflow-x: auto !important; }
   #pVolume, #pLocate { display: none; }
   .player .p-name { font-size: 14px; }
+}
+
+/* =========================================================
+   Mobile dock: floating, sliding pill, live Playing tab
+   ========================================================= */
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  /* Sheet and Now Playing run behind the dock to the bottom edge */
+  .sheet { bottom: 0 !important; padding-bottom: var(--tab-h); }
+  .now { bottom: 0 !important; padding-bottom: calc(var(--tab-h) + 6px); }
+
+  .tabbar {
+    --pad: 6px;
+    display: grid !important; grid-template-columns: repeat(4, 1fr); align-items: stretch;
+    position: fixed; left: 12px; right: 12px; bottom: calc(10px + var(--safe-bottom)); height: 64px; z-index: 26;
+    padding: var(--pad) !important; border: 0 !important; border-radius: 24px;
+    background: var(--ink) !important; color: #f4f1ea;
+    box-shadow: 0 14px 34px -10px rgba(16, 24, 43, .65), 0 0 0 1px rgba(255, 255, 255, .06) inset;
+    animation: dock-in .6s .1s cubic-bezier(.34, 1.56, .64, 1) both;
+  }
+  html.dark .tabbar { background: #1b2440 !important; box-shadow: 0 14px 34px -10px rgba(0, 0, 0, .8), 0 0 0 1px rgba(255, 255, 255, .08) inset; }
+  @keyframes dock-in { from { transform: translateY(120%); opacity: 0; } }
+
+  .tab-indicator {
+    position: absolute; top: var(--pad); bottom: var(--pad); left: var(--pad);
+    width: calc((100% - 2 * var(--pad)) / 4); border-radius: 18px;
+    background: var(--sun); box-shadow: 0 6px 18px -6px rgba(255, 201, 60, .85);
+    transform: translateX(calc(var(--i, 0) * 100%));
+    transition: transform .55s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  .tab {
+    position: relative; z-index: 1; display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    background: none; border: 0; padding: 0; cursor: pointer; color: rgba(244, 241, 234, .62) !important;
+    font: 800 10.5px var(--display) !important; letter-spacing: .02em; transition: color .3s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab svg, .tab.active svg, .tab .tab-ico svg {
+    width: 24px !important; height: 24px !important; padding: 0 !important; background: none !important; border-radius: 0 !important;
+    animation: none;
+  }
+  .tab .tab-ico { position: relative; display: grid; place-items: center; width: 28px; height: 26px; transition: transform .45s cubic-bezier(.34, 1.56, .64, 1); }
+  .tab.active { color: var(--sun-ink) !important; }
+  .tab.active .tab-ico { transform: translateY(-1px) scale(1.12); }
+  .tab:active .tab-ico { transform: scale(.86); transition-duration: .12s; }
+  .tab-label { transition: opacity .3s, transform .3s; }
+  .tab:not(.active) .tab-label { opacity: .85; }
+
+  /* Playing tab: live equalizer + red on-air dot while a station plays */
+  .tab-eq { display: none; gap: 3px; align-items: flex-end; height: 18px; }
+  .tab-eq i { width: 3.5px; border-radius: 2px; background: currentColor; height: 40%; animation: eq .9s infinite ease-in-out; }
+  .tab-eq i:nth-child(2) { animation-delay: -.3s; } .tab-eq i:nth-child(3) { animation-delay: -.6s; } .tab-eq i:nth-child(4) { animation-delay: -.15s; }
+  .tab-live { display: none; position: absolute; top: -1px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 2px var(--ink); font-style: normal; }
+  body.is-live .tab-now .tab-ico > svg { display: none; }
+  body.is-live .tab-now .tab-eq { display: flex; }
+  body.is-live .tab-now .tab-live { display: block; animation: blip 1.6s infinite; }
+  body.is-live .tab-now.active .tab-live { box-shadow: 0 0 0 2px var(--sun); }
+
+  /* Things that sat on top of the old bar now clear the floating dock */
+  .player { bottom: calc(var(--tab-h) + 4px) !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tabbar, .tab-indicator, .tab .tab-ico { animation: none !important; transition: none !important; }
+  .tab-eq i { animation: none; }
+}
+
+/* Phone refresh button beside the search bar */
+.top-refresh { display: none; }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .controls { grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+  .controls .search { grid-column: 1; }
+  .controls .bands { grid-column: 1 / -1; }
+  .top-refresh {
+    grid-column: 2; grid-row: 1; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--panel); color: var(--text); box-shadow: 0 6px 18px -6px rgba(16, 24, 43, .28);
+    cursor: pointer; padding: 0; animation: drop-in .6s .05s var(--ease) both; transition: transform .12s var(--ease);
+  }
+  .top-refresh:active { transform: scale(.9); }
+  .top-refresh svg.i { width: 22px; height: 22px; }
+  .top-refresh.spinning svg { animation: spin-near .8s linear infinite; }
+  #refreshApp { display: none !important; } /* phones use the top button */
 }
