@@ -592,6 +592,7 @@
     const list = $("list");
     list.innerHTML = "";
     list.scrollTop = 0;
+    if (isMobile()) $("sheet").scrollTop = 0; // on phones the whole sheet scrolls
     const frag = document.createDocumentFragment();
     if (area) {
       const near = visible.filter((s) => s.dist <= AREA_KM).length;
@@ -651,6 +652,7 @@
     if (!st) return;
     li.classList.remove("tap"); void li.offsetWidth; li.classList.add("tap");
     tapStation(st);
+    if (gridView) return; // browsing the grid: keep it open, the player bar shows what's on
     if (isMobile()) { setSheet("peek"); setTimeout(() => focus(st), 120); }
     else focus(st);
   });
@@ -1060,6 +1062,29 @@
     render();
   });
   $("sheetToggle").addEventListener("click", () => $("sidebar").classList.toggle("open"));
+
+  // ---------- Grid view: browse every station as cards ----------
+  let gridView = false;
+  function setGrid(on) {
+    gridView = on;
+    $("sidebar").classList.toggle("grid", on);
+    if (on) $("sidebar").classList.add("open");
+    const b = $("viewToggle");
+    b.setAttribute("aria-pressed", String(on));
+    b.title = on ? "Back to list and map" : "Show stations as a grid";
+    b.querySelector(".v-label").textContent = on ? "List" : "Grid";
+    try { localStorage.setItem("filradio.view", on ? "grid" : "list"); } catch {}
+    if (isMobile()) setSheet(on ? "full" : "half");
+    $("list").scrollTop = 0;
+    $("sheet").scrollTop = 0;
+  }
+  $("viewToggle").addEventListener("click", () => setGrid(!gridView));
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && gridView && !document.querySelector("dialog[open]")) setGrid(false); });
+  // Restore the last view; filradio.xyz/?view=grid opens straight into the grid (handy for sharing).
+  try {
+    const wantGrid = new URLSearchParams(location.search).get("view") === "grid" || localStorage.getItem("filradio.view") === "grid";
+    if (wantGrid) requestAnimationFrame(() => setGrid(true));
+  } catch {}
 
   // ======================================================
   // Install (PWA)

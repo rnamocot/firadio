@@ -710,3 +710,72 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
 .sheet-filters { display: flex; align-items: center; gap: 16px; padding: 0 14px 10px; }
 .sheet-filters .toggle { margin-left: 0; }
 @media (max-width: 760px) { .sheet-filters { padding: 0 18px 10px; } }
+
+/* =========================================================
+   Grid view (browse all stations as cards)
+   ========================================================= */
+.sheet-title h2 { flex-shrink: 0; }
+.view-toggle {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 8px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  font: 700 12px var(--display); cursor: pointer; transition: background .2s, color .2s;
+}
+.view-toggle svg.i { width: 16px; height: 16px; }
+.view-toggle .v-rows, .view-toggle[aria-pressed="true"] .v-grid { display: none; }
+.view-toggle[aria-pressed="true"] .v-rows { display: block; }
+.view-toggle[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: transparent; }
+@media (prefers-color-scheme: dark) { .view-toggle[aria-pressed="true"] { background: var(--sun); color: var(--sun-ink); } }
+
+.sidebar.grid .list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 10px; padding: 12px; align-content: start;
+}
+.sidebar.grid .list li[data-id] {
+  flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 16px; position: relative;
+  background: var(--paper); border: 1px solid var(--line); contain-intrinsic-size: auto 176px;
+  transition: transform .18s var(--ease), box-shadow .2s, border-color .2s;
+}
+.sidebar.grid .list li[data-id]:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); background: var(--paper); }
+.sidebar.grid .list li.playing { border-color: var(--sun); background: color-mix(in srgb, var(--sun) 14%, var(--paper)); }
+.sidebar.grid .list .readout { width: 64px; height: 64px; border-radius: 16px; }
+.sidebar.grid .list .readout .tag { font-size: 11px; }
+.sidebar.grid .list .info { width: 100%; }
+.sidebar.grid .list .name {
+  white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  line-height: 1.25; min-height: 2.5em;
+}
+.sidebar.grid .list .meta { white-space: normal; flex-wrap: wrap; row-gap: 3px; }
+.sidebar.grid .list .meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.sidebar.grid .list .bars { position: absolute; top: 14px; right: 14px; }
+.sidebar.grid .list li.area-banner, .sidebar.grid .list li.empty { grid-column: 1 / -1; }
+
+@media (min-width: 761px) {
+  /* Panel widens over the map */
+  .sidebar.grid { width: min(1180px, calc(100% - 28px - 64px)); max-height: calc(100% - 120px); }
+  .sidebar.grid .brand, .sidebar.grid .controls { max-width: 560px; }
+  .sidebar { transition: width .35s var(--ease); }
+  .app:has(.sidebar.grid) .player { left: 50%; transform: translateX(-50%); right: auto; width: min(680px, calc(100% - 32px)); }
+}
+@media (max-width: 760px) {
+  .sidebar.grid .list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 8px 10px 12px; }
+  .sidebar.grid .list li[data-id] { padding: 10px; }
+  .sidebar.grid .list .readout { width: 56px; height: 56px; }
+  .view-toggle { height: 28px; padding: 0 8px; }
+}
+@media (max-width: 400px) { .view-toggle .v-label { display: none; } .view-toggle { padding: 0 7px; } }
+/* Phones: the whole sheet scrolls (title stays pinned), footer sits at the end of the list */
+@media (max-width: 760px) {
+  .sheet { overflow-y: auto; overscroll-behavior: contain; }
+  .sheet .list { flex: none; overflow: visible; min-height: auto; }
+  .sheet-grip { position: sticky; top: 0; z-index: 3; background: var(--panel); border-radius: 26px 26px 0 0; }
+  .sheet .credit { flex-shrink: 0; }
+}
+/* Grid view polish */
+.sidebar.grid .list .meta { flex-wrap: nowrap; }
+.sidebar.grid .list .meta span { min-width: 0; }
+@media (min-width: 761px) {
+  .sidebar.grid .credit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+  .sidebar.grid .credit .about-box { margin: 0; }
+  .sidebar.grid .credit .foot-row { margin: 0; gap: 18px; }
+  .sidebar.grid .bmc { display: inline-flex; margin: 0 0 0 auto; padding: 8px 14px; }
+  .sidebar.grid .credit > p { margin: 0; width: 100%; }
+}

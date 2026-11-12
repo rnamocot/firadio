@@ -60,7 +60,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FilRadio" />
-  <script src="js/gtm.js?v=17"></script>
+  <script src="js/gtm.js?v=19"></script>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png" />
@@ -73,7 +73,7 @@
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css?v=17" />
+  <link rel="stylesheet" href="css/style.css?v=19" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo — rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -100,6 +100,8 @@
       <symbol id="i-near" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="2.4" style="fill:var(--sun);stroke:none"/></symbol>
       <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3" style="fill:var(--sun)"/></symbol>
       <symbol id="i-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5v-5Z"/><path d="M16.5 11h1.2a2.3 2.3 0 0 1 0 4.6h-1.5"/><path d="M8.5 3.5v2.5M12.5 3.5v2.5" style="stroke:var(--sun)"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2" style="fill:var(--sun);stroke:var(--sun)"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol>
+      <symbol id="i-rows" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11"/><rect x="3" y="4.5" width="4" height="4" rx="1.2" style="fill:var(--sun);stroke:none"/><rect x="3" y="10" width="4" height="4" rx="1.2" fill="currentColor" stroke="none"/><rect x="3" y="15.5" width="4" height="4" rx="1.2" fill="currentColor" stroke="none"/></symbol>
     </defs>
   </svg>
   <div class="app">
@@ -177,17 +179,22 @@
           <div class="sheet-title">
             <h2>Stations</h2>
             <span id="listCount"></span>
+            <button class="view-toggle" id="viewToggle" type="button" aria-pressed="false" title="Show stations as a grid" aria-label="Switch between list and grid">
+              <svg class="i v-grid" aria-hidden="true"><use href="#i-grid"/></svg>
+              <svg class="i v-rows" aria-hidden="true"><use href="#i-rows"/></svg>
+              <span class="v-label">Grid</span>
+            </button>
           </div>
           <div class="sheet-filters">
-            <label class="toggle" id="directWrap" title="Only show stations that play right here in FilRadio" hidden>
+            <label class="toggle" id="directWrap" title="Only show stations that play inside FilRadio (hides ones that open in your browser's player)" hidden>
               <input type="checkbox" id="directOnly" checked />
               <span class="switch"></span>
               <span>Plays here</span>
             </label>
-            <label class="toggle" title="Stations whose city couldn't be detected are shown as grey pins around Manila">
+            <label class="toggle" title="Show stations whose city isn't known (grey pins near Manila)">
               <input type="checkbox" id="showUnknown" checked />
               <span class="switch"></span>
-              <span>Unplaced</span>
+              <span>Unknown city</span>
             </label>
           </div>
         </div>
@@ -301,9 +308,9 @@
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js?v=17" defer></script>
-  <script src="js/traffic.js?v=17" defer></script>
-  <script src="js/install-guide.js?v=17" defer></script>
-  <script src="js/app.js?v=17" defer></script>
+  <script src="js/places.js?v=19" defer></script>
+  <script src="js/traffic.js?v=19" defer></script>
+  <script src="js/install-guide.js?v=19" defer></script>
+  <script src="js/app.js?v=19" defer></script>
 </body>
 </html>
