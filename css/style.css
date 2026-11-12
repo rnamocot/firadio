@@ -978,3 +978,58 @@ html.dark .off-btn:not(.ghost) { background: var(--sun); color: var(--sun-ink); 
 .osm-credit:hover { text-decoration: underline !important; }
 .map-credits { font-size: 11px !important; margin-top: 6px !important; }
 .map-credits a { font-weight: 600; }
+
+/* Panel width change (Map <-> Grid): animate width only, keep content pinned to the left edge */
+@media (min-width: 761px) {
+  .sidebar { transition: width .35s var(--ease); will-change: width; }
+  .sidebar .list { overflow-anchor: none; }
+}
+
+/* =========================================================
+   Filter chips, favorites, on-air
+   ========================================================= */
+.sheet-filters { gap: 6px; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+.sheet-filters::-webkit-scrollbar { display: none; }
+.fchip {
+  position: relative; display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px 0 9px; flex-shrink: 0;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+  font: 700 12px var(--display); cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background .2s, color .2s, border-color .2s, transform .12s var(--ease);
+}
+.fchip:active { transform: scale(.95); }
+.fchip input { position: absolute; opacity: 0; pointer-events: none; }
+.fchip svg.i { width: 14px; height: 14px; }
+.fchip:has(input:checked) { background: var(--ink); color: var(--paper); border-color: transparent; }
+html.dark .fchip:has(input:checked) { background: var(--sun); color: var(--sun-ink); }
+.fchip:has(input:focus-visible) { outline: 2px solid var(--fm); outline-offset: 2px; }
+.fchip b { font: 11px var(--mono); opacity: .8; }
+.fchip b:empty { display: none; }
+.fchip svg.heart { fill: none; }
+.fchip:has(input:checked) svg.heart { fill: var(--red); color: var(--red); }
+.live-mark { width: 8px; height: 8px; border-radius: 50%; background: var(--unknown); font-style: normal; }
+.fchip:has(input:checked) .live-mark { background: #2fd27a; box-shadow: 0 0 0 3px rgba(47,210,122,.25); }
+
+/* Heart buttons */
+.fav-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; color: var(--muted);
+  display: grid; place-items: center; cursor: pointer; flex-shrink: 0; padding: 0; transition: color .2s, transform .15s var(--ease);
+}
+.fav-btn svg.i { width: 19px; height: 19px; fill: none; transition: fill .2s; }
+.fav-btn:hover { color: var(--red); }
+.fav-btn[aria-pressed="true"] { color: var(--red); }
+.fav-btn[aria-pressed="true"] svg.i { fill: var(--red); animation: heart-pop .4s var(--ease); }
+@keyframes heart-pop { 40% { transform: scale(1.3); } }
+.list .row-fav { margin-left: auto; }
+.sidebar.grid .list .row-fav { position: absolute; top: 8px; right: 8px; background: color-mix(in srgb, var(--panel) 85%, transparent); }
+.sidebar.grid .list .bars { right: 48px; }
+.popup .pop-fav { width: 34px; height: 34px; }
+.player .fav-btn { color: inherit; opacity: .8; }
+.player .fav-btn[aria-pressed="true"] { color: var(--red); opacity: 1; }
+.now-head-right { display: inline-flex; align-items: center; gap: 2px; }
+.now .fav-btn { color: #f4f1ea; width: 40px; height: 40px; }
+.now .fav-btn svg.i { width: 24px; height: 24px; }
+.now .fav-btn[aria-pressed="true"] { color: var(--red); }
+
+/* Off-air tag in lists */
+.list .meta .off-chip { font: 11px var(--mono); color: #fff; background: var(--unknown); padding: 0 6px; border-radius: 5px; margin-right: 2px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .fav-btn[aria-pressed="true"] svg.i { animation: none; } }

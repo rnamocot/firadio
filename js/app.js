@@ -125,23 +125,72 @@
     return [Math.sin(a) * r, Math.cos(a) * r];
   }
 
+  // ---------- Favorites (kept on this device, keyed by station name) ----------
+  const FAV_KEY = "filradio.favs";
+  let favs = new Set();
+  try { favs = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || "[]")); } catch {}
+  const isFav = (st) => favs.has(st.key);
+  function favBtn(st, cls = "") {
+    const on = isFav(st);
+    return `<button type="button" class="fav-btn ${cls}" data-fav="${esc(st.key)}" aria-pressed="${on}" aria-label="${on ? "Remove from" : "Save to"} favorites">${use("i-heart")}</button>`;
+  }
+  function syncFavButtons(key) {
+    const on = favs.has(key);
+    document.querySelectorAll(`[data-fav="${CSS.escape(key)}"]`).forEach((b) => {
+      b.setAttribute("aria-pressed", String(on));
+      b.setAttribute("aria-label", `${on ? "Remove from" : "Save to"} favorites`);
+    });
+  }
+  function updateFavCount() { const n = favs.size; document.getElementById("favCount").textContent = n ? String(n) : ""; }
+  function toggleFav(key) {
+    if (!key) return;
+    const on = !favs.has(key);
+    if (on) favs.add(key); else favs.delete(key);
+    try { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); } catch {}
+    syncFavButtons(key);
+    updateFavCount();
+    toast(on ? "Saved to favorites ♥" : "Removed from favorites", 1800);
+    if (document.getElementById("favOnly").checked) render();
+  }
+  // Capture phase: a heart tap never also plays/opens the station underneath it.
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest(".fav-btn");
+    if (!b) return;
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFav(b.dataset.fav);
+  }, true);
+
+  // Stations that failed for this visitor are remembered as off air for 6 hours.
+  const OFF_KEY = "filradio.offair";
+  const OFF_TTL = 6 * 60 * 60 * 1000;
+  function learnedOff() { try { return JSON.parse(localStorage.getItem(OFF_KEY) || "{}"); } catch { return {}; } }
+  function rememberOnAir(st, on) {
+    st.onAir = on;
+    const m = learnedOff();
+    if (on) delete m[st.key]; else m[st.key] = Date.now();
+    try { localStorage.setItem(OFF_KEY, JSON.stringify(m)); } catch {}
+  }
+
   // ======================================================
   // Data
   // ======================================================
+  let dataChecked = null; // when the streams were last checked (on-air status)
   async function loadRaw() {
     let cached = null;
     try {
       cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      if (cached && (Date.now() - cached.t < CACHE_TTL || !navigator.onLine)) return cached.d;
+      if (cached && (Date.now() - cached.t < CACHE_TTL || !navigator.onLine)) { dataChecked = cached.c || null; return cached.d; }
     } catch {}
     try {
       const res = await fetch(DATA_URL, { cache: "no-cache" });
       if (!res.ok) throw new Error(res.status);
-      const { d } = await res.json();
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch {}
+      const { d, checked } = await res.json();
+      dataChecked = checked || null;
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d, c: dataChecked })); } catch {}
       return d;
     } catch (e) {
-      if (cached) return cached.d; // offline: use the last list we saved
+      if (cached) { dataChecked = cached.c || null; return cached.d; } // offline: use the last list we saved
       throw e;
     }
   }
@@ -156,11 +205,14 @@
       if (!st) {
         const name = clean(s.n);
         const cls = classify(name, s.t || "");
-        st = { id: s.u, name, tags: clean(s.t).replace(/,/g, ", "), band: cls.band, num: cls.num, state: clean(s.st),
+        st = { id: s.u, key, onAir: null, name, tags: clean(s.t).replace(/,/g, ", "), band: cls.band, num: cls.num, state: clean(s.st),
                favicon: safeUrl(s.f), homepage: safeUrl(s.hp), votes: 0, streams: [], lat: null, lng: null, exact: false };
         byName.set(key, st);
       }
       st.votes += s.v || 0;
+      // On air if any of its links answered at the last check (only meaningful on https).
+      if (SECURE && s.on === 1) st.onAir = true;
+      else if (SECURE && s.on === 0 && st.onAir !== true) st.onAir = false;
       if (!st.favicon && s.f) st.favicon = safeUrl(s.f);
       if (!st.state && s.st) st.state = clean(s.st);
       if (st.lat == null && s.la != null && s.lo != null) { st.lat = s.la; st.lng = s.lo; st.exact = true; }
@@ -196,6 +248,8 @@
       st.hay = `${st.name} ${st.tags} ${st.where} ${freqLabel(st)} ${st.band}`.toLowerCase();
     }
     out.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+    const off = learnedOff();
+    for (const st of out) if (off[st.key] && Date.now() - off[st.key] < OFF_TTL) st.onAir = false;
     return out;
   }
 
@@ -465,6 +519,7 @@
         <div class="meta">${esc(st.where)}${st.unknown || st.exact ? "" : " · approx."}</div></div></div>
       ${st.tags ? `<div class="tags">${esc(st.tags)}</div>` : ""}
       <div class="actions">
+        ${favBtn(st, "pop-fav")}
         <button class="go" data-play="${esc(st.id)}">${playing ? ICON.pause + "Pause" : ICON.play + "Listen"}</button>
         ${st.homepage ? `<a href="${esc(st.homepage)}" target="_blank" rel="noopener">Website ↗</a>` : ""}
         ${SECURE && !st.streams.length && st.insecureUrl ? `<a href="${esc(st.insecureUrl)}" target="_blank" rel="noopener noreferrer">Play in browser ↗</a>` : ""}
@@ -640,7 +695,11 @@
     // "Plays here": hide stations that can only open in the browser's own player.
     // Default view: stations that play here AND have a known city ("Unknown city" starts off).
     const showUnk = $("showUnknown").checked;
-    const base = stations.filter((st) => (!$("directOnly").checked || !st.external) && (showUnk || !st.unknown));
+    const favOnly = $("favOnly").checked, onAirOnly = $("onAirOnly").checked, directOnly = $("directOnly").checked;
+    // Favorites shows every saved station regardless of the other filters.
+    const base = favOnly
+      ? stations.filter((st) => favs.has(st.key))
+      : stations.filter((st) => (!directOnly || !st.external) && (showUnk || !st.unknown) && (!onAirOnly || st.onAir !== false));
     const area = currentArea();
     if (area) {
       for (const st of base) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);
@@ -694,7 +753,8 @@
     if (!visible.length) {
       const li = document.createElement("li");
       li.className = "empty";
-      li.textContent = area ? `No stations found within ${AREA_KM} km.` : `No stations match “${query}”.`;
+      li.textContent = favOnly && !favs.size ? "No favorites yet. Tap ♡ on any station to save it here."
+        : area ? `No stations found within ${AREA_KM} km.` : query ? `No stations match “${query}”.` : "No stations match these filters.";
       frag.appendChild(li);
       list.appendChild(frag);
       return;
@@ -708,9 +768,10 @@
       li.innerHTML = `${readoutHtml(st)}
         <div class="info">
           <div class="name">${esc(st.name)}</div>
-          <div class="meta">${dist}${st.external ? `<b class="ext-chip" title="Opens in your browser's own player">↗ Browser</b>` : ""}${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
+          <div class="meta">${dist}${st.onAir === false ? `<b class="off-chip">Off air</b>` : ""}${st.external ? `<b class="ext-chip" title="Opens in your browser's own player">↗ Browser</b>` : ""}${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
         </div>
         <span class="bars"><i></i><i></i><i></i></span>
+        ${favBtn(st, "row-fav")}
         <span class="row-play" aria-hidden="true">${ICON.play}</span>`;
       frag.appendChild(li);
     });
@@ -825,6 +886,7 @@
         if (!st.external && current === st) toast("This station plays in your browser. Tap Play ↗", 4000);
       } else {
         setStatus("Off air", true);
+        rememberOnAir(st, false);
         if (current === st) showOffline(st);
       }
       updatePlayingUI();
@@ -911,6 +973,8 @@
     $("sheet").classList.add("has-player");
     $("pArt").outerHTML = readoutHtml(st, "small").replace('class="readout', 'id="pArt" class="readout');
     $("pName").textContent = st.name;
+    for (const id of ["pFav", "nFav"]) $(id).dataset.fav = st.key;
+    syncFavButtons(st.key);
     $("pMeta").textContent = [freqFull(st) || st.band, st.where].filter(Boolean).join(" · ");
 
     // Now Playing screen
@@ -947,7 +1011,10 @@
     window.dataLayer?.push({ event: "station_play", station_name: st.name, station_band: st.band, station_city: st.where });
   }
 
-  audio.addEventListener("playing", () => { clearTimeout(stallTimer); setStatus("Live"); updatePlayingUI(); });
+  audio.addEventListener("playing", () => {
+    clearTimeout(stallTimer); setStatus("Live"); updatePlayingUI();
+    if (current && current.onAir === false) rememberOnAir(current, true);
+  });
   audio.addEventListener("waiting", () => setStatus("Loading…"));
   audio.addEventListener("pause", updatePlayingUI);
 
@@ -1204,6 +1271,10 @@
   try { if (!isMobile() && innerHeight >= 900 && !localStorage.getItem("filradio.filterHelp")) showFilterHelp(true); } catch {}
 
   $("directOnly").addEventListener("change", render);
+  $("onAirOnly").checked = SECURE; // on-air data is about the https links the live site uses
+  $("onAirOnly").addEventListener("change", render);
+  $("favOnly").addEventListener("change", render);
+  updateFavCount();
   $("sheetToggle").addEventListener("click", () => $("sidebar").classList.toggle("open"));
 
   // Re-run the entrance animation of the visible rows/cards (after a view switch).
@@ -1234,9 +1305,12 @@
     $("viewSwitch").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.view === "grid") === on)));
     try { localStorage.setItem("filradio.view", on ? "grid" : "list"); } catch {}
     if (isMobile() && moveSheet) setSheet(on ? "full" : "half");
-    $("list").scrollTop = 0;
+    // Rebuild the rows for the new layout: rows the browser skipped off-screen otherwise keep the
+    // size they had in the other view (card vs row) and the list jumps / misaligns.
+    if (stations.length) render();
+    const list = $("list");
+    list.classList.remove("swap"); void list.offsetWidth; list.classList.add("swap");
     $("sheet").scrollTop = 0;
-    replayListAnim();
     syncTabs();
   }
   $("viewSwitch").addEventListener("click", (e) => {
@@ -1340,6 +1414,9 @@
       const c = (b) => stations.filter((s) => s.band === b).length;
       const placed = stations.filter((s) => !s.unknown).length;
       $("summary").textContent = `${stations.length} stations · Luzon to Mindanao`;
+      if (dataChecked) {
+        $("checkedAt").textContent = new Date(dataChecked).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      }
       render();
     } catch (e) {
       console.error(e);
