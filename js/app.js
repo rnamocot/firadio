@@ -70,7 +70,9 @@
     }
   }, true);
 
+  const QUIET = /[?&]shot(=|&|$)/.test(location.search); // ?shot: no pop-up messages (clean screenshots)
   function toast(msg, ms = 2800) {
+    if (QUIET) return;
     const t = $("toast");
     t.textContent = msg;
     t.classList.add("show");
@@ -367,7 +369,10 @@
     map.on("click", "playing-pin", () => current && showPopup(current));
 
     // Keep the map credits collapsed to the (i) button on small screens.
-    if (isMobile()) document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
+    // Map credits (required by the OpenStreetMap licence) stay collapsed behind the (i) button on every device.
+    const collapseCredits = () => document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
+    collapseCredits();
+    map.once("idle", collapseCredits);
     mapReady = true;
     if (stations.length) render();
     if (current) setPlayingFeature();
@@ -555,7 +560,9 @@
 
   function render() {
     // "Plays here": hide stations that can only open in the browser's own player.
-    const base = $("directOnly").checked ? stations.filter((st) => !st.external) : stations;
+    // Default view: stations that play here AND have a known city ("Unknown city" starts off).
+    const showUnk = $("showUnknown").checked;
+    const base = stations.filter((st) => (!$("directOnly").checked || !st.external) && (showUnk || !st.unknown));
     const area = currentArea();
     if (area) {
       for (const st of base) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);
@@ -618,7 +625,7 @@
       const li = document.createElement("li");
       li.dataset.id = st.id;
       if (current === st) li.classList.add("playing");
-      if (i < 18) { li.classList.add("anim"); li.style.setProperty("--i", i + (area ? 1 : 0)); }
+      if (i < 24) { li.classList.add("anim"); li.style.setProperty("--i", i + (area ? 1 : 0)); }
       const dist = st.dist != null && isFinite(st.dist) ? `<b class="dist">${st.dist < 1 ? "<1" : Math.round(st.dist)} km</b>` : "";
       li.innerHTML = `${readoutHtml(st)}
         <div class="info">
@@ -693,6 +700,7 @@
     document.querySelectorAll(".list li.playing").forEach((li) => li.classList.remove("playing"));
     if (current) document.querySelector(`.list li[data-id="${CSS.escape(current.id)}"]`)?.classList.add("playing");
     const live = !!current && !audio.paused;
+    document.body.classList.toggle("is-live", live);
     $("player").classList.toggle("live", live);
     $("now").classList.toggle("live", live);
     $("dial").classList.toggle("stream", live && current?.num == null);
@@ -1065,11 +1073,10 @@
   $("showUnknown").addEventListener("change", render);
   // "Plays here" only matters on https (where old http streams are blocked).
   // It always starts ON; switching it off only lasts for the current visit.
-  $("directWrap").hidden = !SECURE;
-  $("directOnly").checked = SECURE;
+  $("directOnly").checked = true;
+  $("showUnknown").checked = false; // always starts off
   try { localStorage.removeItem("filradio.direct"); } catch {}
   // Filter definitions: open on a first visit, then only when the (i) button is tapped.
-  $("helpDirect").hidden = !SECURE;
   function showFilterHelp(open) {
     $("filterHelp").hidden = !open;
     $("filterInfo").setAttribute("aria-expanded", String(open));
@@ -1085,6 +1092,13 @@
   $("directOnly").addEventListener("change", render);
   $("sheetToggle").addEventListener("click", () => $("sidebar").classList.toggle("open"));
 
+  // Re-run the entrance animation of the visible rows/cards (after a view switch).
+  function replayListAnim() {
+    const list = $("list");
+    list.classList.remove("swap"); void list.offsetWidth; list.classList.add("swap");
+    list.querySelectorAll("li.anim").forEach((li) => { li.style.animation = "none"; void li.offsetWidth; li.style.animation = ""; });
+  }
+
   // ---------- Phone views: Map (map only) / List (playlist) / Grid (cards) ----------
   function setView(v, { save = true } = {}) {
     mView = v;
@@ -1093,6 +1107,7 @@
     else {
       if (gridView) setGrid(false, { sheet: false });
       setSheet(v === "map" ? "hidden" : "half");
+      if (v === "list") replayListAnim();
     }
     syncTabs();
   }
@@ -1107,6 +1122,7 @@
     if (isMobile() && moveSheet) setSheet(on ? "full" : "half");
     $("list").scrollTop = 0;
     $("sheet").scrollTop = 0;
+    replayListAnim();
     syncTabs();
   }
   $("viewSwitch").addEventListener("click", (e) => {

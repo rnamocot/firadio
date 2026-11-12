@@ -12,7 +12,10 @@ Listen to Philippine FM, AM and online radio on a 3D map, at home or abroad. Tap
 - **600+ stations** from [radio-browser.info](https://www.radio-browser.info/), merged and de-duplicated, with backup streams
 - **Location search**: type a city or province (Cebu, Davao, Bohol…) to list stations within 45 km, nearest first; or tap *near me*
 - **For OFWs**: streams work from any country; visitors abroad get a welcome note
-- **Mobile app layout**: floating search, bottom sheet, tab bar, full-screen Now Playing with a tuning dial
+- **Views**: phones get Map · List (playlist) · Grid · Playing tabs; desktop has a Map | Grid switch
+- **Filters**: "Plays here" (on by default) and "Unknown city" (off by default), explained behind an (i) button
+- **Mobile app layout**: floating search, bottom sheet, full-screen Now Playing with a tuning dial
+- **Icon**: radio on a Philippine-flag tile (`icon.svg`, PNGs via `tools/make_icons.py`)
 - **Lock-screen and car controls** via the Media Session API (audio works over CarPlay / Android Auto)
 - **Installable PWA** with an illustrated install guide for desktop, Android and iPhone/iPad
 - **Works offline** for the app itself and the last station list (radio streams and new map areas need internet)

@@ -852,3 +852,51 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
   .credit .bmc { display: inline-flex; margin: 0; padding: 6px 12px; font-size: 12px; order: 4; }
   .credit > p { margin: 0; order: 3; flex: 1 1 auto; }
 }
+
+/* Map credits: always the compact (i) button; text only when the user opens it */
+.maplibregl-ctrl-attrib.maplibregl-compact { min-height: 24px; }
+.maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-inner { display: none; }
+
+/* =========================================================
+   Motion, round 2
+   ========================================================= */
+/* View switch: list fades/slides in */
+.list.swap { animation: list-swap .4s var(--ease); }
+@keyframes list-swap { from { opacity: .3; transform: translateY(10px); } }
+
+/* Grid cards pop in one after another */
+.sidebar.grid .list li.anim { animation: card-in .5s var(--ease) both; animation-delay: calc(var(--i, 0) * 32ms); }
+@keyframes card-in { from { opacity: 0; transform: translateY(12px) scale(.94); } }
+.sidebar.grid .list li[data-id]:active { transform: scale(.97); }
+
+/* Logo "on air" pulse while a station plays */
+.logo, .search-mark { transition: box-shadow .3s; }
+body.is-live .brand .logo, body.is-live .search-mark { animation: logo-onair 1.8s var(--ease) infinite; }
+@keyframes logo-onair {
+  0% { box-shadow: 0 0 0 0 rgba(206,17,38,.55); }
+  70% { box-shadow: 0 0 0 9px rgba(206,17,38,0); }
+  100% { box-shadow: 0 0 0 0 rgba(206,17,38,0); }
+}
+
+/* Install pill: one gentle nudge after load */
+.install:not([hidden]) { animation: nudge 1s 2.2s var(--ease) both; }
+@keyframes nudge { 0%, 100% { transform: none; } 30% { transform: translateY(-3px) scale(1.05); } 60% { transform: translateY(0) scale(.98); } }
+
+/* Definitions panel slides open */
+.filter-help:not([hidden]) { animation: help-open .38s var(--ease); transform-origin: top; }
+@keyframes help-open { from { opacity: 0; transform: translateY(-6px) scaleY(.96); } }
+.info-btn svg { transition: transform .3s var(--ease); }
+.info-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+/* Map | Grid switch and phone tabs: springy press */
+.view-switch button:active, .tab:active { transform: scale(.94); }
+.view-switch button { transition: background .25s, color .25s, transform .15s var(--ease); }
+
+/* Row play button: ripple on tap */
+.list li.tap .row-play { animation: ripple .45s var(--ease); }
+@keyframes ripple { 0% { box-shadow: 0 0 0 0 rgba(255,201,60,.8); } 100% { box-shadow: 0 0 0 12px rgba(255,201,60,0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .list.swap, .sidebar.grid .list li.anim, body.is-live .brand .logo, body.is-live .search-mark,
+  .install, .filter-help { animation: none !important; }
+}

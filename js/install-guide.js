@@ -16,11 +16,16 @@
   const cursor = (x, y) =>
     `<path d="M${x} ${y}l0 15 4-3.6 2.8 6 2.4-1.1-2.8-5.9 5.4-.4Z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`;
   const tap = (x, y) => `<circle cx="${x}" cy="${y}" r="7" fill="${INK}" opacity=".18"/><circle cx="${x}" cy="${y}" r="3.5" fill="${INK}" opacity=".45"/>`;
+  // FilRadio app icon (radio on a Philippine-flag tile), simplified from icon.svg
   const logo = (x, y, s) =>
-    `<g transform="translate(${x} ${y}) scale(${s / 512})"><rect width="512" height="512" rx="120" fill="${INK}"/>
-     <g transform="translate(256 256)" fill="${SUN}">${[0, 90, 180, 270].map((a) => `<rect x="-15" y="-196" width="30" height="100" rx="15" transform="rotate(${a})"/>`).join("")}
-     ${[45, 135, 225, 315].map((a) => `<rect x="-13" y="-160" width="26" height="56" rx="13" transform="rotate(${a})"/>`).join("")}
-     <circle r="70"/><circle r="24" fill="${INK}"/></g><circle cx="426" cy="86" r="22" fill="${RED}"/></g>`;
+    `<g transform="translate(${x} ${y}) scale(${s / 512})">
+     <rect width="512" height="256" rx="0" fill="#0038A8"/><rect y="256" width="512" height="256" fill="#CE1126"/>
+     <path d="M0 0 L210 256 L0 512 Z" fill="#fff"/>
+     <path d="M318 178 L386 96" stroke="#FCD116" stroke-width="18" stroke-linecap="round"/><circle cx="396" cy="82" r="26" fill="#FCD116"/>
+     <rect x="84" y="172" width="344" height="240" rx="56" fill="#FCD116" stroke="${INK}" stroke-width="10"/>
+     <circle cx="190" cy="292" r="72" fill="${INK}"/><circle cx="190" cy="292" r="26" fill="#FCD116"/>
+     <rect x="290" y="226" width="106" height="62" rx="16" fill="${INK}"/><path d="M361 238v40" stroke="#CE1126" stroke-width="8" stroke-linecap="round"/>
+     <circle cx="314" cy="350" r="22" fill="${INK}"/><circle cx="372" cy="350" r="22" fill="${INK}"/></g>`;
   const miniMap = (x, y, w, h) =>
     `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#bcd3ec"/>
      <path d="M${x + w * 0.52} ${y + h * 0.12}c10 8 6 22 14 30s4 18-4 24 6 16 16 22-2 20 6 28" stroke="#e8e1cf" stroke-width="${Math.max(6, w / 22)}" fill="none" stroke-linecap="round"/>

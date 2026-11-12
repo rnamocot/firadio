@@ -1,12 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#10182B"/>
-  <g transform="translate(256 256)" fill="#FFC93C">
-    <g id="L"><rect x="-15" y="-196" width="30" height="100" rx="15"/></g>
-    <g id="S"><rect x="-13" y="-160" width="26" height="56" rx="13" transform="rotate(45)"/></g>
-    <use href="#L" transform="rotate(90)"/><use href="#L" transform="rotate(180)"/><use href="#L" transform="rotate(270)"/>
-    <use href="#S" transform="rotate(90)"/><use href="#S" transform="rotate(180)"/><use href="#S" transform="rotate(270)"/>
-    <circle r="70"/>
-    <circle r="24" fill="#10182B"/>
+  <defs>
+    <clipPath id="tile"><rect width="512" height="512" rx="116"/></clipPath>
+    <path id="star" d="M0-1 0.2245-0.309 0.951-0.309 0.3633 0.118 0.5878 0.809 0 0.382-0.5878 0.809-0.3633 0.118-0.951-0.309-0.2245-0.309Z"/>
+  </defs>
+  <g clip-path="url(#tile)">
+    <!-- Philippine flag: blue over red, white triangle at the hoist -->
+    <rect width="512" height="256" fill="#0038A8"/>
+    <rect y="256" width="512" height="256" fill="#CE1126"/>
+    <path d="M0 0 L210 256 L0 512 Z" fill="#FFFFFF"/>
+    <use href="#star" transform="translate(34 70) scale(17)" fill="#FCD116"/>
+    <use href="#star" transform="translate(34 446) scale(17)" fill="#FCD116"/>
   </g>
-  <circle cx="426" cy="86" r="22" fill="#E63946"/>
+  <!-- antenna with a star tip (the third star) -->
+  <path d="M318 178 L386 96" stroke="#FCD116" stroke-width="18" stroke-linecap="round"/>
+  <use href="#star" transform="translate(396 82) scale(34)" fill="#FCD116"/>
+  <!-- radio -->
+  <rect x="84" y="172" width="344" height="240" rx="56" fill="#FCD116" stroke="#10182B" stroke-width="10"/>
+  <!-- speaker = the flag's sun -->
+  <circle cx="190" cy="292" r="72" fill="#10182B"/>
+  <g stroke="#FCD116" stroke-width="11" stroke-linecap="round">
+    <path d="M190 254v-14M190 330v14M152 292h-14M228 292h14M163 265l-10-10M217 319l10 10M217 265l10-10M163 319l-10 10"/>
+  </g>
+  <circle cx="190" cy="292" r="24" fill="#FCD116"/>
+  <!-- dial window with tuning needle -->
+  <rect x="290" y="226" width="106" height="62" rx="16" fill="#10182B"/>
+  <path d="M308 270v-14M326 270v-22M344 270v-14M378 270v-14" stroke="#FCD116" stroke-width="7" stroke-linecap="round"/>
+  <path d="M361 238v40" stroke="#CE1126" stroke-width="8" stroke-linecap="round"/>
+  <!-- knobs -->
+  <circle cx="314" cy="350" r="22" fill="#10182B"/>
+  <circle cx="372" cy="350" r="22" fill="#10182B"/>
 </svg>
