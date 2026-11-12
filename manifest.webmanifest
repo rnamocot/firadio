@@ -1,20 +1,72 @@
 {
   "id": "./",
-  "name": "FilRadio — Philippine Radio Map",
+  "name": "WebTarsier FilRadio",
   "short_name": "FilRadio",
-  "description": "Tune in to Philippine FM, AM and online radio stations on a 3D map.",
+  "description": "Philippine FM, AM and online radio, live on a 3D map. Listen at home or abroad.",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
   "background_color": "#10182B",
   "theme_color": "#10182B",
-  "categories": ["music", "entertainment", "news"],
+  "categories": [
+    "music",
+    "entertainment",
+    "news"
+  ],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
-  ]
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/desktop.png",
+      "sizes": "1568x741",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Cebu stations on the 3D map with MOR 97.1 playing"
+    },
+    {
+      "src": "screenshots/phone-1.png",
+      "sizes": "375x739",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Now Playing with the tuning dial"
+    },
+    {
+      "src": "screenshots/phone-2.png",
+      "sizes": "375x739",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Stations around Davao on the map"
+    }
+  ],
+  "lang": "en-PH",
+  "dir": "ltr"
 }

@@ -5,34 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <!-- SEO -->
-  <title>FilRadio — Listen to Philippine FM &amp; AM Radio Live on a 3D Map</title>
-  <meta name="description" content="Stream 600+ Philippine radio stations for free. Explore FM, AM and online stations from Manila, Cebu, Davao, Baguio, Iloilo and more on an interactive 3D map — tap a pin and listen live." />
-  <meta name="keywords" content="Philippine radio, Pinoy radio online, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
+  <title>WebTarsier FilRadio — Listen to Philippine FM &amp; AM Radio Live, Anywhere</title>
+  <meta name="description" content="WebTarsier FilRadio: stream 600+ Philippine radio stations free, live on a 3D map. FM, AM and online stations from Manila, Cebu, Davao, Iloilo and more. Made for Filipinos at home and OFWs abroad." />
+  <meta name="keywords" content="WebTarsier FilRadio, FilRadio, Philippine radio, Pinoy radio online, OFW radio, Filipino radio abroad, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
   <meta name="author" content="Ren" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; worker-src 'self' blob:; child-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://webtarsier.com/" />
 
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="FilRadio" />
-  <meta property="og:title" content="FilRadio — Philippine Radio, Live on a 3D Map" />
-  <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live. 600+ FM, AM and online stations." />
+  <meta property="og:site_name" content="WebTarsier FilRadio" />
+  <meta property="og:title" content="WebTarsier FilRadio — Philippine Radio, Live Anywhere" />
+  <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
   <meta property="og:url" content="https://webtarsier.com/" />
   <meta property="og:image" content="https://webtarsier.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="FilRadio — Philippine radio stations on a map" />
+  <meta property="og:image:alt" content="WebTarsier FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:locale" content="en_PH" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="FilRadio — Philippine Radio, Live on a 3D Map" />
-  <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live. 600+ FM, AM and online stations." />
+  <meta name="twitter:title" content="WebTarsier FilRadio — Philippine Radio, Live Anywhere" />
+  <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
   <meta name="twitter:image" content="https://webtarsier.com/og-image.png" />
+  <meta name="twitter:image:alt" content="WebTarsier FilRadio app showing Philippine radio stations on a 3D map" />
+  <meta property="og:image:type" content="image/png" />
+  <meta name="application-name" content="WebTarsier FilRadio" />
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "FilRadio",
+    "name": "WebTarsier FilRadio",
+    "alternateName": "FilRadio",
     "url": "https://webtarsier.com/",
     "description": "Interactive 3D map of Philippine FM, AM and online radio stations with live streaming.",
     "applicationCategory": "MultimediaApplication",
@@ -41,7 +47,10 @@
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PHP" },
     "author": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
     "creator": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
-    "spatialCoverage": { "@type": "Country", "name": "Philippines" }
+    "spatialCoverage": { "@type": "Country", "name": "Philippines" },
+    "audience": { "@type": "Audience", "audienceType": "Filipinos in the Philippines and OFWs abroad" },
+    "publisher": { "@type": "Organization", "name": "WebTarsier", "url": "https://webtarsier.com/", "logo": "https://webtarsier.com/icons/icon-512.png" },
+    "screenshot": "https://webtarsier.com/og-image.png"
   }
   </script>
 
@@ -59,6 +68,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+  <link rel="preconnect" href="https://de1.api.radio-browser.info" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="css/style.css" />
@@ -85,6 +97,8 @@
       <symbol id="i-signal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4.5 9.5a10.6 10.6 0 0 1 15 0M7.5 12.6a6.4 6.4 0 0 1 9 0"/><circle cx="12" cy="16.6" r="2.1" fill="currentColor" stroke="none"/></symbol>
       <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21.5s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z" fill="currentColor"/><circle cx="12" cy="9.5" r="2.6" style="fill:var(--sun)"/></symbol>
       <symbol id="i-3d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 19.6 7.5v9L12 20.8 4.4 16.5v-9L12 3.2Z"/><path d="M4.6 7.6 12 11.8l7.4-4.2M12 11.8v8.8"/><circle cx="12" cy="11.8" r="1.8" style="fill:var(--sun);stroke:none"/></symbol>
+      <symbol id="i-near" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="2.4" style="fill:var(--sun);stroke:none"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3" style="fill:var(--sun)"/></symbol>
     </defs>
   </svg>
   <div class="app">
@@ -116,7 +130,7 @@
         <header class="brand">
           <img class="logo" src="icon.svg" alt="FilRadio logo" width="40" height="40" />
           <div class="brand-text">
-            <h1>Fil<span>Radio</span></h1>
+            <h1>Fil<span>Radio</span> <small class="by">by WebTarsier</small></h1>
             <p class="sub" id="summary">Tuning in…</p>
           </div>
           <button class="ibtn install" id="installBtn" hidden title="Install FilRadio">
@@ -140,6 +154,9 @@
               <input id="search" type="search" placeholder=" " autocomplete="off" enterkeyhint="search" aria-label="Search stations, cities or genres" />
               <span class="search-hint" aria-hidden="true"><span id="hintText">Search stations, cities, genres</span></span>
             </span>
+            <button class="search-near" id="nearMe" type="button" aria-label="Stations near me" title="Stations near me">
+              <svg class="i" aria-hidden="true"><use href="#i-near"/></svg>
+            </button>
             <button class="search-clear" id="searchClear" type="button" aria-label="Clear search">
               <svg class="i" aria-hidden="true"><use href="#i-x"/></svg>
             </button>
@@ -171,11 +188,14 @@
         </ul>
         <footer class="credit">
           <p class="about">
-            FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
+            WebTarsier FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
             FM music stations, AM news and talk radio such as Bombo Radyo, Brigada News FM and Radyo Pilipinas,
-            and online-only Pinoy streams, each pinned to its city on the map.
+            and online-only Pinoy streams, each pinned to its city on the map. It works anywhere in the world,
+            so OFWs and Filipinos abroad can listen to home.
           </p>
-          <p>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></p>
+          <p class="visits" id="visits" hidden><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg><b>0</b> visits</p>
+          <p><a href="#install" id="howInstall">How to install the app</a></p>
+          <p>WebTarsier FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></p>
         </footer>
       </section>
     </aside>
@@ -261,9 +281,9 @@
 
   <audio id="audio" preload="none"></audio>
 
-  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
-  <script src="js/places.js"></script>
-  <script src="js/app.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
+  <script src="js/places.js" defer></script>
+  <script src="js/install-guide.js" defer></script>
+  <script src="js/app.js" defer></script>
 </body>
 </html>

@@ -21,7 +21,7 @@
   const ICON = { play: use("i-play"), pause: use("i-pause"), pin: use("i-pin"), sig: use("i-signal", "sig") };
   // Fallback artwork when a station has no logo of its own.
   const RADIO_IMG = { sm: "icons/radio-128.webp", lg: "icons/radio-512.webp" };
-  const HINTS = ["Search stations, cities, genres", "Try “Bombo Radyo”", "Try “Cebu”", "Try “OPM”", "Try “Love Radio”", "Try “Davao”", "Try “news”"];
+  const HINTS = ["Search stations, cities, genres", "Try a city: “Cebu”", "Try “Bombo Radyo”", "Try a province: “Bohol”", "Try “OPM”", "Try “Love Radio”", "Try “Davao”", "Try “news”"];
 
   // ======================================================
   // State
@@ -52,6 +52,31 @@
   const clean = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
   const norm = (s) => clean(s).toLowerCase().replace(/[^a-z0-9]+/g, "");
   const safeUrl = (u) => (/^https?:\/\//i.test(u || "") ? u : "");
+
+  // Rate limiter persisted per device: allow(key, ms) is true at most once per `ms`.
+  const guard = {
+    allow(key, ms) {
+      try {
+        const k = "filradio.rl." + key, last = +localStorage.getItem(k) || 0;
+        if (Date.now() - last < ms) return false;
+        localStorage.setItem(k, String(Date.now()));
+      } catch {}
+      return true;
+    },
+  };
+  // Station "click" vote on radio-browser: once per station per device per day.
+  function reportClick(st) {
+    if (!guard.allow("click." + st.id, 24 * 60 * 60 * 1000)) return;
+    fetch(`${apiHost}/json/url/${encodeURIComponent(st.streams[0]?.id || st.id)}`).catch(() => {});
+  }
+  // Broken station logos fall back to the radio artwork (no inline handlers needed).
+  document.addEventListener("error", (e) => {
+    const img = e.target;
+    if (img.tagName === "IMG" && img.classList.contains("logo-img")) {
+      img.className = "radio-img";
+      img.src = RADIO_IMG.sm;
+    }
+  }, true);
 
   function toast(msg, ms = 2800) {
     const t = $("toast");
@@ -122,11 +147,22 @@
   }
 
   async function loadRaw() {
+    let cached = null;
     try {
-      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      if (cached && Date.now() - cached.t < CACHE_TTL) return cached.d;
+      cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (cached && (Date.now() - cached.t < CACHE_TTL || !navigator.onLine)) return cached.d;
     } catch {}
-    const data = await fetchJSON("/json/stations/bycountrycodeexact/PH?hidebroken=true&order=votes&reverse=true&limit=5000");
+    if (!guard.allow("api-list", 60 * 1000) && cached) return cached.d;
+    let data;
+    try {
+      data = await fetchJSON("/json/stations/bycountrycodeexact/PH?hidebroken=true&order=votes&reverse=true&limit=5000");
+    } catch (e) {
+      if (cached) return cached.d; // offline or API down: use the last list we saved
+      throw e;
+    }
+    return saveRaw(data);
+  }
+  function saveRaw(data) {
     const slim = data.map((s) => ({
       u: s.stationuuid, n: s.name, url: s.url_resolved || s.url, hp: s.homepage, f: s.favicon, t: s.tags,
       st: s.state, la: s.geo_lat, lo: s.geo_long, c: s.codec, b: s.bitrate, h: s.hls, v: s.votes, ok: s.lastcheckok,
@@ -182,6 +218,8 @@
   // ======================================================
   const map = new maplibregl.Map({
     container: "map",
+    pixelRatio: Math.min(devicePixelRatio || 1, isMobile() ? 1.75 : 2),
+    fadeDuration: 200,
     style: `https://tiles.openfreemap.org/styles/${dark ? "dark" : "liberty"}`,
     center: PH_CENTER,
     zoom: reduceMotion ? 5 : 1.6,
@@ -195,8 +233,6 @@
 
   map.on("style.load", () => {
     try { map.setProjection({ type: "globe" }); } catch {}
-    // Start the fly-in as soon as the style is ready instead of waiting for every terrain tile.
-    setTimeout(intro, 250);
   });
 
   // Pin images drawn on canvas — one per band, plus "playing" and "unknown".
@@ -351,9 +387,12 @@
     }
     map.on("click", "playing-pin", () => current && showPopup(current));
 
+    // Keep the map credits collapsed to the (i) button on small screens.
+    if (isMobile()) document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
     mapReady = true;
     if (stations.length) render();
     if (current) setPlayingFeature();
+    intro();
   });
 
   let introDone = false;
@@ -368,7 +407,7 @@
   function mapPadding() {
     if (isMobile()) {
       const sheetTop = $("sheet").getBoundingClientRect().top;
-      return { top: 140, bottom: Math.max(80, innerHeight - sheetTop + 20), left: 20, right: 20 };
+      return { top: 210, bottom: Math.max(80, innerHeight - sheetTop + 20), left: 20, right: 60 };
     }
     const sb = $("sidebar");
     return { top: 40, bottom: $("player").hidden ? 40 : 110, left: sb.classList.contains("open") ? 400 : 40, right: 60 };
@@ -376,8 +415,10 @@
 
   // Pulse animation for the playing pin
   let pulseT0 = performance.now();
+  let lastPulse = 0;
   (function pulse(t) {
-    if (mapReady && current && !audio.paused && map.getLayer("playing-pulse")) {
+    if (t - lastPulse > 33 && mapReady && current && !audio.paused && map.getLayer("playing-pulse")) {
+      lastPulse = t;
       const p = ((t - pulseT0) % 1600) / 1600;
       map.setPaintProperty("playing-pulse", "circle-radius", 10 + p * 26);
       map.setPaintProperty("playing-pulse", "circle-opacity", 0.55 * (1 - p));
@@ -404,7 +445,7 @@
   function readoutHtml(st, cls = "") {
     const tag = st.num != null ? freqLabel(st) : st.band === "Online" ? "NET" : st.band;
     const img = st.favicon
-      ? `<img class="logo-img" src="${esc(st.favicon)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.className='radio-img';this.src='${RADIO_IMG.sm}'">`
+      ? `<img class="logo-img" src="${esc(st.favicon)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
       : `<img class="radio-img" src="${RADIO_IMG.sm}" alt="" loading="lazy">`;
     return `<span class="readout ${st.band} ${cls}">${img}<b class="tag">${tag}</b></span>`;
   }
@@ -465,21 +506,59 @@
   // Rendering
   // ======================================================
   const byId = new Map();
-  const matches = (st) => (band === "all" || st.band === band) && (!query || st.hay.includes(query));
+  const bandOk = (st) => band === "all" || st.band === band;
+  const matches = (st) => bandOk(st) && (!query || st.hay.includes(query));
   const toFeature = (st) => ({ type: "Feature", properties: { id: st.id, band: st.band }, geometry: { type: "Point", coordinates: [st.lng, st.lat] } });
 
+  // ---------- Location search ----------
+  // Typing a city/province ("Cebu", "Davao", "Iloilo") lists every station within AREA_KM, nearest first.
+  const AREA_KM = 45;
+  let nearMe = null;      // set by the "near me" button
+  let lastAreaKey = null; // so the map only flies when the area changes
+  const placeNames = Object.keys(window.PH_PLACES);
+  function km(lat1, lng1, lat2, lng2) {
+    const r = Math.PI / 180, a = Math.sin(((lat2 - lat1) * r) / 2) ** 2 +
+      Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(((lng2 - lng1) * r) / 2) ** 2;
+    return 12742 * Math.asin(Math.sqrt(a));
+  }
+  function findArea(q) {
+    if (q.length < 3) return null;
+    const exact = placeNames.find((p) => p.toLowerCase() === q);
+    const name = exact || placeNames.filter((p) => p.toLowerCase().startsWith(q)).sort((a, b) => a.length - b.length)[0];
+    if (!name) return null;
+    const [lat, lng] = window.PH_PLACES[name];
+    return { key: name, label: name, lat, lng };
+  }
+  function currentArea() { return nearMe || (query ? findArea(query) : null); }
+
   function render() {
-    visible = stations.filter(matches);
+    const area = currentArea();
+    if (area) {
+      for (const st of stations) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);
+      visible = stations
+        .filter((st) => bandOk(st) && (st.dist <= AREA_KM || (query && !nearMe && st.hay.includes(query))))
+        .sort((a, b) => a.dist - b.dist);
+      // Near me but nothing within range (e.g. abroad): show the 20 nearest instead.
+      if (nearMe && !visible.length) visible = stations.filter((st) => bandOk(st) && isFinite(st.dist)).sort((a, b) => a.dist - b.dist).slice(0, 20);
+      if (area.key !== lastAreaKey && mapReady) {
+        map.flyTo({ center: [area.lng, area.lat], zoom: 9.6, pitch: is3D ? 50 : 0, padding: mapPadding(), duration: reduceMotion ? 0 : 2000, essential: true });
+      }
+    } else {
+      for (const st of stations) st.dist = undefined;
+      visible = stations.filter(matches);
+    }
+    lastAreaKey = area ? area.key : null;
     const showUnknown = $("showUnknown").checked;
 
     if (mapReady) {
       map.getSource("st").setData({ type: "FeatureCollection", features: visible.filter((s) => !s.unknown).map(toFeature) });
-      map.getSource("unk").setData({ type: "FeatureCollection", features: showUnknown ? visible.filter((s) => s.unknown).map(toFeature) : [] });
+      map.getSource("unk").setData({ type: "FeatureCollection", features: showUnknown && !area ? visible.filter((s) => s.unknown).map(toFeature) : [] });
     }
 
-    const searched = query ? stations.filter((s) => s.hay.includes(query)) : stations;
+    const pool = area ? stations.filter((s) => s.dist <= AREA_KM || (query && !nearMe && s.hay.includes(query)))
+                      : query ? stations.filter((s) => s.hay.includes(query)) : stations;
     for (const b of document.querySelectorAll(".band")) {
-      const n = b.dataset.band === "all" ? searched.length : searched.filter((s) => s.band === b.dataset.band).length;
+      const n = b.dataset.band === "all" ? pool.length : pool.filter((s) => s.band === b.dataset.band).length;
       const span = b.querySelector("span");
       if (span.textContent !== String(n)) {
         span.textContent = n;
@@ -491,20 +570,35 @@
     const list = $("list");
     list.innerHTML = "";
     list.scrollTop = 0;
+    const frag = document.createDocumentFragment();
+    if (area) {
+      const near = visible.filter((s) => s.dist <= AREA_KM).length;
+      const banner = document.createElement("li");
+      banner.className = "area-banner anim";
+      banner.innerHTML = `<span class="area-ico">${use(nearMe ? "i-near" : "i-locate")}</span>
+        <div class="info"><div class="name">${nearMe ? "Stations near you" : `Stations in &amp; around ${esc(area.label)}`}</div>
+        <div class="meta">${near} within ${AREA_KM} km · nearest first</div></div>
+        <button class="area-clear" data-area-clear aria-label="Clear location">${use("i-x")}</button>`;
+      frag.appendChild(banner);
+    }
     if (!visible.length) {
-      list.innerHTML = `<li class="empty">No stations match “${esc(query)}”.</li>`;
+      const li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = area ? `No stations found within ${AREA_KM} km.` : `No stations match “${query}”.`;
+      frag.appendChild(li);
+      list.appendChild(frag);
       return;
     }
-    const frag = document.createDocumentFragment();
     visible.forEach((st, i) => {
       const li = document.createElement("li");
       li.dataset.id = st.id;
       if (current === st) li.classList.add("playing");
-      if (i < 18) { li.classList.add("anim"); li.style.setProperty("--i", i); }
+      if (i < 18) { li.classList.add("anim"); li.style.setProperty("--i", i + (area ? 1 : 0)); }
+      const dist = st.dist != null && isFinite(st.dist) ? `<b class="dist">${st.dist < 1 ? "<1" : Math.round(st.dist)} km</b>` : "";
       li.innerHTML = `${readoutHtml(st)}
         <div class="info">
           <div class="name">${esc(st.name)}</div>
-          <div class="meta">${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
+          <div class="meta">${dist}${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
         </div>
         <span class="bars"><i></i><i></i><i></i></span>`;
       frag.appendChild(li);
@@ -513,6 +607,12 @@
   }
 
   $("list").addEventListener("click", (e) => {
+    if (e.target.closest("[data-area-clear]")) {
+      nearMe = null;
+      search.value = "";
+      search.dispatchEvent(new Event("input"));
+      return;
+    }
     const li = e.target.closest("li[data-id]");
     if (!li) return;
     const st = byId.get(li.dataset.id);
@@ -565,6 +665,17 @@
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = live ? "playing" : "paused";
   }
 
+  let hlsPromise = null;
+  function loadHls() {
+    return (hlsPromise ||= new Promise((resolve, reject) => {
+      const sc = document.createElement("script");
+      sc.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
+      sc.onload = resolve;
+      sc.onerror = () => { hlsPromise = null; reject(); };
+      document.head.appendChild(sc);
+    }));
+  }
+
   function playStream(st, idx) {
     stopEngine();
     const s = st.streams[idx];
@@ -573,20 +684,28 @@
     setStatus(idx > 0 ? `Retuning ${idx}…` : "Tuning…");
     const tryNext = () => { if (current === st && st._idx === idx) playStream(st, idx + 1); };
 
-    if (s.hls && window.Hls && Hls.isSupported()) {
-      hls = new Hls();
-      hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) tryNext(); });
-      hls.loadSource(s.url);
-      hls.attachMedia(audio);
-    } else {
-      audio.src = s.url;
-    }
-    audio.onerror = tryNext;
-    audio.play().catch((e) => {
+    const start = () => audio.play().catch((e) => {
       if (e.name === "NotAllowedError") setStatus("Tap play");
       else if (e.name !== "AbortError") tryNext();
     });
-    fetch(`${apiHost}/json/url/${encodeURIComponent(s.id)}`).catch(() => {});
+    audio.onerror = tryNext;
+    reportClick(st);
+
+    // HLS: Safari plays it natively; elsewhere hls.js is fetched only when a station needs it.
+    if (s.hls && !audio.canPlayType("application/vnd.apple.mpegurl")) {
+      loadHls().then(() => {
+        if (current !== st || st._idx !== idx) return;
+        if (!window.Hls || !Hls.isSupported()) return tryNext();
+        hls = new Hls();
+        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) tryNext(); });
+        hls.loadSource(s.url);
+        hls.attachMedia(audio);
+        start();
+      }, tryNext);
+      return;
+    }
+    audio.src = s.url;
+    start();
   }
 
   function togglePlay() {
@@ -655,7 +774,10 @@
     closeNow(); setSheet("peek");
     setTimeout(() => focus(current), 200);
   });
+  let lastStep = 0;
   const step = (d) => {
+    if (Date.now() - lastStep < 400) return; // don't open a burst of stream connections
+    lastStep = Date.now();
     const pool = visible.length ? visible : stations;
     if (!pool.length) return;
     const i = current ? pool.indexOf(current) : -1;
@@ -798,6 +920,7 @@
   const search = $("search");
   let debounce;
   search.addEventListener("input", () => {
+    if (search.value) nearMe = null;
     searchBox.classList.toggle("has-text", !!search.value);
     clearTimeout(debounce);
     if (search.value) {
@@ -818,6 +941,28 @@
   $("searchClear").addEventListener("mousedown", (e) => e.preventDefault()); // keep focus
   $("searchClear").addEventListener("click", () => { search.value = ""; search.dispatchEvent(new Event("input")); search.focus(); });
   $("searchBack").addEventListener("click", () => { search.blur(); setSheet("half"); });
+
+  // Near me (device location, only on tap)
+  $("nearMe").addEventListener("click", () => {
+    if (!navigator.geolocation) return toast("Location isn't available on this device");
+    const btn = $("nearMe");
+    if (btn.classList.contains("busy")) return;
+    btn.classList.add("busy");
+    navigator.geolocation.getCurrentPosition((pos) => {
+      btn.classList.remove("busy");
+      const { latitude: lat, longitude: lng } = pos.coords;
+      nearMe = { key: `me:${lat.toFixed(2)},${lng.toFixed(2)}`, label: "you", lat, lng };
+      search.value = ""; query = "";
+      searchBox.classList.remove("has-text");
+      $("sidebar").classList.add("open");
+      if (isMobile()) setSheet("half");
+      render();
+      if (!visible.some((st) => st.dist <= AREA_KM)) toast(`No stations within ${AREA_KM} km, showing the nearest ones`);
+    }, () => {
+      btn.classList.remove("busy");
+      toast("Allow location access to find stations near you");
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 10 * 60 * 1000 });
+  });
 
   // Rotating hints
   let hintI = 0;
@@ -854,32 +999,49 @@
   mobileInstall.classList.add("in-sheet");
   document.querySelector(".sheet-title").insertBefore(mobileInstall, $("listCount").nextSibling);
 
-  addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    installEvt = e;
-    $("installBtn").hidden = false;
-    mobileInstall.hidden = !isMobile();
-  });
+  // Install buttons are always offered (except inside the installed app). Browsers with a built-in
+  // prompt (Chrome, Edge, Samsung) get it directly; others (iPhone/iPad, Safari, Firefox) get the guide.
+  $("installBtn").hidden = !!standalone;
+  mobileInstall.hidden = !!standalone;
+  const nativePrompt = async () => {
+    if (!installEvt) return;
+    installEvt.prompt();
+    const { outcome } = await installEvt.userChoice;
+    installEvt = null;
+    if (outcome === "accepted") toast("FilRadio installed. Find it on your home screen.");
+  };
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; });
   for (const btn of [$("installBtn"), mobileInstall]) {
-    btn.addEventListener("click", async () => {
-      if (!installEvt) return;
-      installEvt.prompt();
-      const { outcome } = await installEvt.userChoice;
-      installEvt = null;
-      $("installBtn").hidden = true; mobileInstall.hidden = true;
-      if (outcome === "accepted") toast("FilRadio installed — find it on your home screen");
-    });
+    btn.addEventListener("click", () => (installEvt ? nativePrompt() : window.FilGuide?.open()));
   }
+  $("howInstall").addEventListener("click", (e) => { e.preventDefault(); window.FilGuide?.open({ canPrompt: !!installEvt, onPrompt: nativePrompt }); });
   addEventListener("appinstalled", () => { $("installBtn").hidden = true; mobileInstall.hidden = true; });
-  // iOS Safari has no install prompt: show a one-time hint.
-  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone) {
+
+  // OFWs and Filipinos abroad: a warm welcome once a week (streams work from any country).
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    if (tz && tz !== "Asia/Manila" && guard.allow("ofw", 7 * 24 * 60 * 60 * 1000)) {
+      setTimeout(() => toast("Kumusta, kabayan! Listen to home radio wherever you are.", 5000), 4500);
+    }
+  } catch {}
+
+  // ======================================================
+  // Visitor counter (Abacus, free & keyless). One "hit" per device per day; never counts localhost.
+  // ======================================================
+  (async () => {
+    const el = $("visits");
+    const dev = /^(localhost|127\.|\[::1\])/.test(location.hostname) || location.protocol === "file:";
+    const action = !dev && guard.allow("visit", 24 * 60 * 60 * 1000) ? "hit" : "get";
     try {
-      if (!localStorage.getItem("filradio.iosHint")) {
-        setTimeout(() => toast("Install: tap Share, then “Add to Home Screen”", 5000), 6000);
-        localStorage.setItem("filradio.iosHint", "1");
+      const res = await fetch(`https://abacus.jasoncameron.dev/${action}/webtarsier-filradio/visits`);
+      if (!res.ok) return;
+      const { value } = await res.json();
+      if (typeof value === "number") {
+        el.querySelector("b").textContent = value.toLocaleString();
+        el.hidden = false;
       }
     } catch {}
-  }
+  })();
 
   // ======================================================
   // Boot
