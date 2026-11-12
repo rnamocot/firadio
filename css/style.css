@@ -1106,3 +1106,32 @@ html.dark .c-rim { fill: #0b1020; }
 /* Footer links never break into stacked words */
 .credit a, .credit .bmc, .credit .visits, .osm-credit { white-space: nowrap; }
 @media (min-width: 761px) { .sidebar.grid .credit .bmc { flex-shrink: 0; } }
+
+/* =========================================================
+   Station header spacing + phone button column
+   ========================================================= */
+/* Chips sit inside the header block: no second side padding, clear gap under the title row */
+.sheet-grip .sheet-filters { padding: 0; margin-top: 10px; }
+.sheet-grip { padding-bottom: 10px; }
+.sheet-title { min-height: 30px; }
+
+/* Dark map switch inside the Layers menu */
+.layer-dark {
+  display: flex; align-items: center; gap: 9px; margin-top: 4px; padding: 9px 6px 4px; border-top: 1px solid var(--line);
+  font: 700 13px var(--display); color: var(--text); cursor: pointer; user-select: none;
+}
+.layer-dark input { position: absolute; opacity: 0; pointer-events: none; }
+.layer-dark input:checked + .switch { background: var(--ink); }
+html.dark .layer-dark input:checked + .switch { background: var(--sun); }
+.layer-dark input:checked + .switch::after { transform: translateX(12px); }
+
+@media (max-width: 760px) {
+  .sheet-grip { padding: 8px 18px 12px; }
+  .sheet-grip .sheet-filters { margin: 12px -18px 0; padding: 0 18px 2px; } /* scroll edge-to-edge */
+  /* Shorter button column so nothing hides behind the station sheet */
+  #themeBtn { display: none; }
+  .fabs { gap: 7px; }
+  .fab { width: 42px; height: 42px; }
+}
+/* Layers menu open: lift the button column above the station sheet so the whole menu is visible */
+.fabs:has(.layer-menu:not([hidden])) { z-index: 27; }

@@ -560,6 +560,7 @@
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0b1020" : "#10182B");
     try { localStorage.setItem("filradio.theme", next); } catch {}
     $("themeBtn").setAttribute("aria-pressed", String(dark));
+    $("darkMapToggle").checked = dark;
     $("themeBtn").title = dark ? "Switch to light map" : "Switch to dark map";
     applyMapStyle();
   }
@@ -592,10 +593,14 @@
   $("layerMenu").addEventListener("click", (e) => {
     const b = e.target.closest("[data-type]");
     if (b) { setMapType(b.dataset.type); toggleLayerMenu(false); }
+    e.stopPropagation();
   });
   document.addEventListener("click", (e) => { if (!e.target.closest(".layer-wrap")) toggleLayerMenu(false); });
   $("themeBtn").setAttribute("aria-pressed", String(dark));
   $("themeBtn").addEventListener("click", () => setTheme(dark ? "light" : "dark"));
+  // Same switch inside the Layers menu (phones only show it there).
+  $("darkMapToggle").checked = dark;
+  $("darkMapToggle").addEventListener("change", () => setTheme($("darkMapToggle").checked ? "dark" : "light"));
 
   // ---------- 3D on demand ----------
   // Terrain elevation tiles, hillshade, globe and 3D buildings are only fetched the first time 3D is turned on.
