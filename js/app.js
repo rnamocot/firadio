@@ -913,7 +913,9 @@
     const grip = $("sheetGrip");
     let startY = 0, startOff = 0, lastY = 0, lastT = 0, vel = 0, dragging = false;
     grip.addEventListener("pointerdown", (e) => {
-      if (!isMobile() || e.target.closest(".toggle")) return;
+      // Let buttons inside the grip (Install, Unplaced switch) receive their own taps:
+      // capturing the pointer here would redirect their click to the grip.
+      if (!isMobile() || e.target.closest(".toggle, button, a, input, label")) return;
       dragging = true; startY = lastY = e.clientY; lastT = performance.now();
       startOff = sheetY(sheetState);
       sheet.classList.add("dragging");
