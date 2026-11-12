@@ -6,7 +6,7 @@
   // ======================================================
   // Station list is a snapshot served from this site (refresh it with tools/update_stations.py).
   const DATA_URL = "data/stations.json";
-  const CACHE_KEY = "filradio.stations.v2";
+  const CACHE_KEY = "filradio.stations.v3";
   const CACHE_TTL = 6 * 60 * 60 * 1000;
   const MANILA = [14.5995, 120.9842];
   // ?secure=1 lets you test the https behaviour on localhost.
@@ -1259,6 +1259,7 @@
   try { localStorage.removeItem("filradio.direct"); } catch {}
   // Filter definitions: open on a first visit, then only when the (i) button is tapped.
   function showFilterHelp(open) {
+    $("filterInfo").classList.remove("hint");
     $("filterHelp").hidden = !open;
     $("filterInfo").setAttribute("aria-expanded", String(open));
   }
@@ -1268,7 +1269,11 @@
     try { localStorage.setItem("filradio.filterHelp", "seen"); } catch {}
   });
   // Auto-open only where there's room for it and the list (tall desktop screens).
-  try { if (!isMobile() && innerHeight >= 900 && !localStorage.getItem("filradio.filterHelp")) showFilterHelp(true); } catch {}
+  try { if (!localStorage.getItem("filradio.filterHelp")) $("filterInfo").classList.add("hint"); } catch {}
+  // Close the definitions pop-over when tapping anywhere else.
+  document.addEventListener("click", (e) => {
+    if (!$("filterHelp").hidden && !e.target.closest("#filterHelp, #filterInfo")) showFilterHelp(false);
+  });
 
   $("directOnly").addEventListener("change", render);
   $("onAirOnly").checked = SECURE; // on-air data is about the https links the live site uses
@@ -1400,6 +1405,54 @@
         el.hidden = false;
       }
     } catch {}
+  })();
+
+  // ======================================================
+  // Clock: Philippine time by default; visitors abroad can tap to switch to their local time.
+  // ======================================================
+  (() => {
+    const localTz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { return ""; } })();
+    const abroad = localTz && localTz !== "Asia/Manila";
+    let usePH = true;
+    try { usePH = localStorage.getItem("filradio.clock") !== "local"; } catch {}
+    const ticks = $("clockTicks");
+    let svg = "";
+    for (let i = 0; i < 60; i++) {
+      const major = i % 5 === 0;
+      svg += `<line x1="50" y1="${major ? 9.5 : 10.5}" x2="50" y2="${major ? 15 : 12.5}" class="${major ? "t-major" : "t-minor"}" transform="rotate(${i * 6} 50 50)"/>`;
+    }
+    ticks.innerHTML = svg;
+    let secTurns = 0, lastSec = -1;
+    function parts() {
+      const tz = usePH || !abroad ? "Asia/Manila" : localTz;
+      const now = new Date();
+      const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" })
+        .formatToParts(now).map((x) => [x.type, x.value]));
+      return { tz, now, h: +p.hour, m: +p.minute, s: +p.second };
+    }
+    function tick() {
+      const { tz, now, h, m, s } = parts();
+      if (s < lastSec) secTurns++; // keep the second hand moving forward past 12
+      lastSec = s;
+      $("hHand").setAttribute("transform", `rotate(${(h % 12) * 30 + m * 0.5} 50 50)`);
+      $("mHand").setAttribute("transform", `rotate(${m * 6 + s * 0.1} 50 50)`);
+      $("sHand").style.transform = `rotate(${(secTurns * 60 + s) * 6}deg)`;
+      $("clockTime").textContent = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(now);
+      $("clockDate").textContent = new Intl.DateTimeFormat("en-US", isMobile()
+        ? { timeZone: tz, month: "short", day: "numeric" }
+        : { timeZone: tz, weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(now);
+      $("clockZone").textContent = tz === "Asia/Manila" ? (abroad ? "PH time · tap for yours" : "Philippine time") : "Your time · tap for PH";
+      $("clock").setAttribute("aria-label", `${tz === "Asia/Manila" ? "Philippine" : "Local"} time ${$("clockTime").textContent}, ${$("clockDate").textContent}`);
+    }
+    $("clock").addEventListener("click", () => {
+      if (!abroad) return;
+      usePH = !usePH;
+      try { localStorage.setItem("filradio.clock", usePH ? "ph" : "local"); } catch {}
+      tick();
+    });
+    tick();
+    // Align ticks to the start of each second.
+    setTimeout(() => { tick(); setInterval(tick, 1000); }, 1000 - (Date.now() % 1000));
   })();
 
   // ======================================================

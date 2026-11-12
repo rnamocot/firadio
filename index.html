@@ -21,7 +21,7 @@
   <meta property="og:title" content="FilRadio — Philippine Radio, Live Anywhere" />
   <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
   <meta property="og:url" content="https://filradio.xyz/" />
-  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=37" />
+  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=40" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
@@ -29,7 +29,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="FilRadio — Philippine Radio, Live Anywhere" />
   <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
-  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=37" />
+  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=40" />
   <meta name="twitter:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:image:type" content="image/png" />
   <meta name="application-name" content="FilRadio" />
@@ -50,8 +50,8 @@
     "spatialCoverage": { "@type": "Country", "name": "Philippines" },
     "audience": { "@type": "Audience", "audienceType": "Filipinos in the Philippines and OFWs abroad" },
     "publisher": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
-    "screenshot": "https://filradio.xyz/og-image.png?v=37",
-    "image": "https://filradio.xyz/icons/icon-512.png?v=37",
+    "screenshot": "https://filradio.xyz/og-image.png?v=40",
+    "image": "https://filradio.xyz/icons/icon-512.png?v=40",
     "featureList": [
       "Live Philippine FM, AM and online radio",
       "Map, list and grid views",
@@ -69,12 +69,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FilRadio" />
-  <script src="js/theme.js?v=37"></script>
-  <script src="js/gtm.js?v=37"></script>
+  <script src="js/theme.js?v=40"></script>
+  <script src="js/gtm.js?v=40"></script>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon.svg?v=37" type="image/svg+xml" />
-  <link rel="icon" href="icons/favicon-64.png?v=37" sizes="64x64" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=37" />
+  <link rel="icon" href="icon.svg?v=40" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-64.png?v=40" sizes="64x64" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=40" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -83,7 +83,7 @@
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css?v=37" />
+  <link rel="stylesheet" href="css/style.css?v=40" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo — rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -134,6 +134,25 @@
         <span><i class="key unknown">?</i>Location unknown</span>
       </div>
 
+      <!-- Analog clock + date (Philippine time; tap to switch to local time when abroad) -->
+      <button type="button" class="clock" id="clock" aria-label="Philippine time">
+        <svg class="clock-face" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="48" class="c-rim"/>
+          <circle cx="50" cy="50" r="43.5" class="c-dial"/>
+          <g id="clockTicks"></g>
+          <g class="c-num"><text x="50" y="20.5">12</text><text x="81.5" y="53.6">3</text><text x="50" y="86.5">6</text><text x="18.5" y="53.6">9</text></g>
+          <line id="hHand" x1="50" y1="54" x2="50" y2="30" class="c-hour"/>
+          <line id="mHand" x1="50" y1="56" x2="50" y2="17" class="c-min"/>
+          <g id="sHand" class="c-sec"><line x1="50" y1="60" x2="50" y2="13"/><circle cx="50" cy="60" r="2.4"/></g>
+          <circle cx="50" cy="50" r="3.4" class="c-cap"/>
+        </svg>
+        <span class="clock-text">
+          <b id="clockTime">--:--</b>
+          <span id="clockDate"></span>
+          <small id="clockZone">PH time</small>
+        </span>
+      </button>
+
       <div class="fabs">
         <button class="fab" id="toggle3d" aria-pressed="true" title="Switch 2D / 3D">
           <svg class="i" aria-hidden="true"><use href="#i-3d"/></svg><span class="fab-label">3D</span>
@@ -167,7 +186,7 @@
     <aside class="sidebar open" id="sidebar">
       <div class="topbar">
         <header class="brand">
-          <img class="logo" src="icon.svg?v=37" alt="FilRadio logo" width="40" height="40" />
+          <img class="logo" src="icon.svg?v=40" alt="FilRadio logo" width="40" height="40" />
           <div class="brand-text">
             <h1>Fil<span>Radio</span></h1>
             <p class="sub" id="summary">Tuning in…</p>
@@ -183,7 +202,7 @@
         <div class="controls">
           <div class="search" id="searchBox">
             <span class="search-lead">
-              <img class="search-mark" src="icon.svg?v=37" alt="" width="32" height="32" />
+              <img class="search-mark" src="icon.svg?v=40" alt="" width="32" height="32" />
               <button class="search-back" id="searchBack" type="button" aria-label="Close search" tabindex="-1">
                 <svg class="i" aria-hidden="true"><use href="#i-back"/></svg>
               </button>
@@ -400,9 +419,9 @@
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js?v=37" defer></script>
-  <script src="js/traffic.js?v=37" defer></script>
-  <script src="js/install-guide.js?v=37" defer></script>
-  <script src="js/app.js?v=37" defer></script>
+  <script src="js/places.js?v=40" defer></script>
+  <script src="js/traffic.js?v=40" defer></script>
+  <script src="js/install-guide.js?v=40" defer></script>
+  <script src="js/app.js?v=40" defer></script>
 </body>
 </html>
