@@ -206,6 +206,32 @@
   const PH_BOUNDS = [[116.6, 4.4], [127.0, 21.2]];
   try { is3D = localStorage.getItem("filradio.3d") === "1"; } catch {}
 
+  // ---------- Map types (all free, no API key) ----------
+  // standard = OpenFreeMap Liberty, light = Positron, terrain = Liberty + shaded relief,
+  // satellite = EOX Sentinel-2 cloudless 2016 (CC BY 4.0). Dark theme swaps the vector ones for "dark".
+  const MAP_TYPES = ["standard", "light", "terrain", "satellite"];
+  let mapType = "standard";
+  try { const t = localStorage.getItem("filradio.maptype"); if (MAP_TYPES.includes(t)) mapType = t; } catch {}
+  function styleFor() {
+    const OFM = "https://tiles.openfreemap.org/styles/";
+    if (mapType === "satellite") {
+      return {
+        version: 8,
+        glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+        sources: {
+          sat: {
+            type: "raster", tileSize: 256, maxzoom: 15,
+            tiles: ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg"],
+            attribution: '<a href="https://s2maps.eu" target="_blank" rel="noopener">Sentinel-2 cloudless</a> by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2016)',
+          },
+        },
+        layers: [{ id: "sat", type: "raster", source: "sat" }],
+      };
+    }
+    if (mapType === "light") return OFM + (dark ? "dark" : "positron");
+    return OFM + (dark ? "dark" : "liberty");
+  }
+
   // Starts as a flat 2D map (no terrain, no globe, no 3D buildings) so it loads fast.
   const map = new maplibregl.Map({
     container: "map",
@@ -215,7 +241,7 @@
     maxTileCacheSize: isMobile() ? 60 : 200,
     refreshExpiredTiles: false,
     fadeDuration: 150,
-    style: `https://tiles.openfreemap.org/styles/${dark ? "dark" : "liberty"}`,
+    style: styleFor(),
     bounds: PH_BOUNDS,
     fitBoundsOptions: { padding: startPadding() },
     maxPitch: 78,
@@ -372,6 +398,7 @@
     mapReady = true;
     if (stations.length) render();
     if (current) setPlayingFeature();
+    if (mapType === "terrain") ensureHillshade(true);
     // After a theme switch the new style has no terrain yet: restore 3D once it has settled.
     if (styleSwapped && is3D) map.once("idle", () => set3D(true, false));
   });
@@ -478,34 +505,68 @@
     try { localStorage.setItem("filradio.theme", next); } catch {}
     $("themeBtn").setAttribute("aria-pressed", String(dark));
     $("themeBtn").title = dark ? "Switch to light map" : "Switch to dark map";
+    applyMapStyle();
+  }
+  function applyMapStyle() {
     mapReady = false;
     styleSwapped = true;
     terrainAdded = false;
     popup.remove();
-    map.setStyle(`https://tiles.openfreemap.org/styles/${dark ? "dark" : "liberty"}`);
+    // diff:false forces a full reload, so "style.load" fires and the station layers are rebuilt.
+    map.setStyle(styleFor(), { diff: false });
   }
+
+  // Map type picker
+  function syncLayerMenu() {
+    document.querySelectorAll("#layerMenu [data-type]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.type === mapType)));
+  }
+  function setMapType(t) {
+    if (!MAP_TYPES.includes(t) || t === mapType) return;
+    mapType = t;
+    try { localStorage.setItem("filradio.maptype", t); } catch {}
+    syncLayerMenu();
+    applyMapStyle();
+  }
+  function toggleLayerMenu(open) {
+    $("layerMenu").hidden = !open;
+    $("layersBtn").setAttribute("aria-expanded", String(open));
+  }
+  syncLayerMenu();
+  $("layersBtn").addEventListener("click", (e) => { e.stopPropagation(); toggleLayerMenu($("layerMenu").hidden); });
+  $("layerMenu").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-type]");
+    if (b) { setMapType(b.dataset.type); toggleLayerMenu(false); }
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".layer-wrap")) toggleLayerMenu(false); });
   $("themeBtn").setAttribute("aria-pressed", String(dark));
   $("themeBtn").addEventListener("click", () => setTheme(dark ? "light" : "dark"));
 
   // ---------- 3D on demand ----------
   // Terrain elevation tiles, hillshade, globe and 3D buildings are only fetched the first time 3D is turned on.
   let terrainAdded = false;
+  const DEM = {
+    type: "raster-dem",
+    tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+    encoding: "terrarium", tileSize: 256, maxzoom: 14,
+    attribution: "Terrain: Mapzen / AWS Open Data",
+  };
+  function ensureHillshade(visible) {
+    if (!map.getSource("dem")) map.addSource("dem", DEM);
+    if (!map.getSource("dem-hs")) map.addSource("dem-hs", { ...DEM });
+    if (!map.getLayer("hillshade")) {
+      // Below the first label layer (vector maps) or below the station pins (satellite).
+      const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
+      map.addLayer({
+        id: "hillshade", type: "hillshade", source: "dem-hs",
+        paint: { "hillshade-exaggeration": dark ? 0.35 : mapType === "terrain" ? 0.6 : 0.45, "hillshade-shadow-color": dark ? "#000" : "#5b4b2e", "hillshade-highlight-color": "#fffbe8" },
+      }, firstSymbol);
+    }
+    map.setLayoutProperty("hillshade", "visibility", visible ? "visible" : "none");
+  }
   function addTerrain() {
     if (terrainAdded) return;
     terrainAdded = true;
-    const dem = {
-      type: "raster-dem",
-      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-      encoding: "terrarium", tileSize: 256, maxzoom: 14,
-      attribution: "Terrain: Mapzen / AWS Open Data",
-    };
-    map.addSource("dem", dem);
-    map.addSource("dem-hs", { ...dem });
-    const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
-    map.addLayer({
-      id: "hillshade", type: "hillshade", source: "dem-hs",
-      paint: { "hillshade-exaggeration": dark ? 0.35 : 0.45, "hillshade-shadow-color": dark ? "#000" : "#5b4b2e", "hillshade-highlight-color": "#fffbe8" },
-    }, firstSymbol);
+    ensureHillshade(true);
     try {
       map.setSky({
         "sky-color": dark ? "#0b1020" : "#bfd6ee", "horizon-color": dark ? "#1b2440" : "#f4f1ea", "fog-color": dark ? "#0b1020" : "#f4f1ea",
@@ -522,7 +583,7 @@
     try { localStorage.setItem("filradio.3d", on ? "1" : "0"); } catch {}
     if (!mapReady) return;
     if (on) addTerrain();
-    if (map.getLayer("hillshade")) map.setLayoutProperty("hillshade", "visibility", on ? "visible" : "none");
+    if (map.getLayer("hillshade")) map.setLayoutProperty("hillshade", "visibility", on || mapType === "terrain" ? "visible" : "none");
     map.setTerrain(on ? { source: "dem", exaggeration: 1.5 } : null);
     if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", on ? "visible" : "none");
     try { map.setProjection({ type: on ? "globe" : "mercator" }); } catch {}
