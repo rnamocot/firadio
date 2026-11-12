@@ -2,7 +2,7 @@
 
 Listen to Philippine FM, AM and online radio on a 3D map, at home or abroad. Tap a pin and it plays live.
 
-**Live:** https://webtarsier.com/
+**Live:** https://filradio.xyz/
 
 ![WebTarsier FilRadio](og-image.png)
 
@@ -44,7 +44,7 @@ python -m http.server 5173
 
 ## Deploy
 
-Upload the whole folder to the web root of `webtarsier.com`. HTTPS is required for install and for most streams.
+Upload the whole folder to the web root of `filradio.xyz`. HTTPS is required for install and for most streams.
 
 ## Files
 

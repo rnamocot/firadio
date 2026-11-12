@@ -28,7 +28,7 @@
   const svg = (inner) => `<svg viewBox="0 0 280 170" role="img" aria-hidden="true">${inner}</svg>`;
 
   // Desktop browser window
-  const desktop = (extra = "", addr = "webtarsier.com") => svg(`
+  const desktop = (extra = "", addr = "filradio.xyz") => svg(`
     <rect x="10" y="10" width="260" height="150" rx="10" fill="#fff" stroke="#d9d3c4"/>
     <path d="M10 20a10 10 0 0 1 10-10h240a10 10 0 0 1 10 10v12H10Z" fill="#ebe6da"/>
     <circle cx="22" cy="21" r="3" fill="#ff5f57"/><circle cx="32" cy="21" r="3" fill="#febc2e"/><circle cx="42" cy="21" r="3" fill="#28c840"/>
@@ -52,12 +52,12 @@
 
   const androidBar = (hlMenu) => `
     <rect x="95" y="22" width="90" height="17" fill="#f1eee6"/>
-    <rect x="99" y="25" width="68" height="11" rx="5.5" fill="#fff"/><text x="104" y="33" font-size="6" font-family="system-ui" fill="#444">webtarsier.com</text>
+    <rect x="99" y="25" width="68" height="11" rx="5.5" fill="#fff"/><text x="104" y="33" font-size="6" font-family="system-ui" fill="#444">filradio.xyz</text>
     <circle cx="177" cy="27.5" r=".9" fill="#444"/><circle cx="177" cy="30.5" r=".9" fill="#444"/><circle cx="177" cy="33.5" r=".9" fill="#444"/>
     ${hlMenu ? ring(177, 30.5, 7) : ""}`;
   const iosBar = (hlShare) => `
     <rect x="95" y="138" width="90" height="23" fill="#f6f4ef"/>
-    <rect x="101" y="125" width="78" height="11" rx="5.5" fill="#fff" stroke="#e1dccf"/><text x="122" y="133" font-size="6" font-family="system-ui" fill="#444">webtarsier.com</text>
+    <rect x="101" y="125" width="78" height="11" rx="5.5" fill="#fff" stroke="#e1dccf"/><text x="122" y="133" font-size="6" font-family="system-ui" fill="#444">filradio.xyz</text>
     <g fill="none" stroke="#0a84ff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M106 146l-3 3 3 3M116 146l3 3-3 3"/>
       <path d="M137 151.5h-2.5v-6h2M143 145.5h2v6h-10M140 141v7M137.8 143.2l2.2-2.2 2.2 2.2"/>
@@ -73,7 +73,7 @@
       label: "Desktop & laptop",
       note: "Windows, macOS, Linux and ChromeOS. Works in Chrome and Microsoft Edge.",
       steps: [
-        { title: "Open FilRadio in Chrome or Edge", text: "Go to <b>webtarsier.com</b> in Google Chrome or Microsoft Edge.", art: desktop() },
+        { title: "Open FilRadio in Chrome or Edge", text: "Go to <b>filradio.xyz</b> in Google Chrome or Microsoft Edge.", art: desktop() },
         { title: "Click the install icon", text: "At the right end of the address bar, click the <b>Install</b> icon (a screen with a down arrow). No icon? Open the <b>⋮</b> menu → <b>Cast, save and share</b> → <b>Install page as app</b>. In Edge: <b>⋯</b> → <b>Apps</b> → <b>Install this site as an app</b>.",
           art: desktop(ring(238, 44.5, 11) + cursor(240, 47)) },
         { title: "Confirm “Install”", text: "FilRadio opens in its own window and is added to your Start menu, Applications folder or Dock, like any other app.",
@@ -90,7 +90,7 @@
       label: "Android",
       note: "Phones and tablets. Works in Chrome, Edge and Samsung Internet.",
       steps: [
-        { title: "Open FilRadio in Chrome", text: "Go to <b>webtarsier.com</b> in Chrome. If an <b>Install app</b> banner pops up, just tap it.", art: phone(androidBar(false) + appScreen, "android") },
+        { title: "Open FilRadio in Chrome", text: "Go to <b>filradio.xyz</b> in Chrome. If an <b>Install app</b> banner pops up, just tap it.", art: phone(androidBar(false) + appScreen, "android") },
         { title: "Tap ⋮ → Add to Home screen", text: "Tap the <b>⋮</b> menu at the top right, then <b>Add to Home screen</b> (or <b>Install app</b>). In Samsung Internet: <b>≡</b> → <b>Add page to</b> → <b>Home screen</b>.",
           art: phone(androidBar(true) + appScreen + `<rect x="118" y="36" width="66" height="62" rx="5" fill="#fff" stroke="#ddd"/>
             ${["New tab", "Bookmarks", "Add to Home screen", "Settings"].map((t, i) => `<text x="122" y="${49 + i * 14}" font-size="5.4" font-family="system-ui" fill="${i === 2 ? INK : "#555"}" font-weight="${i === 2 ? 700 : 400}">${t}</text>`).join("")}
@@ -108,7 +108,7 @@
       label: "iPhone & iPad",
       note: "Use Safari. On iOS 16.4 or newer you can also use Chrome or Edge from their Share menu.",
       steps: [
-        { title: "Tap the Share button", text: "Open <b>webtarsier.com</b> in Safari and tap <b>Share</b> (the square with an arrow pointing up). It's at the bottom on iPhone and at the top right on iPad.",
+        { title: "Tap the Share button", text: "Open <b>filradio.xyz</b> in Safari and tap <b>Share</b> (the square with an arrow pointing up). It's at the bottom on iPhone and at the top right on iPad.",
           art: phone(appScreen.replace(/y="39"/, 'y="20"') + iosBar(true), "ios") },
         { title: "Choose “Add to Home Screen”", text: "Scroll down the share sheet and tap <b>Add to Home Screen</b>.",
           art: phone(appScreen + `<rect x="95" y="9" width="90" height="152" fill="#000" opacity=".3"/>
