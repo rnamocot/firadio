@@ -1412,3 +1412,6 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
   .top-actions .top-refresh { width: 36px; }
   .band { font-size: 12px; }
 }
+/* Clear (x) takes no space until there's text, so the near-me button sits at the right edge */
+.search:not(.has-text) .search-clear { width: 0; margin-left: -8px; overflow: hidden; }
+.search-near { margin-right: 2px; }
