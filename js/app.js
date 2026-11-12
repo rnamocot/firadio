@@ -1111,8 +1111,17 @@
   // ======================================================
   (async () => {
     const el = $("visits");
+    const T = window.FilTraffic;
     const dev = /^(localhost|127\.|\[::1\])/.test(location.hostname) || location.protocol === "file:";
     const action = !dev && guard.allow("visit", 24 * 60 * 60 * 1000) ? "hit" : "get";
+    // Traffic source report (see stats.html): +1 on "where from", "PH or abroad" and "device" counters,
+    // only when this visit is counted. Read before tidyUrl() strips the tracking parameters.
+    if (T && action === "hit") {
+      for (const k of [`src-${T.classify()}`, `loc-${T.place()}`, `dev-${T.device()}`, `os-${T.system()}`]) {
+        fetch(`${T.COUNTER}/hit/${T.NS}/${k}`).catch(() => {});
+      }
+    }
+    T?.tidyUrl();
     try {
       const res = await fetch(`https://abacus.jasoncameron.dev/${action}/webtarsier-filradio/visits`);
       if (!res.ok) return;
@@ -1136,7 +1145,7 @@
       stations.forEach((s) => byId.set(s.id, s));
       const c = (b) => stations.filter((s) => s.band === b).length;
       const placed = stations.filter((s) => !s.unknown).length;
-      $("summary").textContent = `${stations.length} stations · ${c("FM")} FM · ${c("AM")} AM · ${placed} pinned`;
+      $("summary").textContent = `${stations.length} stations · Luzon to Mindanao`;
       render();
     } catch (e) {
       console.error(e);

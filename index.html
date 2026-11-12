@@ -9,7 +9,7 @@
   <meta name="description" content="FilRadio: stream 600+ Philippine radio stations free, live on a 3D map. FM, AM and online stations from Manila, Cebu, Davao, Iloilo and more. Made for Filipinos at home and OFWs abroad." />
   <meta name="keywords" content="FilRadio, Philippine radio, Pinoy radio online, OFW radio, Filipino radio abroad, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
   <meta name="author" content="Ren" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; worker-src 'self' blob:; child-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com; worker-src 'self' blob:; child-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://filradio.xyz/" />
@@ -72,7 +72,7 @@
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=15" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo — rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -186,14 +186,19 @@
           <li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>
         </ul>
         <footer class="credit">
-          <p class="about">
-            FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
-            FM music stations, AM news and talk radio such as Bombo Radyo, Brigada News FM and Radyo Pilipinas,
-            and online-only Pinoy streams, each pinned to its city on the map. It works anywhere in the world,
-            so OFWs and Filipinos abroad can listen to home.
-          </p>
-          <p class="visits" id="visits" hidden><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg><b>0</b> visits</p>
-          <p><a href="#install" id="howInstall">How to install the app</a></p>
+          <details class="about-box">
+            <summary>About FilRadio</summary>
+            <p class="about">
+              FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
+              FM music stations, AM news and talk radio such as Bombo Radyo, Brigada News FM and Radyo Pilipinas,
+              and online-only Pinoy streams, each pinned to its city on the map. It works anywhere in the world,
+              so OFWs and Filipinos abroad can listen to home.
+            </p>
+          </details>
+          <div class="foot-row">
+            <p class="visits" id="visits" hidden><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg><b>0</b> visits</p>
+            <a href="#install" id="howInstall">How to install</a>
+          </div>
           <p>FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></p>
         </footer>
       </section>
@@ -286,8 +291,9 @@
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js" defer></script>
-  <script src="js/install-guide.js" defer></script>
-  <script src="js/app.js" defer></script>
+  <script src="js/places.js?v=15" defer></script>
+  <script src="js/traffic.js?v=15" defer></script>
+  <script src="js/install-guide.js?v=15" defer></script>
+  <script src="js/app.js?v=15" defer></script>
 </body>
 </html>

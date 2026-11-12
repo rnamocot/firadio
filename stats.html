@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>FilRadio Traffic</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://abacus.jasoncameron.dev; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="theme-color" content="#10182B" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/stats.css?v=15" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <a class="brand" href="./"><img src="icon.svg" alt="" width="44" height="44" /><span>Fil<b>Radio</b></span></a>
+      <h1>Traffic</h1>
+      <button id="refresh" type="button">Refresh</button>
+    </header>
+
+    <section class="hero">
+      <div class="lcd">
+        <small>Total visits</small>
+        <b id="total">—</b>
+      </div>
+      <div class="lcd">
+        <small>Sources tracked</small>
+        <b id="tracked">—</b>
+      </div>
+      <p class="note">Each device counts once per day. Sources, location and device are tracked from the day this report was added, so they can be lower than the total.</p>
+    </section>
+
+    <section class="card">
+      <h2>Where visitors come from</h2>
+      <ol class="bars" id="sources"><li class="muted">Loading…</li></ol>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Where they are</h2>
+        <ol class="bars" id="places"></ol>
+      </section>
+      <section class="card">
+        <h2>Mobile or desktop</h2>
+        <ol class="bars" id="devices"></ol>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Phone &amp; computer type</h2>
+      <ol class="bars" id="systems"></ol>
+    </section>
+
+    <section class="card tips">
+      <h2>Tag your posts for exact numbers</h2>
+      <p>Most apps are detected automatically. To track a specific post, share a tagged link:</p>
+      <ul>
+        <li><code>filradio.xyz/?utm_source=facebook</code></li>
+        <li><code>filradio.xyz/?utm_source=tiktok</code></li>
+        <li><code>filradio.xyz/?utm_source=viber</code></li>
+      </ul>
+      <p>The tag is removed from the address bar after the visit is counted.</p>
+    </section>
+
+    <footer>No personal data is collected. Only anonymous counts.</footer>
+  </main>
+  <script src="js/traffic.js?v=15" defer></script>
+  <script src="js/stats.js?v=15" defer></script>
+</body>
+</html>

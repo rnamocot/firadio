@@ -641,3 +641,51 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
 .ext-box[hidden] { display: none; }
 .ext-box p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.45; color: rgba(244,241,234,.7); }
 @media (max-width: 760px) { .now-art, .dial, .now-controls { flex-shrink: 0; } }
+
+/* =========================================================
+   Layout polish
+   ========================================================= */
+/* Footer: collapsible About, one compact row for visits + install link */
+.about-box { margin: 0 0 8px; }
+.about-box summary {
+  cursor: pointer; list-style: none; font-weight: 700; font-size: 12.5px; color: var(--text);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.about-box summary::-webkit-details-marker { display: none; }
+.about-box summary::after { content: ""; width: 7px; height: 7px; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-2px); transition: transform .2s var(--ease); }
+.about-box[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
+.about-box .about { margin: 8px 0 0; }
+.foot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.foot-row .visits { margin: 0 !important; }
+.foot-row #howInstall { font-size: 12px; }
+
+@media (min-width: 761px) {
+  /* Player docks beside the panel instead of covering the map's centre and legend */
+  .player {
+    left: calc(14px + 372px + 14px); right: 72px; width: auto; max-width: 680px; transform: none;
+    animation: rise-d .35s var(--ease);
+  }
+  @keyframes rise-d { from { transform: translateY(20px); opacity: 0; } }
+  .app:has(.player:not([hidden])) .legend { bottom: 100px; }
+  .sub { white-space: nowrap; }
+}
+@media (min-width: 761px) and (max-width: 980px) {
+  .legend span:last-child { display: none; } /* keep the legend on one short row */
+}
+
+@media (max-width: 760px) {
+  /* About stays collapsed text on phones (crawlable, no extra height) */
+  .credit .about { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; text-align: left; }
+  .about-box { text-align: center; }
+  .foot-row { justify-content: center; gap: 16px; }
+  /* Slimmer header row in the station sheet */
+  .sheet-title { gap: 6px; }
+  .sheet-title .install { height: 28px; padding: 0 9px 0 7px; font-size: 11.5px; }
+}
+@media (max-width: 400px) {
+  .sheet-title .install span { display: none; }
+  .sheet-title .install { width: 28px; padding: 0; justify-content: center; }
+}
+@media (max-width: 330px) {
+  .toggle > span:last-child { display: none; }
+}

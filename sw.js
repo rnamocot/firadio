@@ -1,13 +1,14 @@
 // FilRadio service worker: makes the app installable and loads the shell offline.
 // Audio streams, map tiles and the station API are never cached here.
-const VERSION = "filradio-v14";
+const VERSION = "filradio-v15";
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css",
-  "./js/app.js",
-  "./js/places.js",
-  "./js/install-guide.js",
+  "./css/style.css?v=15",
+  "./js/app.js?v=15",
+  "./js/places.js?v=15",
+  "./js/install-guide.js?v=15",
+  "./js/traffic.js?v=15",
   "./manifest.webmanifest",
   "./icon.svg",
   "./icons/icon-192.png",
@@ -40,7 +41,8 @@ self.addEventListener("fetch", (e) => {
   if (url.origin === self.location.origin) {
     if (req.headers.get("range")) return;
     e.respondWith(
-      fetch(req)
+      // no-cache: always revalidate with the server so FTP uploads show up immediately.
+      fetch(req, { cache: "no-cache" })
         .then((res) => {
           if (res.ok) caches.open(VERSION).then((c) => c.put(req, res.clone()));
           return res;

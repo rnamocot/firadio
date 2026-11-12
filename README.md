@@ -54,6 +54,7 @@ Upload the whole folder to the web root of `filradio.xyz`. HTTPS is required for
 | `css/style.css` | Design system, desktop + mobile layouts, motion |
 | `js/app.js` | Data, band detection, map, player, location search, mobile shell, PWA, counter |
 | `js/install-guide.js` | Illustrated install guide |
+| `js/traffic.js`, `stats.html`, `js/stats.js`, `css/stats.css` | Anonymous traffic sources report at /stats.html |
 | `js/places.js` | Philippine places gazetteer used to pin stations |
 | `sw.js`, `manifest.webmanifest` | PWA |
 | `icons/` | App icons and fallback radio artwork |
