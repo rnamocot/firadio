@@ -218,6 +218,7 @@
       }
       st.where = st.exact ? (st.state || "Exact location") : st.place ? (st.state || st.place) : "Location unknown";
       st.genre = (st.tags.split(",")[0] || "").trim();
+      st.external = SECURE && !st.streams.length && !!st.insecureUrl;
       st.hay = `${st.name} ${st.tags} ${st.where} ${freqLabel(st)} ${st.band}`.toLowerCase();
     }
     out.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
@@ -389,7 +390,7 @@
       }
       map.on("click", `${src}-pin`, (e) => {
         const st = byId.get(e.features[0].properties.id);
-        if (st) { play(st); showPopup(st); }
+        if (st) { tapStation(st); showPopup(st); }
       });
     }
     map.on("click", "playing-pin", () => current && showPopup(current));
@@ -481,7 +482,7 @@
     btn?.addEventListener("click", () => {
       const st = byId.get(btn.dataset.play);
       if (!st) return;
-      if (current === st) togglePlay(); else play(st);
+      if (current === st && !st.external) togglePlay(); else tapStation(st);
     });
   }
 
@@ -648,12 +649,22 @@
       li.innerHTML = `${readoutHtml(st)}
         <div class="info">
           <div class="name">${esc(st.name)}</div>
-          <div class="meta">${dist}${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
+          <div class="meta">${dist}${st.external ? `<b class="ext-chip" title="Opens in your browser's own player">↗ Browser</b>` : ""}${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
         </div>
         <span class="bars"><i></i><i></i><i></i></span>`;
       frag.appendChild(li);
     });
     list.appendChild(frag);
+  }
+
+  // Every tap on a station goes through here. Stations that only have an old http stream are opened in the
+  // browser's own player right away: it must happen inside the tap, or the browser blocks the new tab.
+  function tapStation(st) {
+    if (st.external) {
+      const win = window.open(st.insecureUrl, "_blank", "noopener,noreferrer");
+      toast(win === null ? "Tap Play ↗ to open this station in your browser" : "Opening in your browser's player…", 3500);
+    }
+    play(st);
   }
 
   $("list").addEventListener("click", (e) => {
@@ -668,7 +679,7 @@
     const st = byId.get(li.dataset.id);
     if (!st) return;
     li.classList.remove("tap"); void li.offsetWidth; li.classList.add("tap");
-    play(st);
+    tapStation(st);
     if (isMobile()) { setSheet("peek"); setTimeout(() => focus(st), 120); }
     else focus(st);
   });
@@ -747,10 +758,12 @@
     if (!s) {
       if (st.insecureUrl) {
         // Every in-page option failed or was blocked: offer the browser's own player.
-        setStatus("Tap Play ↗ to listen");
+        setStatus(st.external ? "Plays in your browser's player" : "Tap Play ↗ to listen");
         showExternal(st);
+        if (!st.external && current === st) toast("This station plays in your browser. Tap Play ↗", 4000);
       } else {
         setStatus("Off air", true);
+        if (current === st) toast("This station seems off air right now. Try another one.", 3500);
       }
       updatePlayingUI();
       return;
