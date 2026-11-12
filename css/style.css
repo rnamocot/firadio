@@ -972,3 +972,9 @@ html.dark .off-btn:not(.ghost) { background: var(--sun); color: var(--sun-ink); 
 @media (max-width: 760px) {
   .layer-menu { width: 160px; }
 }
+
+/* Map credits live in the footer / About (not on the map) */
+.osm-credit { font-size: 11px; color: var(--muted) !important; font-weight: 500 !important; text-decoration: none !important; }
+.osm-credit:hover { text-decoration: underline !important; }
+.map-credits { font-size: 11px !important; margin-top: 6px !important; }
+.map-credits a { font-weight: 600; }

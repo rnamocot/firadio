@@ -245,7 +245,8 @@
     bounds: PH_BOUNDS,
     fitBoundsOptions: { padding: startPadding() },
     maxPitch: 78,
-    attributionControl: { compact: true },
+    // No credit control on the map; the required credits live in the panel footer and "About FilRadio".
+    attributionControl: false,
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
   map.on("error", (e) => console.warn("[map]", e.error?.message || e));
