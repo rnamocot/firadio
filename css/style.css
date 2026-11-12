@@ -1300,3 +1300,62 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
   .top-refresh.spinning svg { animation: spin-near .8s linear infinite; }
   #refreshApp { display: none !important; } /* phones use the top button */
 }
+
+/* =========================================================
+   Motion, round 3
+   ========================================================= */
+/* Splash */
+.splash {
+  position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: radial-gradient(120% 70% at 50% 35%, #1b2850 0%, #10182b 60%); color: #f4f1ea;
+  transition: opacity .55s ease, transform .55s var(--ease);
+}
+.splash.out { opacity: 0; transform: scale(1.04); pointer-events: none; }
+.splash-mark { position: relative; width: 104px; height: 104px; display: grid; place-items: center; }
+.splash-mark img { position: relative; z-index: 1; border-radius: 26px; box-shadow: 0 18px 40px -12px rgba(0,0,0,.7); animation: splash-pop .7s cubic-bezier(.34,1.56,.64,1) both; }
+.splash-wave { position: absolute; inset: 0; border-radius: 30px; border: 2px solid rgba(255, 201, 60, .7); animation: splash-wave 2.2s ease-out infinite; }
+.splash-wave:nth-child(2) { animation-delay: .73s; }
+.splash-wave:nth-child(3) { animation-delay: 1.46s; }
+@keyframes splash-wave { from { transform: scale(1); opacity: .9; } to { transform: scale(2.4); opacity: 0; } }
+@keyframes splash-pop { from { transform: scale(.6) rotate(-8deg); opacity: 0; } }
+.splash-name { margin: 8px 0 0; font: 400 30px var(--display); font-stretch: 125%; letter-spacing: -.01em; animation: row-in .6s .15s var(--ease) both; }
+.splash-name b { font-weight: 800; }
+.splash-dial {
+  position: relative; width: 180px; height: 22px; margin-top: 2px;
+  background: repeating-linear-gradient(90deg, rgba(244,241,234,.45) 0 1.5px, transparent 1.5px 9px) bottom / 100% 9px no-repeat,
+              repeating-linear-gradient(90deg, rgba(244,241,234,.85) 0 2px, transparent 2px 45px) bottom / 100% 15px no-repeat;
+  animation: row-in .6s .25s var(--ease) both;
+}
+.splash-needle { position: absolute; left: 0; bottom: 0; width: 3px; height: 22px; border-radius: 2px; background: var(--red); box-shadow: 0 0 10px rgba(230,57,70,.9); animation: splash-tune 1.6s ease-in-out infinite alternate; }
+@keyframes splash-tune { from { left: 4%; } to { left: 94%; } }
+.splash-tag { margin: 0; font: 12px var(--mono); letter-spacing: .08em; color: rgba(244,241,234,.6); animation: row-in .6s .35s var(--ease) both; }
+
+/* Now Playing: floating art + sound rings while live */
+.now-art-wrap { position: relative; display: grid; place-items: center; }
+.now-ring { position: absolute; inset: 3.5vh 0 20px; margin: auto; width: min(58vw, 260px); aspect-ratio: 1; border-radius: 34px; border: 2px solid rgba(255, 201, 60, .55); opacity: 0; pointer-events: none; }
+.now.live .now-ring { animation: now-ring 2.6s ease-out infinite; }
+.now.live .now-ring:nth-child(2) { animation-delay: .86s; }
+.now.live .now-ring:nth-child(3) { animation-delay: 1.72s; }
+@keyframes now-ring { from { transform: scale(1); opacity: .8; } to { transform: scale(1.32); opacity: 0; } }
+.now.live .now-art { animation: art-float 4.2s ease-in-out infinite; }
+@keyframes art-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (max-width: 760px) and (min-height: 501px) and (max-height: 680px), (max-width: 480px) and (max-height: 680px) {
+  .now-ring { width: min(44vw, 180px); inset: 2vh 0 12px; }
+}
+
+/* Mini player: new station slides in */
+.p-info.swap-in { animation: swap-in .45s var(--ease); }
+@keyframes swap-in { from { opacity: 0; transform: translateX(14px); } }
+
+/* Filter chip pop */
+.fchip.pop { animation: chip-pop .35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes chip-pop { 40% { transform: scale(1.1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-wave, .splash-needle, .now-ring, .now.live .now-art, .p-info.swap-in, .fchip.pop { animation: none !important; }
+}
+.splash { gap: 22px; }
+.splash-name, .splash-dial, .splash-tag { position: relative; z-index: 2; }
+.splash-mark { margin-bottom: 4px; }
+/* The floating dock stays on top of the full-height Now Playing screen */
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .tabbar { z-index: 31 !important; } }

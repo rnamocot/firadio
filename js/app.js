@@ -74,6 +74,7 @@
   }, true);
 
   const QUIET = /[?&]shot(=|&|$)/.test(location.search); // ?shot: no pop-up messages (clean screenshots)
+  if (QUIET) document.getElementById("splash")?.remove();
   function toast(msg, ms = 2800) {
     if (QUIET) return;
     const t = $("toast");
@@ -490,8 +491,22 @@
     requestAnimationFrame(pulse);
   })(pulseT0);
 
+  let lastPinId = null;
+  function dropPin() {
+    if (reduceMotion || !map.getLayer("playing-pin")) return;
+    const t0 = performance.now(), dur = 700;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur);
+      // fall from 40px above, then a small bounce
+      const y = k < 0.6 ? -40 * (1 - (k / 0.6) ** 2) : -8 * Math.sin(((k - 0.6) / 0.4) * Math.PI);
+      try { map.setLayoutProperty("playing-pin", "icon-offset", [0, y]); } catch { return; }
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
   function setPlayingFeature() {
     if (!mapReady) return;
+    if (current && current.id !== lastPinId) { lastPinId = current.id; dropPin(); }
     map.getSource("playing").setData(current
       ? { type: "FeatureCollection", features: [{ type: "Feature", properties: { id: current.id }, geometry: { type: "Point", coordinates: [current.lng, current.lat] } }] }
       : emptyFC);
@@ -980,6 +995,8 @@
     $("sheet").classList.add("has-player");
     $("pArt").outerHTML = readoutHtml(st, "small").replace('class="readout', 'id="pArt" class="readout');
     $("pName").textContent = st.name;
+    const pInfo = document.querySelector(".p-info");
+    pInfo.classList.remove("swap-in"); void pInfo.offsetWidth; pInfo.classList.add("swap-in");
     for (const id of ["pFav", "nFav"]) $(id).dataset.fav = st.key;
     syncFavButtons(st.key);
     $("pMeta").textContent = [freqFull(st) || st.band, st.where].filter(Boolean).join(" · ");
@@ -1291,6 +1308,10 @@
   });
 
   $("directOnly").addEventListener("change", render);
+  document.querySelectorAll(".fchip input").forEach((inp) => inp.addEventListener("change", () => {
+    const chip = inp.closest(".fchip");
+    chip.classList.remove("pop"); void chip.offsetWidth; chip.classList.add("pop");
+  }));
   $("onAirOnly").checked = SECURE; // on-air data is about the https links the live site uses
   $("onAirOnly").addEventListener("change", render);
   $("favOnly").addEventListener("change", render);
@@ -1473,6 +1494,23 @@
     setTimeout(() => { tick(); setInterval(tick, 1000); }, 1000 - (Date.now() % 1000));
   })();
 
+  // ---------- Splash ----------
+  let splashGone = false;
+  function hideSplash() {
+    if (splashGone) return;
+    const go = () => {
+      if (splashGone) return;
+      splashGone = true;
+      const el = document.getElementById("splash");
+      if (!el) return;
+      el.classList.add("out");
+      setTimeout(() => el.remove(), 650);
+    };
+    // Wait for the map style too (so the first frame isn't blank), but never longer than ~1.5 s more.
+    if (mapReady) go(); else { map.once("idle", go); setTimeout(go, 1500); }
+  }
+  setTimeout(hideSplash, 4000); // safety net
+
   // ======================================================
   // Boot
   // ======================================================
@@ -1489,7 +1527,9 @@
         $("checkedAt").textContent = new Date(dataChecked).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       }
       render();
+      hideSplash();
     } catch (e) {
+      hideSplash();
       console.error(e);
       $("summary").textContent = "Offline. Couldn't load stations";
       $("list").innerHTML = `<li class="empty">Couldn't load stations. Check your connection and reload.</li>`;
