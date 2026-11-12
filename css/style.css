@@ -1135,3 +1135,27 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 }
 /* Layers menu open: lift the button column above the station sheet so the whole menu is visible */
 .fabs:has(.layer-menu:not([hidden])) { z-index: 27; }
+
+/* Phones: crisp, solid search bar and band filter (no see-through blur, no scaling animation) */
+@media (max-width: 760px) {
+  .search, .bands {
+    background: var(--panel) !important;
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    border: 1px solid var(--line) !important;
+  }
+  .search { box-shadow: 0 6px 18px -6px rgba(16, 24, 43, .28); }
+  .bands { box-shadow: 0 4px 12px -6px rgba(16, 24, 43, .25); }
+  @keyframes drop-in { from { opacity: 0; transform: translateY(-12px); } }
+  #search, .search-hint { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+}
+/* Calmer hint change: short fade with a tiny slide (no long blurry drift) */
+.search-hint span.out { animation: hint-out2 .18s ease-in forwards; }
+.search-hint span.in { animation: hint-in2 .22s ease-out; }
+@keyframes hint-out2 { to { opacity: 0; transform: translateY(-4px); } }
+@keyframes hint-in2 { from { opacity: 0; transform: translateY(4px); } }
+@media (max-width: 760px) {
+  /* Installed app / notch phones: solid strip behind the status bar instead of the map showing through */
+  .topbar::before {
+    content: ""; position: fixed; left: 0; right: 0; top: 0; height: var(--safe-top); background: var(--panel); pointer-events: none;
+  }
+}

@@ -1246,8 +1246,8 @@
       hintI = (hintI + 1) % HINTS.length;
       el.textContent = HINTS[hintI];
       el.className = "in";
-    }, 330);
-  }, 3200);
+    }, 190);
+  }, 5000);
 
   $("bandChips").addEventListener("click", (e) => {
     const b = e.target.closest(".band");
