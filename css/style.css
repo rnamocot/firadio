@@ -1359,3 +1359,34 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 .splash-mark { margin-bottom: 4px; }
 /* The floating dock stays on top of the full-height Now Playing screen */
 @media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .tabbar { z-index: 31 !important; } }
+
+/* Phones: [search][dark mode][refresh] top bar; visible credit strip at the top of the list */
+.mob-credit { display: none; }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .controls { grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 7px; }
+  .controls .search { grid-column: 1; height: 50px; }
+  .top-theme { grid-column: 2; grid-row: 1; }
+  #refreshTop { grid-column: 3; grid-row: 1; }
+  .top-refresh { width: 50px; height: 50px; }
+  .top-theme .t-sun, html.dark .top-theme .t-moon { display: none; }
+  html.dark .top-theme .t-sun { display: block; }
+  .layer-dark { display: none; } /* phones use the top-bar button */
+
+  .mob-credit {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 7px 18px;
+    font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); background: var(--panel-2);
+  }
+  .mob-credit > span > a { color: var(--text); font-weight: 800; text-decoration: underline; text-decoration-color: var(--sun); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .mob-bmc {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+    background: var(--sun); color: var(--sun-ink); font-weight: 800; font-size: 12px; text-decoration: none;
+  }
+  .mob-bmc svg.i { width: 15px; height: 15px; }
+  .mob-bmc svg.i path:last-child { stroke: var(--sun-ink) !important; }
+  .list { border-top: 0; }
+}
+@media (max-width: 340px) {
+  .controls { column-gap: 5px; }
+  .top-refresh { width: 44px; height: 44px; }
+  .controls .search { height: 46px; }
+}

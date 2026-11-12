@@ -577,6 +577,8 @@
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0b1020" : "#10182B");
     try { localStorage.setItem("filradio.theme", next); } catch {}
     $("themeBtn").setAttribute("aria-pressed", String(dark));
+    $("themeTop").setAttribute("aria-pressed", String(dark));
+    $("themeTop").title = dark ? "Light mode" : "Dark mode";
     $("darkMapToggle").checked = dark;
     $("themeBtn").title = dark ? "Light mode" : "Dark mode";
     applyMapStyle();
@@ -615,6 +617,8 @@
   document.addEventListener("click", (e) => { if (!e.target.closest(".layer-wrap")) toggleLayerMenu(false); });
   $("themeBtn").setAttribute("aria-pressed", String(dark));
   $("themeBtn").addEventListener("click", () => setTheme(dark ? "light" : "dark"));
+  $("themeTop").setAttribute("aria-pressed", String(dark));
+  $("themeTop").addEventListener("click", () => setTheme(dark ? "light" : "dark"));
   // Same switch inside the Layers menu (phones only show it there).
   $("darkMapToggle").checked = dark;
   $("darkMapToggle").addEventListener("change", () => setTheme($("darkMapToggle").checked ? "dark" : "light"));
