@@ -50,3 +50,5 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 2
   .grid, .hero { grid-template-columns: 1fr; }
   .lcd b { font-size: 38px; }
 }
+
+.hint { margin: 12px 0 0; font-size: 12px; color: var(--muted); }

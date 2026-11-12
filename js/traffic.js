@@ -98,6 +98,45 @@
     return "desktop";
   }
 
+  // Country from the device time zone (no location permission, nothing personal).
+  // Main OFW destinations + common countries; anything else counts as "other".
+  const COUNTRIES = [
+    ["ph", "Philippines"], ["sa", "Saudi Arabia"], ["ae", "United Arab Emirates"], ["qa", "Qatar"], ["kw", "Kuwait"],
+    ["om", "Oman"], ["bh", "Bahrain"], ["il", "Israel"], ["jo", "Jordan"], ["lb", "Lebanon"],
+    ["hk", "Hong Kong"], ["mo", "Macau"], ["sg", "Singapore"], ["my", "Malaysia"], ["bn", "Brunei"], ["tw", "Taiwan"],
+    ["jp", "Japan"], ["kr", "South Korea"], ["cn", "China"], ["th", "Thailand"], ["vn", "Vietnam"], ["id", "Indonesia"],
+    ["in", "India"], ["us", "United States"], ["ca", "Canada"], ["mx", "Mexico"], ["gb", "United Kingdom"],
+    ["ie", "Ireland"], ["it", "Italy"], ["es", "Spain"], ["fr", "France"], ["de", "Germany"], ["nl", "Netherlands"],
+    ["be", "Belgium"], ["ch", "Switzerland"], ["at", "Austria"], ["no", "Norway"], ["se", "Sweden"], ["dk", "Denmark"],
+    ["fi", "Finland"], ["pl", "Poland"], ["cy", "Cyprus"], ["gr", "Greece"], ["au", "Australia"], ["nz", "New Zealand"],
+    ["gu", "Guam"], ["mp", "Northern Mariana Islands"], ["pg", "Papua New Guinea"], ["other", "Other countries"],
+  ];
+  const TZ = {
+    "Asia/Manila": "ph", "Asia/Riyadh": "sa", "Asia/Dubai": "ae", "Asia/Qatar": "qa", "Asia/Kuwait": "kw",
+    "Asia/Muscat": "om", "Asia/Bahrain": "bh", "Asia/Jerusalem": "il", "Asia/Tel_Aviv": "il", "Asia/Amman": "jo",
+    "Asia/Beirut": "lb", "Asia/Hong_Kong": "hk", "Asia/Macau": "mo", "Asia/Singapore": "sg",
+    "Asia/Kuala_Lumpur": "my", "Asia/Kuching": "my", "Asia/Brunei": "bn", "Asia/Taipei": "tw", "Asia/Tokyo": "jp",
+    "Asia/Seoul": "kr", "Asia/Shanghai": "cn", "Asia/Chongqing": "cn", "Asia/Urumqi": "cn", "Asia/Bangkok": "th",
+    "Asia/Ho_Chi_Minh": "vn", "Asia/Saigon": "vn", "Asia/Jakarta": "id", "Asia/Makassar": "id", "Asia/Jayapura": "id",
+    "Asia/Kolkata": "in", "Asia/Calcutta": "in", "Pacific/Guam": "gu", "Pacific/Saipan": "mp",
+    "Pacific/Port_Moresby": "pg", "Pacific/Auckland": "nz", "Pacific/Honolulu": "us",
+    "Europe/London": "gb", "Europe/Dublin": "ie", "Europe/Rome": "it", "Europe/Madrid": "es", "Atlantic/Canary": "es",
+    "Europe/Paris": "fr", "Europe/Berlin": "de", "Europe/Amsterdam": "nl", "Europe/Brussels": "be", "Europe/Zurich": "ch",
+    "Europe/Vienna": "at", "Europe/Oslo": "no", "Europe/Stockholm": "se", "Europe/Copenhagen": "dk",
+    "Europe/Helsinki": "fi", "Europe/Warsaw": "pl", "Asia/Nicosia": "cy", "Europe/Nicosia": "cy", "Europe/Athens": "gr",
+    "America/Mexico_City": "mx", "America/Cancun": "mx", "America/Tijuana": "mx", "America/Monterrey": "mx",
+  };
+  const CANADA = /^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Halifax|Regina|St_Johns|Montreal|Calgary|Moncton|Whitehorse|Yellowknife|Iqaluit|Glace_Bay|Goose_Bay|Swift_Current|Dawson_Creek|Fort_Nelson)$/;
+  function country() {
+    let tz = "";
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch {}
+    if (TZ[tz]) return TZ[tz];
+    if (CANADA.test(tz)) return "ca";
+    if (/^America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Detroit|Boise|Indiana\/|Kentucky\/|North_Dakota\/|Juneau|Sitka|Nome|Adak|Menominee)/.test(tz)) return "us";
+    if (/^Australia\//.test(tz)) return "au";
+    return "other";
+  }
+
   function system() {
     const ua = navigator.userAgent;
     if (/iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return "ios";
@@ -121,5 +160,5 @@
     } catch {}
   }
 
-  window.FilTraffic = { COUNTER, NS, SOURCES, PLACES, DEVICES, SYSTEMS, classify, place, device, system, tidyUrl };
+  window.FilTraffic = { COUNTER, NS, SOURCES, PLACES, DEVICES, SYSTEMS, COUNTRIES, classify, place, device, system, country, tidyUrl };
 })();

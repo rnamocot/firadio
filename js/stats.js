@@ -35,12 +35,13 @@
 
   async function load() {
     $("refresh").disabled = true;
-    const [total, src, plc, dev, os] = await Promise.all([
+    const [total, src, plc, dev, os, cc] = await Promise.all([
       get("visits"),
       Promise.all(T.SOURCES.map(async ([k, label]) => ({ label, n: await get(`src-${k}`) }))),
       Promise.all(T.PLACES.map(async ([k, label]) => ({ label, n: await get(`loc-${k}`) }))),
       Promise.all(T.DEVICES.map(async ([k, label]) => ({ label, n: await get(`dev-${k}`) }))),
       Promise.all(T.SYSTEMS.map(async ([k, label]) => ({ label, n: await get(`os-${k}`) }))),
+      Promise.all(T.COUNTRIES.map(async ([k, label]) => ({ label, n: await get(`cc-${k}`) }))),
     ]);
     $("total").textContent = total.toLocaleString();
     const tracked = bars($("sources"), src, { hideZero: true });
@@ -48,6 +49,7 @@
     bars($("places"), plc);
     bars($("devices"), dev, { hideZero: true });
     bars($("systems"), os, { hideZero: true });
+    bars($("countries"), cc, { hideZero: true });
     $("refresh").disabled = false;
   }
 

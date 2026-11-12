@@ -1250,7 +1250,7 @@
     // Traffic source report (see stats.html): +1 on "where from", "PH or abroad" and "device" counters,
     // only when this visit is counted. Read before tidyUrl() strips the tracking parameters.
     if (T && action === "hit") {
-      for (const k of [`src-${T.classify()}`, `loc-${T.place()}`, `dev-${T.device()}`, `os-${T.system()}`]) {
+      for (const k of [`src-${T.classify()}`, `loc-${T.place()}`, `cc-${T.country()}`, `dev-${T.device()}`, `os-${T.system()}`]) {
         fetch(`${T.COUNTER}/hit/${T.NS}/${k}`).catch(() => {});
       }
     }
