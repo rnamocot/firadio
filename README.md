@@ -44,7 +44,13 @@ python -m http.server 5173
 
 ## Deploy
 
-Upload the whole folder to the web root of `filradio.xyz`. HTTPS is required for install and for most streams.
+```sh
+python tools/update_stations.py   # refresh data/stations.json (monthly is plenty)
+python tools/build.py             # minify into dist/ and create ../filradio-xyz-upload.zip
+```
+
+Upload the contents of `dist/` (or the zip) to the web root of `filradio.xyz`. HTTPS is required for install and most streams.
+Visitors' browsers load the station list from `data/stations.json` on this domain, never from the upstream directory.
 
 ## Files
 

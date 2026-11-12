@@ -693,3 +693,20 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
 /* Stations that open in the browser's own player */
 .list .meta .ext-chip { font: 11px var(--mono); letter-spacing: .02em; color: var(--muted); border: 1px solid var(--line); padding: 0 5px; border-radius: 5px; margin-right: 2px; white-space: nowrap; }
 .player.external .ext-btn { animation: fab-hint 1.4s var(--ease) 3; }
+
+/* Buy me a coffee */
+.bmc {
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 2px; padding: 9px 14px; border-radius: 12px;
+  background: var(--sun); color: var(--sun-ink) !important; font-weight: 800; font-size: 13px; text-decoration: none !important;
+  transition: transform .15s var(--ease), box-shadow .2s;
+}
+.bmc:hover { box-shadow: 0 6px 18px -6px rgba(255,201,60,.9); }
+.bmc:active { transform: scale(.97); }
+.bmc svg.i { width: 18px; height: 18px; }
+.bmc svg.i path:last-child { stroke: var(--sun-ink) !important; }
+.now-credit .bmc-link { color: var(--sun); font-weight: 700; }
+
+/* Filters row under the sheet title */
+.sheet-filters { display: flex; align-items: center; gap: 16px; padding: 0 14px 10px; }
+.sheet-filters .toggle { margin-left: 0; }
+@media (max-width: 760px) { .sheet-filters { padding: 0 18px 10px; } }

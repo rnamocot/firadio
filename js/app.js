@@ -4,14 +4,9 @@
   // ======================================================
   // Config
   // ======================================================
-  const API_HOSTS = [
-    "https://de1.api.radio-browser.info",
-    "https://de2.api.radio-browser.info",
-    "https://nl1.api.radio-browser.info",
-    "https://at1.api.radio-browser.info",
-    "https://fi1.api.radio-browser.info",
-  ];
-  const CACHE_KEY = "filradio.stations.v1";
+  // Station list is a snapshot served from this site (refresh it with tools/update_stations.py).
+  const DATA_URL = "data/stations.json";
+  const CACHE_KEY = "filradio.stations.v2";
   const CACHE_TTL = 6 * 60 * 60 * 1000;
   const MANILA = [14.5995, 120.9842];
   // ?secure=1 lets you test the https behaviour on localhost.
@@ -27,7 +22,6 @@
   // ======================================================
   // State
   // ======================================================
-  let apiHost = API_HOSTS[0];
   let stations = [];
   let visible = [];
   let band = "all";
@@ -65,11 +59,6 @@
       return true;
     },
   };
-  // Station "click" vote on radio-browser: once per station per device per day.
-  function reportClick(st) {
-    if (!guard.allow("click." + st.id, 24 * 60 * 60 * 1000)) return;
-    fetch(`${apiHost}/json/url/${encodeURIComponent(st.streams[0]?.id || st.id)}`).catch(() => {});
-  }
   // Broken station logos fall back to the radio artwork (no inline handlers needed).
   document.addEventListener("error", (e) => {
     const img = e.target;
@@ -87,7 +76,7 @@
     toast._t = setTimeout(() => t.classList.remove("show"), ms);
   }
 
-  // FM / AM / Online from name + tags (radio-browser has no band field).
+  // FM / AM / Online from name + tags (the directory has no band field).
   function classify(name, tags) {
     const text = `${name} ${tags}`;
     const dec = text.match(/\b(8[7-9]|9\d|10[0-8])[.,]\d\b/);
@@ -134,42 +123,22 @@
   // ======================================================
   // Data
   // ======================================================
-  async function fetchJSON(path) {
-    let lastErr;
-    for (const host of [apiHost, ...API_HOSTS.filter((h) => h !== apiHost)]) {
-      try {
-        const res = await fetch(host + path, { headers: { Accept: "application/json" } });
-        if (!res.ok) throw new Error(res.status);
-        apiHost = host;
-        return await res.json();
-      } catch (e) { lastErr = e; }
-    }
-    throw lastErr;
-  }
-
   async function loadRaw() {
     let cached = null;
     try {
       cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
       if (cached && (Date.now() - cached.t < CACHE_TTL || !navigator.onLine)) return cached.d;
     } catch {}
-    if (!guard.allow("api-list", 60 * 1000) && cached) return cached.d;
-    let data;
     try {
-      data = await fetchJSON("/json/stations/bycountrycodeexact/PH?hidebroken=true&order=votes&reverse=true&limit=5000");
+      const res = await fetch(DATA_URL, { cache: "no-cache" });
+      if (!res.ok) throw new Error(res.status);
+      const { d } = await res.json();
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch {}
+      return d;
     } catch (e) {
-      if (cached) return cached.d; // offline or API down: use the last list we saved
+      if (cached) return cached.d; // offline: use the last list we saved
       throw e;
     }
-    return saveRaw(data);
-  }
-  function saveRaw(data) {
-    const slim = data.map((s) => ({
-      u: s.stationuuid, n: s.name, url: s.url_resolved || s.url, hp: s.homepage, f: s.favicon, t: s.tags,
-      st: s.state, la: s.geo_lat, lo: s.geo_long, c: s.codec, b: s.bitrate, h: s.hls, v: s.votes, ok: s.lastcheckok,
-    }));
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: slim })); } catch {}
-    return slim;
   }
 
   function build(raw) {
@@ -583,20 +552,22 @@
   function currentArea() { return nearMe || (query ? findArea(query) : null); }
 
   function render() {
+    // "Plays here": hide stations that can only open in the browser's own player.
+    const base = $("directOnly").checked ? stations.filter((st) => !st.external) : stations;
     const area = currentArea();
     if (area) {
-      for (const st of stations) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);
-      visible = stations
+      for (const st of base) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);
+      visible = base
         .filter((st) => bandOk(st) && (st.dist <= AREA_KM || (query && !nearMe && st.hay.includes(query))))
         .sort((a, b) => a.dist - b.dist);
       // Near me but nothing within range (e.g. abroad): show the 20 nearest instead.
-      if (nearMe && !visible.length) visible = stations.filter((st) => bandOk(st) && isFinite(st.dist)).sort((a, b) => a.dist - b.dist).slice(0, 20);
+      if (nearMe && !visible.length) visible = base.filter((st) => bandOk(st) && isFinite(st.dist)).sort((a, b) => a.dist - b.dist).slice(0, 20);
       if (area.key !== lastAreaKey && mapReady) {
         map.flyTo({ center: [area.lng, area.lat], zoom: 9.6, pitch: is3D ? 50 : 0, padding: mapPadding(), duration: reduceMotion ? 0 : 2000, essential: true });
       }
     } else {
-      for (const st of stations) st.dist = undefined;
-      visible = stations.filter(matches);
+      for (const st of base) st.dist = undefined;
+      visible = base.filter(matches);
     }
     lastAreaKey = area ? area.key : null;
     const showUnknown = $("showUnknown").checked;
@@ -606,8 +577,8 @@
       map.getSource("unk").setData({ type: "FeatureCollection", features: showUnknown && !area ? visible.filter((s) => s.unknown).map(toFeature) : [] });
     }
 
-    const pool = area ? stations.filter((s) => s.dist <= AREA_KM || (query && !nearMe && s.hay.includes(query)))
-                      : query ? stations.filter((s) => s.hay.includes(query)) : stations;
+    const pool = area ? base.filter((s) => s.dist <= AREA_KM || (query && !nearMe && s.hay.includes(query)))
+                      : query ? base.filter((s) => s.hay.includes(query)) : base;
     for (const b of document.querySelectorAll(".band")) {
       const n = b.dataset.band === "all" ? pool.length : pool.filter((s) => s.band === b.dataset.band).length;
       const span = b.querySelector("span");
@@ -781,7 +752,6 @@
       else if (e.name !== "AbortError") tryNext();
     });
     audio.onerror = tryNext;
-    reportClick(st);
 
     // HLS: Safari plays it natively; elsewhere hls.js is fetched only when a station needs it.
     if (s.hls && !audio.canPlayType("application/vnd.apple.mpegurl")) {
@@ -846,6 +816,8 @@
     }
     playStream(st, 0);
     updatePlayingUI();
+    // Analytics event for GTM/GA4 (which stations people play).
+    window.dataLayer?.push({ event: "station_play", station_name: st.name, station_band: st.band, station_city: st.where });
   }
 
   audio.addEventListener("playing", () => { clearTimeout(stallTimer); setStatus("Live"); updatePlayingUI(); });
@@ -1079,6 +1051,14 @@
     render();
   });
   $("showUnknown").addEventListener("change", render);
+  // "Plays here" only matters on https (where old http streams are blocked); remembered per device.
+  $("directWrap").hidden = !SECURE;
+  try { if (localStorage.getItem("filradio.direct") === "0") $("directOnly").checked = false; } catch {}
+  if (!SECURE) $("directOnly").checked = false;
+  $("directOnly").addEventListener("change", () => {
+    try { localStorage.setItem("filradio.direct", $("directOnly").checked ? "1" : "0"); } catch {}
+    render();
+  });
   $("sheetToggle").addEventListener("click", () => $("sidebar").classList.toggle("open"));
 
   // ======================================================
@@ -1162,7 +1142,7 @@
       render();
     } catch (e) {
       console.error(e);
-      $("summary").textContent = "Offline — can't reach radio-browser.info";
+      $("summary").textContent = "Offline. Couldn't load stations";
       $("list").innerHTML = `<li class="empty">Couldn't load stations. Check your connection and reload.</li>`;
     }
   })();

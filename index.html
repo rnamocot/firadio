@@ -9,8 +9,9 @@
   <meta name="description" content="FilRadio: stream 600+ Philippine radio stations free, live on a 3D map. FM, AM and online stations from Manila, Cebu, Davao, Iloilo and more. Made for Filipinos at home and OFWs abroad." />
   <meta name="keywords" content="FilRadio, Philippine radio, Pinoy radio online, OFW radio, Filipino radio abroad, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
   <meta name="author" content="Ren" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com; worker-src 'self' blob:; child-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com https://www.googletagmanager.com; worker-src 'self' blob:; child-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="google-site-verification" content="fAsxkgkYhvrl0ZGd60YTLYJalbHF1yg5A00qthzW1a8" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://filradio.xyz/" />
 
@@ -59,6 +60,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FilRadio" />
+  <script src="js/gtm.js?v=17"></script>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png" />
@@ -67,12 +69,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
-  <link rel="preconnect" href="https://de1.api.radio-browser.info" crossorigin />
   <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css?v=16" />
+  <link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo — rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -98,6 +99,7 @@
       <symbol id="i-3d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 19.6 7.5v9L12 20.8 4.4 16.5v-9L12 3.2Z"/><path d="M4.6 7.6 12 11.8l7.4-4.2M12 11.8v8.8"/><circle cx="12" cy="11.8" r="1.8" style="fill:var(--sun);stroke:none"/></symbol>
       <symbol id="i-near" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="2.4" style="fill:var(--sun);stroke:none"/></symbol>
       <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3" style="fill:var(--sun)"/></symbol>
+      <symbol id="i-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5v-5Z"/><path d="M16.5 11h1.2a2.3 2.3 0 0 1 0 4.6h-1.5"/><path d="M8.5 3.5v2.5M12.5 3.5v2.5" style="stroke:var(--sun)"/></symbol>
     </defs>
   </svg>
   <div class="app">
@@ -175,6 +177,13 @@
           <div class="sheet-title">
             <h2>Stations</h2>
             <span id="listCount"></span>
+          </div>
+          <div class="sheet-filters">
+            <label class="toggle" id="directWrap" title="Only show stations that play right here in FilRadio" hidden>
+              <input type="checkbox" id="directOnly" checked />
+              <span class="switch"></span>
+              <span>Plays here</span>
+            </label>
             <label class="toggle" title="Stations whose city couldn't be detected are shown as grey pins around Manila">
               <input type="checkbox" id="showUnknown" checked />
               <span class="switch"></span>
@@ -199,6 +208,7 @@
             <p class="visits" id="visits" hidden><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg><b>0</b> visits</p>
             <a href="#install" id="howInstall">How to install</a>
           </div>
+          <a class="bmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a>
           <p>FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></p>
         </footer>
       </section>
@@ -262,7 +272,7 @@
         Show on map
       </button>
       <p class="n-tags" id="nTags"></p>
-      <footer class="now-credit">Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></footer>
+      <footer class="now-credit">Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a> · <a class="bmc-link" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener">Buy me a coffee</a></footer>
     </section>
 
     <!-- Mobile: bottom tab bar (custom tuner-themed icons) -->
@@ -291,9 +301,9 @@
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js?v=16" defer></script>
-  <script src="js/traffic.js?v=16" defer></script>
-  <script src="js/install-guide.js?v=16" defer></script>
-  <script src="js/app.js?v=16" defer></script>
+  <script src="js/places.js?v=17" defer></script>
+  <script src="js/traffic.js?v=17" defer></script>
+  <script src="js/install-guide.js?v=17" defer></script>
+  <script src="js/app.js?v=17" defer></script>
 </body>
 </html>
