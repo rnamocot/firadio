@@ -904,3 +904,44 @@ body.is-live .brand .logo, body.is-live .search-mark { animation: logo-onair 1.8
 #themeBtn .t-sun, html.dark #themeBtn .t-moon { display: none; }
 html.dark #themeBtn .t-sun { display: block; }
 #themeBtn[aria-pressed="true"] { background: var(--panel); color: var(--text); border: 1px solid var(--line); }
+
+/* =========================================================
+   Off-air pop-up
+   ========================================================= */
+dialog.offdlg { border: 0; padding: 0; background: transparent; color: var(--text); width: min(400px, calc(100% - 32px)); overflow: visible; }
+dialog.offdlg::backdrop { background: rgba(16, 24, 43, .5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+dialog.offdlg[open] .off-card { animation: guide-in .4s var(--ease); }
+.off-card { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 18px; }
+.off-grip { display: none; }
+.off-head { display: flex; gap: 14px; align-items: flex-start; }
+.off-ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0; background: color-mix(in srgb, var(--red) 12%, var(--panel)); color: var(--text); }
+.off-ico svg.i { width: 26px; height: 26px; }
+.off-head h3 { margin: 2px 0 4px; font-size: 17px; font-weight: 800; font-stretch: 112%; letter-spacing: -.01em; line-height: 1.2; }
+.off-head p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.off-suggest { margin-top: 14px; }
+.off-suggest[hidden] { display: none; }
+.off-label { margin: 0 0 6px; font: 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.off-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.off-list button {
+  width: 100%; display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 14px; cursor: pointer; text-align: left;
+  border: 1px solid var(--line); background: var(--paper); color: var(--text); transition: background .15s, transform .12s var(--ease);
+}
+.off-list button:hover { background: var(--panel-2); }
+.off-list button:active { transform: scale(.98); }
+.off-name { min-width: 0; flex: 1; display: grid; }
+.off-name b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.off-name small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.off-play { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--sun); color: var(--sun-ink); flex-shrink: 0; }
+.off-play svg.i { width: 15px; height: 15px; margin-left: 2px; }
+.off-actions { display: flex; gap: 10px; margin-top: 16px; }
+.off-btn { flex: 1; border: 0; border-radius: 999px; padding: 11px 14px; font: 800 14px var(--display); cursor: pointer; background: var(--ink); color: var(--paper); }
+.off-btn.ghost { background: var(--panel-2); color: var(--text); }
+html.dark .off-btn:not(.ghost) { background: var(--sun); color: var(--sun-ink); }
+
+@media (max-width: 760px) {
+  /* Phones: bottom sheet */
+  dialog.offdlg { width: 100%; max-width: 100%; margin: auto 0 0; }
+  dialog.offdlg[open] .off-card { animation: sheet-up .4s var(--ease); }
+  .off-card { border-radius: 24px 24px 0 0; border: 0; padding: 10px 18px calc(18px + var(--safe-bottom)); }
+  .off-grip { display: block; width: 38px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 14px; }
+}

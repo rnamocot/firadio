@@ -763,13 +763,13 @@
         if (!st.external && current === st) toast("This station plays in your browser. Tap Play ↗", 4000);
       } else {
         setStatus("Off air", true);
-        if (current === st) toast("This station seems off air right now. Try another one.", 3500);
+        if (current === st) showOffline(st);
       }
       updatePlayingUI();
       return;
     }
     st._idx = idx;
-    setStatus(idx > 0 ? `Retuning ${idx}…` : "Tuning…");
+    setStatus(idx > 0 ? "Checking another link…" : "Opening station…");
     const tryNext = () => { if (current === st && st._idx === idx) { clearTimeout(stallTimer); playStream(st, idx + 1); } };
     // Some streams never answer and never error (common on mobile data): move on after 12 s.
     stallTimer = setTimeout(() => {
@@ -798,6 +798,42 @@
     audio.src = s.url;
     start();
   }
+
+  // ---------- Off-air pop-up (bottom sheet on phones, card on desktop) ----------
+  const offShown = new Set(); // once per station per visit
+  function suggestionsFor(st) {
+    const pool = (visible.length ? visible : stations).filter((x) => x !== st && !x.external && x.streams.length);
+    const score = (x) => (x.where === st.where ? 2 : 0) + (x.band === st.band ? 1 : 0) + Math.min(x.votes, 50) / 1000;
+    return pool.map((x) => [score(x), x]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(([, x]) => x);
+  }
+  function showOffline(st) {
+    if (offShown.has(st.id) || QUIET) return;
+    offShown.add(st.id);
+    const dlg = $("offDlg");
+    $("offTitle").textContent = `${st.name} is off air`;
+    $("offText").textContent = "We tried all of its links and it isn't broadcasting right now. It may be back later.";
+    const sugg = suggestionsFor(st);
+    $("offSuggestWrap").hidden = !sugg.length;
+    $("offList").innerHTML = sugg.map((x) => `<li><button type="button" data-id="${esc(x.id)}">${readoutHtml(x, "small")}
+        <span class="off-name"><b>${esc(x.name)}</b><small>${esc([freqFull(x) || x.band, x.where].join(" · "))}</small></span>
+        <span class="off-play">${ICON.play}</span></button></li>`).join("");
+    dlg.dataset.station = st.id;
+    if (!dlg.open) dlg.showModal();
+  }
+  $("offList").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-id]");
+    const st = b && byId.get(b.dataset.id);
+    if (!st) return;
+    $("offDlg").close();
+    tapStation(st);
+  });
+  $("offRetry").addEventListener("click", () => {
+    const st = byId.get($("offDlg").dataset.station);
+    $("offDlg").close();
+    if (st) { offShown.delete(st.id); current = st; playStream(st, 0); }
+  });
+  $("offClose").addEventListener("click", () => $("offDlg").close());
+  $("offDlg").addEventListener("click", (e) => { if (e.target === $("offDlg")) $("offDlg").close(); });
 
   function togglePlay() {
     if (!current) return;
@@ -850,7 +886,7 @@
   }
 
   audio.addEventListener("playing", () => { clearTimeout(stallTimer); setStatus("Live"); updatePlayingUI(); });
-  audio.addEventListener("waiting", () => setStatus("Buffering…"));
+  audio.addEventListener("waiting", () => setStatus("Loading…"));
   audio.addEventListener("pause", updatePlayingUI);
 
   $("pToggle").addEventListener("click", togglePlay);
