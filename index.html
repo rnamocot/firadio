@@ -212,6 +212,7 @@
       <button class="ibtn" id="pLocate" aria-label="Show on map" title="Show on map">
         <svg class="i" aria-hidden="true"><use href="#i-locate"/></svg>
       </button>
+      <a class="ext-btn" id="pExt" target="_blank" rel="noopener noreferrer" hidden><svg class="i" aria-hidden="true"><use href="#i-external"/></svg>Play</a>
       <button class="ibtn play" id="pToggle" aria-label="Play or pause"></button>
     </div>
 
@@ -237,6 +238,10 @@
         <div class="needle"></div>
       </div>
       <p class="n-status" id="nStatus"></p>
+      <div class="ext-box" id="nExtBox" hidden>
+        <p>This station only streams over an older, non-secure link, which browsers block inside secure sites. It will open in your browser's own player.</p>
+        <a class="ext-btn big" id="nExt" target="_blank" rel="noopener noreferrer" hidden><svg class="i" aria-hidden="true"><use href="#i-external"/></svg>Play in browser player</a>
+      </div>
 
       <div class="now-controls">
         <button class="ibtn big ghost" id="nPrev" aria-label="Previous station">

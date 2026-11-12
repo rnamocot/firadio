@@ -14,6 +14,8 @@
   const CACHE_KEY = "filradio.stations.v1";
   const CACHE_TTL = 6 * 60 * 60 * 1000;
   const MANILA = [14.5995, 120.9842];
+  // ?secure=1 lets you test the https behaviour on localhost.
+  const SECURE = location.protocol === "https:" || /[?&]secure=1(&|$)/.test(location.search);
   const BRAND = { ink: "#10182b", sun: "#ffc93c", red: "#e63946", fm: "#2347d6", am: "#e4572e", online: "#0e9f8e", unknown: "#9aa0aa" };
   // Branded icon set lives in the SVG sprite in index.html.
   const use = (id, cls = "") => `<svg class="i ${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
@@ -193,6 +195,16 @@
     const out = [...byName.values()];
     for (const st of out) {
       st.streams.sort((a, b) => (b.url.startsWith("https") - a.url.startsWith("https")) || (b.ok - a.ok) || ((b.bitrate || 0) - (a.bitrate || 0)));
+      // On an https site browsers block http audio ("mixed content"). Use https links first, then try the
+      // same http address over https (works for many hosts), and keep the http link so the station can
+      // still be opened in the browser's own player as a last resort.
+      if (SECURE) {
+        st.insecureUrl = st.streams.find((x) => x.url.startsWith("http:"))?.url || "";
+        const upgraded = st.streams
+          .filter((x) => x.url.startsWith("http:") && !/^http:\/\/(\d+\.\d+\.\d+\.\d+|\[)/.test(x.url))
+          .map((x) => ({ ...x, url: "https:" + x.url.slice(5), upgraded: true }));
+        st.streams = [...st.streams.filter((x) => x.url.startsWith("https:")), ...upgraded];
+      }
       if (!st.exact) {
         const place = findPlace(st.state, st.name, st.tags);
         if (place) {
@@ -452,6 +464,7 @@
       <div class="actions">
         <button class="go" data-play="${esc(st.id)}">${playing ? ICON.pause + "Pause" : ICON.play + "Listen"}</button>
         ${st.homepage ? `<a href="${esc(st.homepage)}" target="_blank" rel="noopener">Website ↗</a>` : ""}
+        ${SECURE && !st.streams.length && st.insecureUrl ? `<a href="${esc(st.insecureUrl)}" target="_blank" rel="noopener noreferrer">Play in browser ↗</a>` : ""}
       </div></div>`;
   }
 
@@ -713,16 +726,45 @@
     }));
   }
 
+  let stallTimer = 0, needsTap = false;
+  function showExternal(st) {
+    const url = st && st.insecureUrl;
+    for (const id of ["pExt", "nExt"]) {
+      const a = $(id);
+      if (url) a.href = url; else a.removeAttribute("href");
+      a.hidden = !url;
+    }
+    $("nExtBox").hidden = !url;
+    $("player").classList.toggle("external", !!url);
+  }
+
   function playStream(st, idx) {
     stopEngine();
+    clearTimeout(stallTimer);
+    needsTap = false;
+    showExternal(null);
     const s = st.streams[idx];
-    if (!s) { setStatus("Off air", true); updatePlayingUI(); return; }
+    if (!s) {
+      if (st.insecureUrl) {
+        // Every in-page option failed or was blocked: offer the browser's own player.
+        setStatus("Tap Play ↗ to listen");
+        showExternal(st);
+      } else {
+        setStatus("Off air", true);
+      }
+      updatePlayingUI();
+      return;
+    }
     st._idx = idx;
     setStatus(idx > 0 ? `Retuning ${idx}…` : "Tuning…");
-    const tryNext = () => { if (current === st && st._idx === idx) playStream(st, idx + 1); };
+    const tryNext = () => { if (current === st && st._idx === idx) { clearTimeout(stallTimer); playStream(st, idx + 1); } };
+    // Some streams never answer and never error (common on mobile data): move on after 12 s.
+    stallTimer = setTimeout(() => {
+      if (current === st && st._idx === idx && !needsTap && (audio.paused || audio.readyState < 3)) tryNext();
+    }, 12000);
 
     const start = () => audio.play().catch((e) => {
-      if (e.name === "NotAllowedError") setStatus("Tap play");
+      if (e.name === "NotAllowedError") { needsTap = true; setStatus("Tap play"); }
       else if (e.name !== "AbortError") tryNext();
     });
     audio.onerror = tryNext;
@@ -793,7 +835,7 @@
     updatePlayingUI();
   }
 
-  audio.addEventListener("playing", () => { setStatus("Live"); updatePlayingUI(); });
+  audio.addEventListener("playing", () => { clearTimeout(stallTimer); setStatus("Live"); updatePlayingUI(); });
   audio.addEventListener("waiting", () => setStatus("Buffering…"));
   audio.addEventListener("pause", updatePlayingUI);
 
