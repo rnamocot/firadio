@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <!-- SEO -->
+  <title>FilRadio — Listen to Philippine FM &amp; AM Radio Live on a 3D Map</title>
+  <meta name="description" content="Stream 600+ Philippine radio stations for free. Explore FM, AM and online stations from Manila, Cebu, Davao, Baguio, Iloilo and more on an interactive 3D map — tap a pin and listen live." />
+  <meta name="keywords" content="Philippine radio, Pinoy radio online, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
+  <meta name="author" content="Ren" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://webtarsier.com/" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="FilRadio" />
+  <meta property="og:title" content="FilRadio — Philippine Radio, Live on a 3D Map" />
+  <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live. 600+ FM, AM and online stations." />
+  <meta property="og:url" content="https://webtarsier.com/" />
+  <meta property="og:image" content="https://webtarsier.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="FilRadio — Philippine radio stations on a map" />
+  <meta property="og:locale" content="en_PH" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FilRadio — Philippine Radio, Live on a 3D Map" />
+  <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live. 600+ FM, AM and online stations." />
+  <meta name="twitter:image" content="https://webtarsier.com/og-image.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "FilRadio",
+    "url": "https://webtarsier.com/",
+    "description": "Interactive 3D map of Philippine FM, AM and online radio stations with live streaming.",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Any",
+    "inLanguage": ["en", "fil"],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PHP" },
+    "author": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
+    "creator": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
+    "spatialCoverage": { "@type": "Country", "name": "Philippines" }
+  }
+  </script>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#10182B" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FilRadio" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- FilRadio icon set: drawn from the logo — rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6"/><circle cx="10.5" cy="10.5" r="2.1" style="fill:var(--sun);stroke:none"/><path d="m15.3 15.3 4.6 4.6" stroke-width="2.7"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m7.5 7.5 9 9m0-9-9 9"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></symbol>
+      <symbol id="i-install" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v9.5m-4.2-4.2 4.2 4.2 4.2-4.2"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/><circle cx="19.3" cy="4.7" r="2.1" style="fill:var(--red);stroke:none"/></symbol>
+      <symbol id="i-presets" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10.5 6.5h9.5M10.5 12h9.5M10.5 17.5h6.5"/><circle cx="5.2" cy="6.5" r="1.9"/><circle cx="5.2" cy="12" r="1.9" style="fill:var(--sun);stroke:var(--sun)"/><circle cx="5.2" cy="17.5" r="1.9"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3.3" stroke-width="2.5"/><path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3M5.7 5.7l1.3 1.3M17 17l1.3 1.3M17 7l1.3-1.3M5.7 18.3 7 17"/><circle cx="20.4" cy="3.6" r="1.7" style="fill:var(--red);stroke:none"/></symbol>
+      <symbol id="i-locate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5s-6.8-5.9-6.8-11.7a6.8 6.8 0 0 1 13.6 0c0 5.8-6.8 11.7-6.8 11.7Z"/><circle cx="12" cy="9.8" r="2.4" style="fill:var(--sun)"/></symbol>
+      <symbol id="i-tuner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 19.5h18M5 19.5V17M8 19.5v-4.5M11 19.5V17M17 19.5V17M20 19.5V15"/><path d="M14 6v13.5" style="stroke:var(--red)" stroke-width="2.4"/><circle cx="14" cy="4.6" r="2" style="fill:var(--red);stroke:none"/></symbol>
+      <symbol id="i-onair" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2.6" style="fill:var(--red)" stroke-width="2"/><path d="M8 8a5.7 5.7 0 0 0 0 8M16 8a5.7 5.7 0 0 1 0 8M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.2 5.9v12.2a1.2 1.2 0 0 0 1.84 1.01l9.6-6.1a1.2 1.2 0 0 0 0-2.02l-9.6-6.1A1.2 1.2 0 0 0 8.2 5.9Z" fill="currentColor"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4.3" height="14" rx="2.15"/><rect x="13.7" y="5" width="4.3" height="14" rx="2.15"/></symbol>
+      <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 5.5v13" stroke="currentColor" stroke-width="2.7" stroke-linecap="round"/><path d="M18.5 6.3v11.4a1 1 0 0 1-1.56.83L9.4 13.4a1.7 1.7 0 0 1 0-2.8l7.54-5.13a1 1 0 0 1 1.56.83Z" fill="currentColor"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="M18 5.5v13" stroke="currentColor" stroke-width="2.7" stroke-linecap="round"/><path d="M5.5 6.3v11.4a1 1 0 0 0 1.56.83l7.54-5.13a1.7 1.7 0 0 0 0-2.8L7.06 5.47a1 1 0 0 0-1.56.83Z" fill="currentColor"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4.5h6v6M19.5 4.5 11 13"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol>
+      <symbol id="i-signal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4.5 9.5a10.6 10.6 0 0 1 15 0M7.5 12.6a6.4 6.4 0 0 1 9 0"/><circle cx="12" cy="16.6" r="2.1" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21.5s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z" fill="currentColor"/><circle cx="12" cy="9.5" r="2.6" style="fill:var(--sun)"/></symbol>
+      <symbol id="i-3d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 19.6 7.5v9L12 20.8 4.4 16.5v-9L12 3.2Z"/><path d="M4.6 7.6 12 11.8l7.4-4.2M12 11.8v8.8"/><circle cx="12" cy="11.8" r="1.8" style="fill:var(--sun);stroke:none"/></symbol>
+    </defs>
+  </svg>
+  <div class="app">
+    <main class="map-wrap" aria-label="Map of Philippine radio stations">
+      <div id="map"></div>
+
+      <div class="legend" aria-hidden="true">
+        <span><i class="key FM">FM</i>FM</span>
+        <span><i class="key AM">AM</i>AM</span>
+        <span><i class="key Online">
+          <svg class="i" aria-hidden="true"><use href="#i-signal"/></svg>
+        </i>Online</span>
+        <span><i class="key unknown">?</i>Location unknown</span>
+      </div>
+
+      <div class="fabs">
+        <button class="fab" id="toggle3d" aria-pressed="true" title="Switch 2D / 3D">
+          <svg class="i" aria-hidden="true"><use href="#i-3d"/></svg><span class="fab-label">3D</span>
+        </button>
+        <button class="fab" id="recenter" title="Show the whole Philippines" aria-label="Show the whole Philippines">
+          <svg class="i" aria-hidden="true"><use href="#i-sun"/></svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- Desktop: floating console. Mobile: top search bar + bottom sheet. -->
+    <aside class="sidebar open" id="sidebar">
+      <div class="topbar">
+        <header class="brand">
+          <img class="logo" src="icon.svg" alt="FilRadio logo" width="40" height="40" />
+          <div class="brand-text">
+            <h1>Fil<span>Radio</span></h1>
+            <p class="sub" id="summary">Tuning in…</p>
+          </div>
+          <button class="ibtn install" id="installBtn" hidden title="Install FilRadio">
+            <svg class="i" aria-hidden="true"><use href="#i-install"/></svg>
+            <span>Install</span>
+          </button>
+          <button class="ibtn sheet-toggle" id="sheetToggle" aria-label="Show or hide station list" title="Station list">
+            <svg class="i" aria-hidden="true"><use href="#i-presets"/></svg>
+          </button>
+        </header>
+        <div class="controls">
+          <div class="search" id="searchBox">
+            <span class="search-lead">
+              <img class="search-mark" src="icon.svg" alt="" width="32" height="32" />
+              <button class="search-back" id="searchBack" type="button" aria-label="Close search" tabindex="-1">
+                <svg class="i" aria-hidden="true"><use href="#i-back"/></svg>
+              </button>
+              <svg class="i search-ico" aria-hidden="true"><use href="#i-search"/></svg>
+            </span>
+            <span class="search-field">
+              <input id="search" type="search" placeholder=" " autocomplete="off" enterkeyhint="search" aria-label="Search stations, cities or genres" />
+              <span class="search-hint" aria-hidden="true"><span id="hintText">Search stations, cities, genres</span></span>
+            </span>
+            <button class="search-clear" id="searchClear" type="button" aria-label="Clear search">
+              <svg class="i" aria-hidden="true"><use href="#i-x"/></svg>
+            </button>
+          </div>
+          <div class="bands" id="bandChips" role="tablist" aria-label="Filter by band">
+            <button class="band active" data-band="all" role="tab">All <span></span></button>
+            <button class="band" data-band="FM" role="tab">FM <span></span></button>
+            <button class="band" data-band="AM" role="tab">AM <span></span></button>
+            <button class="band" data-band="Online" role="tab">Online <span></span></button>
+          </div>
+        </div>
+      </div>
+
+      <section class="sheet" id="sheet" aria-label="Station list">
+        <div class="sheet-grip" id="sheetGrip">
+          <span class="grip"></span>
+          <div class="sheet-title">
+            <h2>Stations</h2>
+            <span id="listCount"></span>
+            <label class="toggle" title="Stations whose city couldn't be detected are shown as grey pins around Manila">
+              <input type="checkbox" id="showUnknown" checked />
+              <span class="switch"></span>
+              <span>Unplaced</span>
+            </label>
+          </div>
+        </div>
+        <ul class="list" id="list">
+          <li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>
+        </ul>
+        <footer class="credit">
+          <p class="about">
+            FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
+            FM music stations, AM news and talk radio such as Bombo Radyo, Brigada News FM and Radyo Pilipinas,
+            and online-only Pinoy streams, each pinned to its city on the map.
+          </p>
+          <p>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></p>
+        </footer>
+      </section>
+    </aside>
+
+    <!-- Mini player -->
+    <div class="player" id="player" hidden>
+      <button class="p-open" id="pOpen" aria-label="Open now playing">
+        <span class="readout small" id="pArt"></span>
+        <span class="p-info">
+          <span class="p-name" id="pName">—</span>
+          <span class="p-meta"><i class="live-dot"></i><span id="pStatus"></span><span id="pMeta"></span></span>
+        </span>
+      </button>
+      <input type="range" id="pVolume" min="0" max="1" step="0.01" value="0.8" aria-label="Volume" />
+      <button class="ibtn" id="pLocate" aria-label="Show on map" title="Show on map">
+        <svg class="i" aria-hidden="true"><use href="#i-locate"/></svg>
+      </button>
+      <button class="ibtn play" id="pToggle" aria-label="Play or pause"></button>
+    </div>
+
+    <!-- Mobile: full-screen Now Playing -->
+    <section class="now" id="now" aria-hidden="true" aria-label="Now playing">
+      <header class="now-head">
+        <button class="ibtn ghost" id="nowClose" aria-label="Close">
+          <svg class="i" aria-hidden="true"><use href="#i-down"/></svg>
+        </button>
+        <span class="onair"><i></i>On air</span>
+        <a class="ibtn ghost" id="nSite" target="_blank" rel="noopener" aria-label="Station website">
+          <svg class="i" aria-hidden="true"><use href="#i-external"/></svg>
+        </a>
+      </header>
+
+      <div class="now-art" id="nArt"></div>
+      <h2 id="nName">—</h2>
+      <p class="n-meta" id="nMeta"></p>
+
+      <!-- Tuning dial: signature element -->
+      <div class="dial" id="dial" aria-hidden="true">
+        <div class="dial-scale" id="dialScale"></div>
+        <div class="needle"></div>
+      </div>
+      <p class="n-status" id="nStatus"></p>
+
+      <div class="now-controls">
+        <button class="ibtn big ghost" id="nPrev" aria-label="Previous station">
+          <svg class="i" aria-hidden="true"><use href="#i-prev"/></svg>
+        </button>
+        <button class="ibtn huge play" id="nToggle" aria-label="Play or pause"></button>
+        <button class="ibtn big ghost" id="nNext" aria-label="Next station">
+          <svg class="i" aria-hidden="true"><use href="#i-next"/></svg>
+        </button>
+      </div>
+      <button class="pill-btn" id="nLocate">
+        <svg class="i" aria-hidden="true"><use href="#i-locate"/></svg>
+        Show on map
+      </button>
+      <p class="n-tags" id="nTags"></p>
+      <footer class="now-credit">Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></footer>
+    </section>
+
+    <!-- Mobile: bottom tab bar (custom tuner-themed icons) -->
+    <nav class="tabbar" id="tabbar" aria-label="Main">
+      <button class="tab active" data-tab="map">
+        <svg class="i" aria-hidden="true"><use href="#i-locate"/></svg>
+        <span>Map</span>
+      </button>
+      <button class="tab" data-tab="list">
+        <svg class="i" aria-hidden="true"><use href="#i-tuner"/></svg>
+        <span>Stations</span>
+      </button>
+      <button class="tab" data-tab="now">
+        <svg class="i" aria-hidden="true"><use href="#i-onair"/></svg>
+        <span>On air</span>
+      </button>
+    </nav>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <noscript>
+    <p style="padding:24px;font-family:sans-serif">FilRadio needs JavaScript to show the radio map and play Philippine radio stations.</p>
+  </noscript>
+
+  <audio id="audio" preload="none"></audio>
+
+  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
+  <script src="js/places.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

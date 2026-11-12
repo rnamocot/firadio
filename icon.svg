@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="120" fill="#10182B"/>
+  <g transform="translate(256 256)" fill="#FFC93C">
+    <g id="L"><rect x="-15" y="-196" width="30" height="100" rx="15"/></g>
+    <g id="S"><rect x="-13" y="-160" width="26" height="56" rx="13" transform="rotate(45)"/></g>
+    <use href="#L" transform="rotate(90)"/><use href="#L" transform="rotate(180)"/><use href="#L" transform="rotate(270)"/>
+    <use href="#S" transform="rotate(90)"/><use href="#S" transform="rotate(180)"/><use href="#S" transform="rotate(270)"/>
+    <circle r="70"/>
+    <circle r="24" fill="#10182B"/>
+  </g>
+  <circle cx="426" cy="86" r="22" fill="#E63946"/>
+</svg>
