@@ -1491,3 +1491,22 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 @media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .credit-pop { top: auto; bottom: 0; transform-origin: bottom right; }
 }
+/* Dock: subtle "you are here" pill so the centre Radio button is the only solid yellow element */
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .tab-indicator { background: rgba(255, 255, 255, .12) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08) !important; }
+  .tab.active { color: var(--sun) !important; }
+  .tab.active .tab-ico { transform: translateY(-1px) scale(1.08); }
+  body.is-live .tab-now.active .tab-live { box-shadow: 0 0 0 2px var(--ink); }
+}
+
+/* Dock: no filled pill — the active tab is a yellow icon/label with a short sliding line above it */
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .tab-indicator {
+    top: 5px !important; bottom: auto !important; height: 3px !important; border-radius: 3px !important;
+    background: var(--sun) !important; box-shadow: 0 0 10px rgba(255, 201, 60, .7) !important;
+  }
+  .tab.active .tab-ico { transform: none; }
+}
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .tab.active svg, .tab svg { color: inherit !important; }
+}

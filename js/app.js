@@ -1160,8 +1160,9 @@
     const on = tabs.find((t) => t.dataset.tab === active);
     const ind = document.querySelector(".tab-indicator");
     if (on && ind) {
-      ind.style.width = on.offsetWidth + "px";
-      ind.style.transform = `translateX(${on.offsetLeft}px)`;
+      const w = 22; // short line centred over the active tab
+      ind.style.width = w + "px";
+      ind.style.transform = `translateX(${on.offsetLeft + (on.offsetWidth - w) / 2}px)`;
     }
   }
   function openNow() {
