@@ -292,7 +292,7 @@ html.dark .player { background: var(--panel); color: var(--text); border: 1px so
 /* =========================================================
    Desktop / tablet: floating console
    ========================================================= */
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   .sidebar {
     position: absolute; top: 14px; left: 14px; width: 372px; max-height: calc(100% - 120px);
     display: flex; flex-direction: column; z-index: 20;
@@ -308,7 +308,7 @@ html.dark .player { background: var(--panel); color: var(--text); border: 1px so
 /* =========================================================
    Mobile: native-app layout
    ========================================================= */
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   body { font-size: 15px; }
   .sidebar { display: contents; }
   .legend, .maplibregl-ctrl-top-right { display: none; }
@@ -461,7 +461,7 @@ html.dark .player { background: var(--panel); color: var(--text); border: 1px so
   .maplibregl-popup-content { padding: 12px; }
 }
 
-@media (max-width: 760px) and (max-height: 680px) {
+@media (max-width: 760px) and (min-height: 501px) and (max-height: 680px), (max-width: 480px) and (max-height: 680px) {
   .now-art { width: min(44vw, 180px); margin: 2vh 0 12px; }
   .dial { margin-top: 12px; }
   .now-controls { margin: 10px 0 10px; }
@@ -486,12 +486,12 @@ html.dark .player { background: var(--panel); color: var(--text); border: 1px so
 .ibtn.play svg { transition: transform .25s var(--ease); }
 .ibtn.play.swap svg { animation: swap .3s var(--ease); }
 @keyframes swap { from { transform: scale(.4) rotate(-40deg); opacity: 0; } }
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   .sidebar { animation: console-in .6s var(--ease) both; }
   @keyframes console-in { from { opacity: 0; transform: translateX(-20px); } }
   .sheet { animation: row-in .4s var(--ease); }
 }
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .tab.active svg { animation: tab-pop .4s var(--ease); }
   @keyframes tab-pop { 0% { transform: scale(.8); } 60% { transform: scale(1.08); } }
   .now.open .now-art { animation: art-in .6s .1s var(--ease) both; }
@@ -503,7 +503,7 @@ html.dark .player { background: var(--panel); color: var(--text); border: 1px so
 }
 .sheet-title .install { height: 30px; padding: 0 10px 0 8px; font-size: 12px; }
 .sheet-title .install svg { width: 15px; height: 15px; }
-@media (min-width: 761px) { .sheet-title .install { display: none !important; } }
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) { .sheet-title .install { display: none !important; } }
 
 /* ---------- Location search ---------- */
 .search-near {
@@ -531,7 +531,7 @@ html.dark .list li.area-banner, html.dark .list li.area-banner:hover { backgroun
 .credit .visits[hidden] { display: none; }
 .credit .visits b { font: 700 12px var(--mono); color: var(--text); }
 .credit .visits svg.i { width: 16px; height: 16px; }
-@media (max-width: 760px) { .credit .visits { justify-content: center; } }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .credit .visits { justify-content: center; } }
 
 /* ---------- Brand byline ---------- */
 .brand h1 .by { display: block; font: 600 9px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
@@ -586,7 +586,7 @@ html.dark .guide-art { background: linear-gradient(160deg, #1f2945, #141b2e); }
 .hl-pulse { transform-box: fill-box; transform-origin: center; animation: hl 1.6s var(--ease) infinite; }
 @keyframes hl { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
 
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   dialog.guide { width: 100%; max-width: 100%; max-height: 100dvh; height: 100dvh; margin: 0; }
   dialog.guide[open] .guide-card { animation: sheet-up .45s var(--ease); }
   @keyframes sheet-up { from { transform: translateY(100%); } }
@@ -600,7 +600,7 @@ html.dark .guide-art { background: linear-gradient(160deg, #1f2945, #141b2e); }
   .guide-art { padding: 8px 30px 2px; }
 }
 /* Mobile: keep the station list roomy; the SEO "about" text stays in the DOM */
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .credit { padding: 10px 16px 12px; }
   .credit .about { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .credit p { margin-bottom: 4px; }
@@ -639,7 +639,7 @@ html.dark .guide-art { background: linear-gradient(160deg, #1f2945, #141b2e); }
 .ext-box { max-width: 320px; margin: 10px auto 0; text-align: center; }
 .ext-box[hidden] { display: none; }
 .ext-box p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.45; color: rgba(244,241,234,.7); }
-@media (max-width: 760px) { .now-art, .dial, .now-controls { flex-shrink: 0; } }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .now-art, .dial, .now-controls { flex-shrink: 0; } }
 
 /* =========================================================
    Layout polish
@@ -658,7 +658,7 @@ html.dark .guide-art { background: linear-gradient(160deg, #1f2945, #141b2e); }
 .foot-row .visits { margin: 0 !important; }
 .foot-row #howInstall { font-size: 12px; }
 
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   /* Player docks beside the panel instead of covering the map's centre and legend */
   .player {
     left: calc(14px + 372px + 14px); right: 72px; width: auto; max-width: 680px; transform: none;
@@ -668,11 +668,11 @@ html.dark .guide-art { background: linear-gradient(160deg, #1f2945, #141b2e); }
   .app:has(.player:not([hidden])) .legend { bottom: 100px; }
   .sub { white-space: nowrap; }
 }
-@media (min-width: 761px) and (max-width: 980px) {
+@media (min-width: 761px) and (max-width: 980px), (min-width: 481px) and (max-width: 980px) and (max-height: 500px) {
   .legend span:last-child { display: none; } /* keep the legend on one short row */
 }
 
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   /* About stays collapsed text on phones (crawlable, no extra height) */
   .credit .about { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; text-align: left; }
   .about-box { text-align: center; }
@@ -708,7 +708,7 @@ html.dark .guide-art { background: linear-gradient(160deg, #1f2945, #141b2e); }
 /* Filters row under the sheet title */
 .sheet-filters { display: flex; align-items: center; gap: 16px; padding: 0 14px 10px; }
 .sheet-filters .toggle { margin-left: 0; }
-@media (max-width: 760px) { .sheet-filters { padding: 0 18px 10px; } }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .sheet-filters { padding: 0 18px 10px; } }
 
 /* =========================================================
    Grid view (browse all stations as cards)
@@ -747,14 +747,14 @@ html.dark .view-toggle[aria-pressed="true"] { background: var(--sun); color: var
 .sidebar.grid .list .bars { position: absolute; top: 14px; right: 14px; }
 .sidebar.grid .list li.area-banner, .sidebar.grid .list li.empty { grid-column: 1 / -1; }
 
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   /* Panel widens over the map */
   .sidebar.grid { width: min(1180px, calc(100% - 28px - 64px)); max-height: calc(100% - 120px); }
   .sidebar.grid .brand, .sidebar.grid .controls { max-width: 560px; }
   .sidebar { transition: width .35s var(--ease); }
   .app:has(.sidebar.grid) .player { left: 50%; transform: translateX(-50%); right: auto; width: min(680px, calc(100% - 32px)); }
 }
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .sidebar.grid .list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 8px 10px 12px; }
   .sidebar.grid .list li[data-id] { padding: 10px; }
   .sidebar.grid .list .readout { width: 56px; height: 56px; }
@@ -762,7 +762,7 @@ html.dark .view-toggle[aria-pressed="true"] { background: var(--sun); color: var
 }
 @media (max-width: 400px) { .view-toggle .v-label { display: none; } .view-toggle { padding: 0 7px; } }
 /* Phones: the whole sheet scrolls (title stays pinned), footer sits at the end of the list */
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .sheet { overflow-y: auto; overscroll-behavior: contain; }
   .sheet .list { flex: none; overflow: visible; min-height: auto; }
   .sheet-grip { position: sticky; top: 0; z-index: 3; background: var(--panel); border-radius: 26px 26px 0 0; }
@@ -771,7 +771,7 @@ html.dark .view-toggle[aria-pressed="true"] { background: var(--sun); color: var
 /* Grid view polish */
 .sidebar.grid .list .meta { flex-wrap: nowrap; }
 .sidebar.grid .list .meta span { min-width: 0; }
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   .sidebar.grid .credit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
   .sidebar.grid .credit .about-box { margin: 0; }
   .sidebar.grid .credit .foot-row { margin: 0; gap: 18px; }
@@ -797,7 +797,7 @@ html.dark .view-toggle[aria-pressed="true"] { background: var(--sun); color: var
 .filter-help b { color: var(--text); font: 11px var(--mono); }
 .help-ok { margin-top: 10px; border: 0; border-radius: 999px; padding: 6px 14px; background: var(--ink); color: var(--paper); font: 700 12px var(--display); cursor: pointer; }
 html.dark .help-ok { background: var(--sun); color: var(--sun-ink); } 
-@media (max-width: 760px) { .filter-help { margin: 0 18px 10px; } }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .filter-help { margin: 0 18px 10px; } }
 .sidebar.grid .filter-help { max-width: 640px; }
 
 /* Map | Grid switch (desktop) */
@@ -810,13 +810,13 @@ html.dark .help-ok { background: var(--sun); color: var(--sun-ink); }
 .view-switch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-sm); }
 html.dark .view-switch button[aria-pressed="true"] { background: var(--sun); color: var(--sun-ink); } 
 /* Phones use the tab bar (Map | Grid | On air) instead */
-@media (max-width: 760px) { .view-switch { display: none; } }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .view-switch { display: none; } }
 
 /* ---------- Phones: playlist rows, toasts at the bottom, refresh button ---------- */
 .row-play { display: none; }
 .fab[hidden] { display: none; }
 .fab.spinning svg { animation: spin-near .8s linear infinite; }
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .sidebar:not(.grid) .list li[data-id] .row-play {
     display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
     background: var(--panel-2); color: var(--text);
@@ -833,7 +833,7 @@ html.dark .view-switch button[aria-pressed="true"] { background: var(--sun); col
 }
 
 /* Phones: Install sits on the right of the Stations title as a clear pill */
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .sheet-title { align-items: center; }
   .sheet-title .install {
     margin-left: auto; height: 30px; padding: 0 12px 0 10px; gap: 6px; border-radius: 999px;
@@ -844,7 +844,7 @@ html.dark .view-switch button[aria-pressed="true"] { background: var(--sun); col
 }
 
 /* Desktop footer: compact two-row layout (coffee as a pill, not a full-width bar) */
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   .credit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 14px 12px; }
   .credit .about-box { margin: 0; flex: 1 1 auto; }
   .credit .foot-row { margin: 0; gap: 14px; flex: 1 1 100%; order: 2; }
@@ -938,7 +938,7 @@ dialog.offdlg[open] .off-card { animation: guide-in .4s var(--ease); }
 .off-btn.ghost { background: var(--panel-2); color: var(--text); }
 html.dark .off-btn:not(.ghost) { background: var(--sun); color: var(--sun-ink); }
 
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   /* Phones: bottom sheet */
   dialog.offdlg { width: 100%; max-width: 100%; margin: auto 0 0; }
   dialog.offdlg[open] .off-card { animation: sheet-up .4s var(--ease); }
@@ -969,7 +969,7 @@ html.dark .off-btn:not(.ghost) { background: var(--sun); color: var(--sun-ink); 
 .sw-light { background: linear-gradient(135deg, #d4dadc 0 38%, #fafaf8 38% 62%, #e8ece4 62%); }
 .sw-terrain { background: radial-gradient(circle at 70% 35%, #7d6a4a 0 18%, transparent 19%), linear-gradient(135deg, #aad3df 0 32%, #d9cfb4 32% 58%, #a9b98a 58%); }
 .sw-satellite { background: radial-gradient(circle at 30% 70%, #4f6b3a 0 22%, transparent 23%), linear-gradient(135deg, #10314f 0 40%, #2c4a2a 40% 70%, #6b6440 70%); }
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .layer-menu { width: 160px; }
 }
 
@@ -980,7 +980,7 @@ html.dark .off-btn:not(.ghost) { background: var(--sun); color: var(--sun-ink); 
 .map-credits a { font-weight: 600; }
 
 /* Panel width change (Map <-> Grid): animate width only, keep content pinned to the left edge */
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   .sidebar { transition: width .35s var(--ease); will-change: width; }
   .sidebar .list { overflow-anchor: none; }
 }
@@ -1039,20 +1039,20 @@ html.dark .fchip:has(input:checked) { background: var(--sun); color: var(--sun-i
    ========================================================= */
 /* Definitions: a floating pop-over over the list, never pushes it away */
 .sheet-filters { position: relative; }
-@media (min-width: 761px) { .sheet { position: relative; } } /* phones keep the fixed bottom sheet */
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) { .sheet { position: relative; } } /* phones keep the fixed bottom sheet */
 .filter-help {
   position: absolute; z-index: 40; left: 12px; right: 12px; margin: 0; max-width: 420px;
   box-shadow: var(--shadow); background: var(--panel); top: auto;
 }
 .sheet-grip + .sheet-filters + .filter-help, .filter-help { transform-origin: top left; }
 .info-btn.hint { animation: fab-hint 1.4s var(--ease) 4; color: var(--text); }
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   /* Chips wrap instead of being cut off */
   .sheet-filters { flex-wrap: wrap; overflow: visible; row-gap: 6px; }
 }
 
 /* Grid view on desktop: header stretches with the panel */
-@media (min-width: 761px) {
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   .sidebar.grid { max-height: calc(100% - 28px); }
   .sidebar.grid .brand { max-width: none; }
   .sidebar.grid .controls { max-width: none; grid-template-columns: minmax(260px, 1fr) minmax(320px, 440px); align-items: center; }
@@ -1089,7 +1089,7 @@ html.dark .c-dial { fill: #1b2440; }
 html.dark .t-major, html.dark .c-hour, html.dark .c-min { stroke: #eef0f5; }
 html.dark .c-num text { fill: #eef0f5; }
 html.dark .c-rim { fill: #0b1020; }
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   /* Phones: compact clock at the top of the right-hand button column */
   .clock {
     top: calc(var(--safe-top) + 132px); right: 10px; flex-direction: column; gap: 3px; padding: 6px 5px 7px; border-radius: 18px;
@@ -1102,10 +1102,10 @@ html.dark .c-rim { fill: #0b1020; }
   .fabs { top: calc(var(--safe-top) + 222px); }
 }
 @media (prefers-reduced-motion: reduce) { .c-sec { transition: none; } }
-@media (min-width: 761px) { .app:has(.sidebar.grid) .clock { display: none; } }
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) { .app:has(.sidebar.grid) .clock { display: none; } }
 /* Footer links never break into stacked words */
 .credit a, .credit .bmc, .credit .visits, .osm-credit { white-space: nowrap; }
-@media (min-width: 761px) { .sidebar.grid .credit .bmc { flex-shrink: 0; } }
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) { .sidebar.grid .credit .bmc { flex-shrink: 0; } }
 
 /* =========================================================
    Station header spacing + phone button column
@@ -1125,7 +1125,7 @@ html.dark .c-rim { fill: #0b1020; }
 html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 .layer-dark input:checked + .switch::after { transform: translateX(12px); }
 
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .sheet-grip { padding: 8px 18px 12px; }
   .sheet-grip .sheet-filters { margin: 12px -18px 0; padding: 0 18px 2px; } /* scroll edge-to-edge */
   /* Shorter button column so nothing hides behind the station sheet */
@@ -1137,7 +1137,7 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 .fabs:has(.layer-menu:not([hidden])) { z-index: 27; }
 
 /* Phones: crisp, solid search bar and band filter (no see-through blur, no scaling animation) */
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .search, .bands {
     background: var(--panel) !important;
     backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
@@ -1153,9 +1153,71 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 .search-hint span.in { animation: hint-in2 .22s ease-out; }
 @keyframes hint-out2 { to { opacity: 0; transform: translateY(-4px); } }
 @keyframes hint-in2 { from { opacity: 0; transform: translateY(4px); } }
-@media (max-width: 760px) {
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   /* Installed app / notch phones: solid strip behind the status bar instead of the map showing through */
   .topbar::before {
     content: ""; position: fixed; left: 0; right: 0; top: 0; height: var(--safe-top); background: var(--panel); pointer-events: none;
   }
+}
+
+/* =========================================================
+   Short phones (e.g. iPhone SE 320x568): compact right-hand column
+   ========================================================= */
+@media (max-width: 760px) and (min-height: 501px) and (max-height: 700px), (max-width: 480px) and (max-height: 700px) {
+  .clock { padding: 4px; border-radius: 14px; top: calc(var(--safe-top) + 128px); }
+  .clock-face { width: 38px; height: 38px; }
+  .clock-text { display: none; }
+  .fabs { top: calc(var(--safe-top) + 178px); gap: 6px; }
+  .fab { width: 38px; height: 38px; border-radius: 11px; }
+  .fab svg.i { width: 19px; height: 19px; }
+}
+
+/* =========================================================
+   Phones in landscape (short screens): compact side panel
+   ========================================================= */
+@media (min-width: 481px) and (max-height: 500px) {
+  .sidebar { top: 8px; left: 8px; width: 330px; max-height: calc(100% - 16px); border-radius: 16px; }
+  .sidebar.grid { width: calc(100% - 16px - 60px); max-height: calc(100% - 16px); }
+  .brand { padding: 8px 12px 2px; gap: 10px; }
+  .logo { width: 30px; height: 30px; border-radius: 9px; }
+  .brand h1 { font-size: 17px; }
+  .sub { display: none; }
+  .ibtn.install { height: 32px; }
+  .controls { padding: 4px 12px 6px; gap: 6px; }
+  .search { height: 36px; }
+  .band { padding: 3px 2px; font-size: 12px; }
+  .band span { display: none; }
+  .sheet-grip { padding: 4px 12px 6px; }
+  .sheet-title h2 { font-size: 14px; }
+  .sheet-grip .sheet-filters { margin-top: 6px; }
+  .fchip { height: 26px; font-size: 11px; }
+  .list li { padding: 5px 8px; }
+  .readout { width: 40px; height: 40px; }
+  .credit { display: none; }
+  .legend, .maplibregl-ctrl-top-right { display: none; }
+  .clock { top: 8px; right: 60px; padding: 4px 10px 4px 4px; }
+  .clock-face { width: 38px; height: 38px; }
+  .clock-text b { font-size: 15px; }
+  .clock-text small { display: none; }
+  .fabs { top: 8px; right: 8px; gap: 6px; }
+  .fab { width: 38px; height: 38px; }
+  .player { left: 346px; right: 60px; bottom: 8px; padding: 6px; max-width: none; }
+  .app:has(.sidebar.grid) .player { left: 50%; right: auto; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); }
+}
+/* Distance tag never wraps; small phones keep 2 grid columns */
+.list .meta .dist { white-space: nowrap; flex-shrink: 0; }
+@media (max-width: 360px) {
+  .sidebar.grid .list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding: 8px; }
+  .sidebar.grid .list li[data-id] { padding: 9px; }
+  .sidebar.grid .list .readout { width: 48px; height: 48px; }
+  .sidebar.grid .list .name { font-size: 13px; }
+  .sidebar.grid .list .row-fav { top: 4px; right: 4px; }
+}
+@media (min-width: 481px) and (max-height: 500px) {
+  .sidebar .credit, .sidebar.grid .credit { display: none !important; }
+}
+@media (min-width: 481px) and (max-height: 500px) {
+  .sheet-filters { flex-wrap: nowrap !important; overflow-x: auto !important; }
+  #pVolume, #pLocate { display: none; }
+  .player .p-name { font-size: 14px; }
 }

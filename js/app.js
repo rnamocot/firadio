@@ -36,7 +36,9 @@
 
   const $ = (id) => document.getElementById(id);
   const audio = $("audio");
-  const mq = matchMedia("(max-width: 760px)");
+  // Phone layout: portrait phones (<=760 wide and taller than 500) or anything <=480 wide.
+  // Phones in landscape (short screens) use the side-panel layout.
+  const mq = matchMedia("(max-width: 760px) and (min-height: 501px), (max-width: 480px)");
   const isMobile = () => mq.matches;
   // Theme is chosen by the user (light by default) and set on <html> by js/theme.js before paint.
   let dark = document.documentElement.classList.contains("dark");
