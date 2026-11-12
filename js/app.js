@@ -38,7 +38,8 @@
   const audio = $("audio");
   const mq = matchMedia("(max-width: 760px)");
   const isMobile = () => mq.matches;
-  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  // Theme is chosen by the user (light by default) and set on <html> by js/theme.js before paint.
+  let dark = document.documentElement.classList.contains("dark");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ======================================================
@@ -269,10 +270,10 @@
       if (!map.hasImage(id)) map.addImage(id, g.getImageData(0, 0, w * r, h * r), { pixelRatio: r });
     }
 
-    // Cluster markers drawn as the FilRadio sun: 8 rays (long/short) around a navy core.
-    for (const [id, ray, core, ring] of [
-      ["cluster-st", BRAND.sun, BRAND.ink, BRAND.sun],
-      ["cluster-unk", BRAND.unknown, "#5c6373", BRAND.unknown],
+    // Cluster markers: a count badge (navy disc, white rim, gold halo) = "several stations here".
+    for (const [id, fill, halo] of [
+      ["cluster-st", BRAND.ink, "rgba(255,201,60,.45)"],
+      ["cluster-unk", "#6b7387", "rgba(154,160,170,.4)"],
     ]) {
       const r = 2, S = 64;
       const c = document.createElement("canvas");
@@ -280,19 +281,9 @@
       const g = c.getContext("2d");
       g.scale(r, r);
       g.translate(S / 2, S / 2);
-      g.lineCap = "round";
-      g.strokeStyle = ray;
-      for (let i = 0; i < 8; i++) {
-        const long = i % 2 === 0;
-        g.lineWidth = long ? 4.2 : 3.6;
-        g.beginPath();
-        g.moveTo(0, -(long ? 21 : 21.5));
-        g.lineTo(0, -(long ? 29.5 : 26.5));
-        g.stroke();
-        g.rotate(Math.PI / 4);
-      }
-      g.beginPath(); g.arc(0, 0, 17.5, 0, Math.PI * 2); g.fillStyle = ring; g.fill();
-      g.beginPath(); g.arc(0, 0, 14.5, 0, Math.PI * 2); g.fillStyle = core; g.fill();
+      g.beginPath(); g.arc(0, 0, 29, 0, Math.PI * 2); g.fillStyle = halo; g.fill();
+      g.beginPath(); g.arc(0, 0, 22, 0, Math.PI * 2); g.fillStyle = "#fff"; g.fill();
+      g.beginPath(); g.arc(0, 0, 19, 0, Math.PI * 2); g.fillStyle = fill; g.fill();
       if (!map.hasImage(id)) map.addImage(id, g.getImageData(0, 0, S * r, S * r), { pixelRatio: r });
     }
   }
@@ -304,7 +295,8 @@
   const SKIP_LAYERS = /^(poi_|road_one_way_arrow|highway-shield|road_shield_us)|_hatching$/;
   const SKIP_ON_PHONE = /^(building|highway-name-path|highway-name-minor|landuse_track|landuse_pitch|aeroway_taxiway)$|path_pedestrian/;
 
-  map.once("style.load", async () => {
+  let handlersBound = false;
+  map.on("style.load", async () => {
     for (const layer of map.getStyle().layers) {
       if (SKIP_LAYERS.test(layer.id) || (isMobile() && SKIP_ON_PHONE.test(layer.id))) {
         map.setLayoutProperty(layer.id, "visibility", "none");
@@ -316,7 +308,8 @@
 
     // Station sources: located (clustered) + unknown (clustered separately)
     for (const src of ["st", "unk"]) {
-      map.addSource(src, { type: "geojson", data: emptyFC, cluster: true, clusterRadius: 46, clusterMaxZoom: 11 });
+      // Phones cluster a little less so individual pins appear sooner.
+      map.addSource(src, { type: "geojson", data: emptyFC, cluster: true, clusterRadius: isMobile() ? 32 : 46, clusterMaxZoom: 11 });
       const isUnk = src === "unk";
       map.addLayer({
         id: `${src}-cluster`, type: "symbol", source: src, filter: ["has", "point_count"],
@@ -328,7 +321,7 @@
           "text-size": ["step", ["get", "point_count"], 11, 10, 12, 40, 14],
           "text-allow-overlap": true, "text-ignore-placement": true,
         },
-        paint: { "text-color": isUnk ? "#fff" : BRAND.sun },
+        paint: { "text-color": "#fff" },
       });
       map.addLayer({
         id: `${src}-pin`, type: "symbol", source: src, filter: ["!", ["has", "point_count"]],
@@ -350,7 +343,9 @@
       layout: { "icon-image": "pin-playing", "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-ignore-placement": true, "icon-size": 1.15 },
     });
 
-    // Interactions
+    // Interactions (bound once; they survive style swaps because they refer to layer ids)
+    if (!handlersBound) {
+    handlersBound = true;
     for (const src of ["st", "unk"]) {
       map.on("click", `${src}-cluster`, async (e) => {
         const f = e.features[0];
@@ -367,6 +362,7 @@
       });
     }
     map.on("click", "playing-pin", () => current && showPopup(current));
+    }
 
     // Keep the map credits collapsed to the (i) button on small screens.
     // Map credits (required by the OpenStreetMap licence) stay collapsed behind the (i) button on every device.
@@ -376,6 +372,8 @@
     mapReady = true;
     if (stations.length) render();
     if (current) setPlayingFeature();
+    // After a theme switch the new style has no terrain yet: restore 3D once it has settled.
+    if (styleSwapped && is3D) map.once("idle", () => set3D(true, false));
   });
   // Restore 3D only after the first full load (terrain must not be added mid-load).
   map.once("load", () => { if (is3D) set3D(true, false); });
@@ -470,6 +468,24 @@
     });
     if (opts.popup !== false) map.once("moveend", () => showPopup(st));
   }
+
+  // ---------- Light / dark theme ----------
+  let styleSwapped = false;
+  function setTheme(next) {
+    dark = next === "dark";
+    document.documentElement.classList.toggle("dark", dark);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0b1020" : "#10182B");
+    try { localStorage.setItem("filradio.theme", next); } catch {}
+    $("themeBtn").setAttribute("aria-pressed", String(dark));
+    $("themeBtn").title = dark ? "Switch to light map" : "Switch to dark map";
+    mapReady = false;
+    styleSwapped = true;
+    terrainAdded = false;
+    popup.remove();
+    map.setStyle(`https://tiles.openfreemap.org/styles/${dark ? "dark" : "liberty"}`);
+  }
+  $("themeBtn").setAttribute("aria-pressed", String(dark));
+  $("themeBtn").addEventListener("click", () => setTheme(dark ? "light" : "dark"));
 
   // ---------- 3D on demand ----------
   // Terrain elevation tiles, hillshade, globe and 3D buildings are only fetched the first time 3D is turned on.
