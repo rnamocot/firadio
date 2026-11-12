@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <!-- SEO -->
-  <title>WebTarsier FilRadio — Listen to Philippine FM &amp; AM Radio Live, Anywhere</title>
-  <meta name="description" content="WebTarsier FilRadio: stream 600+ Philippine radio stations free, live on a 3D map. FM, AM and online stations from Manila, Cebu, Davao, Iloilo and more. Made for Filipinos at home and OFWs abroad." />
-  <meta name="keywords" content="WebTarsier FilRadio, FilRadio, Philippine radio, Pinoy radio online, OFW radio, Filipino radio abroad, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
+  <title>FilRadio — Listen to Philippine FM &amp; AM Radio Live, Anywhere</title>
+  <meta name="description" content="FilRadio: stream 600+ Philippine radio stations free, live on a 3D map. FM, AM and online stations from Manila, Cebu, Davao, Iloilo and more. Made for Filipinos at home and OFWs abroad." />
+  <meta name="keywords" content="FilRadio, Philippine radio, Pinoy radio online, OFW radio, Filipino radio abroad, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
   <meta name="author" content="Ren" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; worker-src 'self' blob:; child-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -16,29 +16,28 @@
 
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="WebTarsier FilRadio" />
-  <meta property="og:title" content="WebTarsier FilRadio — Philippine Radio, Live Anywhere" />
+  <meta property="og:site_name" content="FilRadio" />
+  <meta property="og:title" content="FilRadio — Philippine Radio, Live Anywhere" />
   <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
   <meta property="og:url" content="https://filradio.xyz/" />
   <meta property="og:image" content="https://filradio.xyz/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="WebTarsier FilRadio app showing Philippine radio stations on a 3D map" />
+  <meta property="og:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:locale" content="en_PH" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="WebTarsier FilRadio — Philippine Radio, Live Anywhere" />
+  <meta name="twitter:title" content="FilRadio — Philippine Radio, Live Anywhere" />
   <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
   <meta name="twitter:image" content="https://filradio.xyz/og-image.png" />
-  <meta name="twitter:image:alt" content="WebTarsier FilRadio app showing Philippine radio stations on a 3D map" />
+  <meta name="twitter:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:image:type" content="image/png" />
-  <meta name="application-name" content="WebTarsier FilRadio" />
+  <meta name="application-name" content="FilRadio" />
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "WebTarsier FilRadio",
-    "alternateName": "FilRadio",
+    "name": "FilRadio",
     "url": "https://filradio.xyz/",
     "description": "Interactive 3D map of Philippine FM, AM and online radio stations with live streaming.",
     "applicationCategory": "MultimediaApplication",
@@ -49,7 +48,7 @@
     "creator": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
     "spatialCoverage": { "@type": "Country", "name": "Philippines" },
     "audience": { "@type": "Audience", "audienceType": "Filipinos in the Philippines and OFWs abroad" },
-    "publisher": { "@type": "Organization", "name": "WebTarsier", "url": "https://webtarsier.com/", "logo": "https://filradio.xyz/icons/icon-512.png" },
+    "publisher": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
     "screenshot": "https://filradio.xyz/og-image.png"
   }
   </script>
@@ -71,7 +70,7 @@
   <link rel="preconnect" href="https://de1.api.radio-browser.info" crossorigin />
   <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -130,7 +129,7 @@
         <header class="brand">
           <img class="logo" src="icon.svg" alt="FilRadio logo" width="40" height="40" />
           <div class="brand-text">
-            <h1>Fil<span>Radio</span> <small class="by">by WebTarsier</small></h1>
+            <h1>Fil<span>Radio</span></h1>
             <p class="sub" id="summary">Tuning in…</p>
           </div>
           <button class="ibtn install" id="installBtn" hidden title="Install FilRadio">
@@ -188,14 +187,14 @@
         </ul>
         <footer class="credit">
           <p class="about">
-            WebTarsier FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
+            FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
             FM music stations, AM news and talk radio such as Bombo Radyo, Brigada News FM and Radyo Pilipinas,
             and online-only Pinoy streams, each pinned to its city on the map. It works anywhere in the world,
             so OFWs and Filipinos abroad can listen to home.
           </p>
           <p class="visits" id="visits" hidden><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg><b>0</b> visits</p>
           <p><a href="#install" id="howInstall">How to install the app</a></p>
-          <p>WebTarsier FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></p>
+          <p>FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></p>
         </footer>
       </section>
     </aside>

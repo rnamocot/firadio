@@ -235,7 +235,7 @@
 
   // Pin images drawn on canvas — one per band, plus "playing" and "unknown".
   async function makePins() {
-    try { await document.fonts.load('700 20px "JetBrains Mono"'); } catch {}
+    try { await document.fonts.load('20px "Share Tech Mono"'); } catch {}
     const defs = {
       "pin-FM": [BRAND.fm, "#fff", "FM"],
       "pin-AM": [BRAND.am, "#fff", "AM"],
@@ -268,7 +268,7 @@
       } else if (label === "play") {
         g.beginPath(); g.moveTo(13.5, 10); g.lineTo(23, 16); g.lineTo(13.5, 22); g.closePath(); g.fill();
       } else {
-        g.font = '700 11px "JetBrains Mono", ui-monospace, monospace';
+        g.font = '12.5px "Share Tech Mono", ui-monospace, monospace';
         g.textAlign = "center"; g.textBaseline = "middle";
         g.fillText(label, 17, 16.5);
       }

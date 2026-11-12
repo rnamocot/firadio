@@ -20,8 +20,8 @@
   --lcd-text: #ffc93c;
   --shadow: 0 1px 0 rgba(16, 24, 43, .04), 0 12px 32px -8px rgba(16, 24, 43, .22);
   --shadow-sm: 0 1px 0 rgba(16, 24, 43, .04), 0 4px 14px -4px rgba(16, 24, 43, .22);
-  --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, monospace;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --tab-h: calc(64px + var(--safe-bottom));
@@ -40,7 +40,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body {
-  font-family: var(--display); font-optical-sizing: auto; background: var(--paper); color: var(--text);
+  font-family: var(--display); font-synthesis: style; background: var(--paper); color: var(--text);
   font-size: 14px; overscroll-behavior: none; -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; }
@@ -610,3 +610,20 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
 /* 3D button tip on first visit */
 .fab.hint { animation: fab-hint 1.2s var(--ease) infinite; }
 @keyframes fab-hint { 0%, 100% { box-shadow: var(--shadow-sm), 0 0 0 0 rgba(255,201,60,.8); } 60% { box-shadow: var(--shadow-sm), 0 0 0 12px rgba(255,201,60,0); } }
+
+/* ---------- Type: Archivo (expanded for headings) + Share Tech Mono (tuner LCD) ---------- */
+.brand h1, .sheet-title h2, .now h2, .guide-head h2, .guide-text h3, .popup h3, .area-banner .name, .p-name {
+  font-stretch: 125%; letter-spacing: -.01em;
+}
+.brand h1 { font-size: 20px; font-weight: 800; }
+.brand h1 span { font-weight: 500; }
+.now h2 { font-size: 22px; line-height: 1.2; }
+.list .name { font-weight: 650; letter-spacing: -.005em; }
+.band { font-stretch: 112%; letter-spacing: 0; }
+.tab { font-stretch: 110%; letter-spacing: .01em; }
+/* LCD readouts read best a touch larger, uppercase, slightly tracked */
+.readout .tag { font-size: 10px; letter-spacing: .02em; }
+.sub, #listCount, .band span, .p-meta, .n-status, .onair, .art-tag, .list .meta .dist, .credit .visits b { letter-spacing: .04em; }
+.art-tag { font-size: 15px; }
+.n-status { font-size: 13px; }
+.dial-scale .t span { font-size: 11px; }

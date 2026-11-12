@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "WebTarsier FilRadio",
+  "name": "FilRadio — Philippine Radio",
   "short_name": "FilRadio",
   "description": "Philippine FM, AM and online radio, live on a 3D map. Listen at home or abroad.",
   "start_url": "./?source=pwa",

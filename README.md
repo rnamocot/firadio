@@ -1,10 +1,10 @@
-# WebTarsier FilRadio
+# FilRadio
 
 Listen to Philippine FM, AM and online radio on a 3D map, at home or abroad. Tap a pin and it plays live.
 
 **Live:** https://filradio.xyz/
 
-![WebTarsier FilRadio](og-image.png)
+![FilRadio](og-image.png)
 
 ## Features
 
@@ -59,4 +59,4 @@ Upload the whole folder to the web root of `filradio.xyz`. HTTPS is required for
 | `icons/` | App icons and fallback radio artwork |
 | `screenshots/`, `og-image.png` | Install dialog screenshots and social preview |
 
-WebTarsier FilRadio · Created by [Ren](https://www.renienamocot.com/).
+FilRadio · Created by [Ren](https://www.renienamocot.com/).
