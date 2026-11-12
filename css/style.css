@@ -1390,3 +1390,25 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
   .top-refresh { width: 44px; height: 44px; }
   .controls .search { height: 46px; }
 }
+
+/* Phones: search full width; [bands] [dark mode + refresh] on the second row */
+.top-actions { display: none; }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .controls { grid-template-columns: minmax(0, 1fr) auto !important; column-gap: 8px; row-gap: 8px; }
+  .controls .search { grid-column: 1 / -1 !important; grid-row: 1; height: 52px; }
+  .controls .bands { grid-column: 1 !important; grid-row: 2; }
+  .top-actions {
+    grid-column: 2; grid-row: 2; display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 16px;
+    background: var(--panel); border: 1px solid var(--line); box-shadow: 0 4px 12px -6px rgba(16, 24, 43, .25);
+    animation: drop-in .6s .1s var(--ease) both;
+  }
+  .top-actions .top-refresh {
+    width: 42px; height: 100%; min-height: 40px; border-radius: 12px; border: 0; box-shadow: none; background: transparent; animation: none;
+  }
+  .top-actions .top-refresh:active { background: var(--panel-2); }
+  .top-actions .top-theme[aria-pressed="true"] { background: var(--sun); color: var(--sun-ink); }
+}
+@media (max-width: 340px) {
+  .top-actions .top-refresh { width: 36px; }
+  .band { font-size: 12px; }
+}
