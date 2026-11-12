@@ -1415,3 +1415,79 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 /* Clear (x) takes no space until there's text, so the near-me button sits at the right edge */
 .search:not(.has-text) .search-clear { width: 0; margin-left: -8px; overflow: hidden; }
 .search-near { margin-right: 2px; }
+
+/* =========================================================
+   Dock: big raised centre "Radio" button
+   ========================================================= */
+.tab-center { display: none; }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .tabbar { grid-template-columns: 1fr 1fr 82px 1fr 1fr; overflow: visible; }
+  .tab-indicator { left: 0 !important; width: 60px; transform: translateX(var(--pad)); transition: transform .55s cubic-bezier(.34, 1.56, .64, 1), width .35s var(--ease); }
+  .tab-center {
+    position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
+    border: 0; background: none; padding: 0 0 2px; cursor: pointer; color: #f4f1ea; font: 800 10.5px var(--display); letter-spacing: .02em;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tc-disc {
+    position: absolute; left: 50%; top: -26px; width: 66px; height: 66px; margin-left: -33px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--sun); color: var(--sun-ink);
+    box-shadow: 0 0 0 5px var(--ink), 0 10px 24px -6px rgba(255, 201, 60, .75);
+    transition: transform .4s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  html.dark .tc-disc { box-shadow: 0 0 0 5px #1b2440, 0 10px 24px -6px rgba(255, 201, 60, .6); }
+  .tab-center:active .tc-disc { transform: scale(.9); }
+  .tc-disc svg.i { width: 32px; height: 32px; }
+  .tc-pause { display: none; }
+  .tc-label { position: relative; top: 0; color: rgba(244, 241, 234, .75); }
+  /* While playing: pause icon + pulsing glow ring */
+  .tab-center[aria-pressed="true"] .tc-radio { display: none; }
+  .tab-center[aria-pressed="true"] .tc-pause { display: block; }
+  .tab-center[aria-pressed="true"] .tc-disc { animation: tc-glow 1.8s ease-out infinite; }
+  .tab-center[aria-pressed="true"] .tc-label { color: var(--sun); }
+  @keyframes tc-glow {
+    0% { box-shadow: 0 0 0 5px var(--ink), 0 0 0 5px rgba(255, 201, 60, .55); }
+    100% { box-shadow: 0 0 0 5px var(--ink), 0 0 0 18px rgba(255, 201, 60, 0); }
+  }
+  .tab { font-size: 10px !important; }
+}
+@media (prefers-reduced-motion: reduce) { .tab-center[aria-pressed="true"] .tc-disc { animation: none; } }
+
+/* =========================================================
+   Credits icon + pop-over (phones); replaces the strip in the list
+   ========================================================= */
+.credit-wrap { display: none; position: relative; }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .mob-credit { display: none !important; }
+  .credit-wrap { display: block; }
+  .fabs:has(.credit-pop:not([hidden])) { z-index: 27; }
+  .credit-pop {
+    position: absolute; right: calc(100% + 10px); top: 0; width: 220px; padding: 12px; display: grid; gap: 8px; z-index: 30;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
+    animation: help-open .3s var(--ease); transform-origin: top right;
+  }
+  .credit-pop[hidden] { display: none; }
+  .cp-head { display: flex; align-items: center; gap: 10px; }
+  .cp-head img { border-radius: 11px; }
+  .cp-head p { margin: 0; display: grid; line-height: 1.25; }
+  .cp-head b { font-size: 16px; font-weight: 800; font-stretch: 120%; }
+  .cp-head span { font-size: 12.5px; color: var(--muted); }
+  .cp-head a { color: var(--text); font-weight: 800; text-decoration: underline; text-decoration-color: var(--sun); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .cp-bmc { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border-radius: 12px; background: var(--sun); color: var(--sun-ink); font-weight: 800; font-size: 13px; text-decoration: none; }
+  .cp-bmc svg.i { width: 16px; height: 16px; }
+  .cp-bmc svg.i path:last-child { stroke: var(--sun-ink) !important; }
+  .cp-link { font-size: 12.5px; font-weight: 700; color: var(--text); text-align: center; }
+  .cp-osm { font-size: 11px; color: var(--muted); text-align: center; text-decoration: none; }
+}
+/* Keep the right-hand column clear of the station sheet on shorter phones */
+@media (max-width: 760px) and (min-height: 501px) and (max-height: 760px), (max-width: 480px) and (max-height: 760px) {
+  .fabs { gap: 5px; }
+  .fab { width: 38px; height: 38px; border-radius: 11px; }
+  .fab svg.i { width: 19px; height: 19px; }
+}
+@media (max-width: 760px) and (min-height: 501px) and (max-height: 620px), (max-width: 480px) and (max-height: 620px) {
+  .clock { display: none; }
+  .fabs { top: calc(var(--safe-top) + 128px); }
+}
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .credit-pop { top: auto; bottom: 0; transform-origin: bottom right; }
+}

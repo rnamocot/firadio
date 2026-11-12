@@ -609,6 +609,15 @@
   }
   syncLayerMenu();
   $("layersBtn").addEventListener("click", (e) => { e.stopPropagation(); toggleLayerMenu($("layerMenu").hidden); });
+  // Credits pop-over (phones): Created by, Buy me a coffee, install guide, map credit.
+  function toggleCredit(open) {
+    $("creditPop").hidden = !open;
+    $("creditBtn").setAttribute("aria-expanded", String(open));
+  }
+  $("creditBtn").addEventListener("click", (e) => { e.stopPropagation(); toggleLayerMenu(false); toggleCredit($("creditPop").hidden); });
+  $("creditPop").addEventListener("click", (e) => e.stopPropagation());
+  $("cpInstall").addEventListener("click", (e) => { e.preventDefault(); toggleCredit(false); window.FilGuide?.open({ canPrompt: !!installEvt, onPrompt: nativePrompt }); });
+  document.addEventListener("click", () => toggleCredit(false));
   $("layerMenu").addEventListener("click", (e) => {
     const b = e.target.closest("[data-type]");
     if (b) { setMapType(b.dataset.type); toggleLayerMenu(false); }
@@ -866,6 +875,8 @@
     if (current) document.querySelector(`.list li[data-id="${CSS.escape(current.id)}"]`)?.classList.add("playing");
     const live = !!current && !audio.paused;
     document.body.classList.toggle("is-live", live);
+    $("tabRadio").setAttribute("aria-pressed", String(live));
+    $("tabRadio").setAttribute("aria-label", live ? "Pause radio" : current ? "Play radio" : "Play a random station");
     $("player").classList.toggle("live", live);
     $("now").classList.toggle("live", live);
     $("dial").classList.toggle("stream", live && current?.num == null);
@@ -984,6 +995,18 @@
   });
   $("offClose").addEventListener("click", () => $("offDlg").close());
   $("offDlg").addEventListener("click", (e) => { if (e.target === $("offDlg")) $("offDlg").close(); });
+
+  // Big centre "Radio" button: play/pause what's loaded, or tune in a random on-air station.
+  function radioButton() {
+    if (navigator.vibrate) navigator.vibrate(12);
+    if (current) return togglePlay();
+    const pool = (visible.length ? visible : stations).filter((st) => !st.external && st.streams.length && st.onAir !== false);
+    if (!pool.length) return toast("No stations match your filters right now");
+    const st = pool[Math.floor(Math.random() * pool.length)];
+    toast(`Tuning in: ${st.name}`, 2200);
+    tapStation(st);
+  }
+  $("tabRadio").addEventListener("click", radioButton);
 
   function togglePlay() {
     if (!current) return;
@@ -1133,8 +1156,13 @@
       t.classList.toggle("active", on);
       if (on) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
     });
-    // The sun-yellow pill slides to the active tab.
-    $("tabbar").style.setProperty("--i", String(Math.max(0, tabs.findIndex((t) => t.dataset.tab === active))));
+    // The sun-yellow pill slides to the active tab (measured, since the big centre button breaks equal spacing).
+    const on = tabs.find((t) => t.dataset.tab === active);
+    const ind = document.querySelector(".tab-indicator");
+    if (on && ind) {
+      ind.style.width = on.offsetWidth + "px";
+      ind.style.transform = `translateX(${on.offsetLeft}px)`;
+    }
   }
   function openNow() {
     if (!current) { toast("Tap any station to start listening"); return; }
