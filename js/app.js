@@ -14,7 +14,6 @@
   const CACHE_KEY = "filradio.stations.v1";
   const CACHE_TTL = 6 * 60 * 60 * 1000;
   const MANILA = [14.5995, 120.9842];
-  const PH_CENTER = [122.3, 12.1];
   const BRAND = { ink: "#10182b", sun: "#ffc93c", red: "#e63946", fm: "#2347d6", am: "#e4572e", online: "#0e9f8e", unknown: "#9aa0aa" };
   // Branded icon set lives in the SVG sprite in index.html.
   const use = (id, cls = "") => `<svg class="i ${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
@@ -33,7 +32,7 @@
   let query = "";
   let current = null;
   let hls = null;
-  let is3D = true;
+  let is3D = false; // 2D first for a fast start; 3D loads on demand
   let mapReady = false;
   let installEvt = null;
 
@@ -216,24 +215,23 @@
   // ======================================================
   // 3D Map (MapLibre GL + OpenFreeMap + AWS terrain)
   // ======================================================
+  // Whole Philippines, framed around the panel/sheet.
+  const PH_BOUNDS = [[116.6, 4.4], [127.0, 21.2]];
+  try { is3D = localStorage.getItem("filradio.3d") === "1"; } catch {}
+
+  // Starts as a flat 2D map (no terrain, no globe, no 3D buildings) so it loads fast.
   const map = new maplibregl.Map({
     container: "map",
     pixelRatio: Math.min(devicePixelRatio || 1, isMobile() ? 1.75 : 2),
-    fadeDuration: 200,
+    fadeDuration: 150,
     style: `https://tiles.openfreemap.org/styles/${dark ? "dark" : "liberty"}`,
-    center: PH_CENTER,
-    zoom: reduceMotion ? 5 : 1.6,
-    pitch: 0,
+    bounds: PH_BOUNDS,
+    fitBoundsOptions: { padding: mapPadding() },
     maxPitch: 78,
     attributionControl: { compact: true },
-    cooperativeGestures: false,
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
   map.on("error", (e) => console.warn("[map]", e.error?.message || e));
-
-  map.on("style.load", () => {
-    try { map.setProjection({ type: "globe" }); } catch {}
-  });
 
   // Pin images drawn on canvas — one per band, plus "playing" and "unknown".
   async function makePins() {
@@ -307,30 +305,9 @@
 
   const emptyFC = { type: "FeatureCollection", features: [] };
 
-  map.on("load", async () => {
-    // Terrain + hillshade
-    const dem = {
-      type: "raster-dem",
-      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-      encoding: "terrarium", tileSize: 256, maxzoom: 14,
-      attribution: "Terrain: Mapzen / AWS Open Data",
-    };
-    map.addSource("dem", dem);
-    map.addSource("dem-hs", { ...dem });
-    const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
-    map.addLayer({
-      id: "hillshade", type: "hillshade", source: "dem-hs",
-      paint: { "hillshade-exaggeration": dark ? 0.35 : 0.45, "hillshade-shadow-color": dark ? "#000" : "#5b4b2e", "hillshade-highlight-color": "#fffbe8" },
-    }, firstSymbol);
-    map.setTerrain({ source: "dem", exaggeration: 1.5 });
-    try {
-      map.setSky({
-        "sky-color": dark ? "#0b1020" : "#bfd6ee", "horizon-color": dark ? "#1b2440" : "#f4f1ea", "fog-color": dark ? "#0b1020" : "#f4f1ea",
-        "sky-horizon-blend": 0.6, "horizon-fog-blend": 0.7, "fog-ground-blend": 0.5,
-        "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 7, 0.6, 10, 0],
-      });
-    } catch {}
-
+  map.once("style.load", async () => {
+    // 3D buildings stay hidden until the user switches to 3D.
+    if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", "none");
     await makePins();
 
     // Station sources: located (clustered) + unknown (clustered separately)
@@ -392,17 +369,9 @@
     mapReady = true;
     if (stations.length) render();
     if (current) setPlayingFeature();
-    intro();
   });
-
-  let introDone = false;
-  function intro() {
-    if (introDone) return;
-    introDone = true;
-    const target = { center: PH_CENTER, zoom: isMobile() ? 4.7 : 5.4, pitch: 42, bearing: -14, padding: mapPadding() };
-    if (reduceMotion) map.jumpTo(target);
-    else map.flyTo({ ...target, duration: 3800, curve: 1.6, essential: true });
-  }
+  // Restore 3D only after the first full load (terrain must not be added mid-load).
+  map.once("load", () => { if (is3D) set3D(true, false); });
 
   function mapPadding() {
     if (isMobile()) {
@@ -488,19 +457,63 @@
     if (opts.popup !== false) map.once("moveend", () => showPopup(st));
   }
 
-  // 3D / recenter
-  $("toggle3d").addEventListener("click", () => {
-    is3D = !is3D;
-    $("toggle3d").setAttribute("aria-pressed", String(is3D));
-    $("toggle3d").querySelector(".fab-label").textContent = is3D ? "3D" : "2D";
+  // ---------- 3D on demand ----------
+  // Terrain elevation tiles, hillshade, globe and 3D buildings are only fetched the first time 3D is turned on.
+  let terrainAdded = false;
+  function addTerrain() {
+    if (terrainAdded) return;
+    terrainAdded = true;
+    const dem = {
+      type: "raster-dem",
+      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+      encoding: "terrarium", tileSize: 256, maxzoom: 14,
+      attribution: "Terrain: Mapzen / AWS Open Data",
+    };
+    map.addSource("dem", dem);
+    map.addSource("dem-hs", { ...dem });
+    const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
+    map.addLayer({
+      id: "hillshade", type: "hillshade", source: "dem-hs",
+      paint: { "hillshade-exaggeration": dark ? 0.35 : 0.45, "hillshade-shadow-color": dark ? "#000" : "#5b4b2e", "hillshade-highlight-color": "#fffbe8" },
+    }, firstSymbol);
+    try {
+      map.setSky({
+        "sky-color": dark ? "#0b1020" : "#bfd6ee", "horizon-color": dark ? "#1b2440" : "#f4f1ea", "fog-color": dark ? "#0b1020" : "#f4f1ea",
+        "sky-horizon-blend": 0.6, "horizon-fog-blend": 0.7, "fog-ground-blend": 0.5,
+        "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 7, 0.6, 10, 0],
+      });
+    } catch {}
+  }
+
+  function set3D(on, animate = true) {
+    is3D = on;
+    $("toggle3d").setAttribute("aria-pressed", String(on));
+    $("toggle3d").classList.remove("hint");
+    try { localStorage.setItem("filradio.3d", on ? "1" : "0"); } catch {}
     if (!mapReady) return;
-    map.setTerrain(is3D ? { source: "dem", exaggeration: 1.5 } : null);
-    if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", is3D ? "visible" : "none");
-    map.easeTo({ pitch: is3D ? 55 : 0, bearing: is3D ? -14 : 0, duration: 900 });
-  });
+    if (on) addTerrain();
+    if (map.getLayer("hillshade")) map.setLayoutProperty("hillshade", "visibility", on ? "visible" : "none");
+    map.setTerrain(on ? { source: "dem", exaggeration: 1.5 } : null);
+    if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", on ? "visible" : "none");
+    try { map.setProjection({ type: on ? "globe" : "mercator" }); } catch {}
+    map.easeTo({ pitch: on ? 55 : 0, bearing: on ? -14 : 0, duration: animate && !reduceMotion ? 1000 : 0 });
+  }
+  $("toggle3d").setAttribute("aria-pressed", String(is3D));
+  $("toggle3d").addEventListener("click", () => set3D(!is3D));
+
+  // First visit: point out the 3D button once.
+  if (!is3D && guard.allow("hint3d", 30 * 24 * 60 * 60 * 1000)) {
+    setTimeout(() => {
+      $("toggle3d").classList.add("hint");
+      toast("Tip: tap 3D to see mountains and city buildings", 4000);
+      setTimeout(() => $("toggle3d").classList.remove("hint"), 6000);
+    }, 3000);
+  }
+
   $("recenter").addEventListener("click", () => {
-    map.flyTo({ center: PH_CENTER, zoom: isMobile() ? 4.7 : 5.4, pitch: is3D ? 42 : 0, bearing: is3D ? -14 : 0, padding: mapPadding(), duration: 1800 });
+    map.fitBounds(PH_BOUNDS, { padding: mapPadding(), pitch: is3D ? 42 : 0, bearing: is3D ? -14 : 0, duration: reduceMotion ? 0 : 1500 });
   });
+
 
   // ======================================================
   // Rendering

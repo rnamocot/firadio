@@ -8,7 +8,7 @@ Listen to Philippine FM, AM and online radio on a 3D map, at home or abroad. Tap
 
 ## Features
 
-- **3D map** (MapLibre GL + OpenFreeMap + AWS terrain) with a 2D toggle; station clusters drawn as the FilRadio sun
+- **Map that starts in fast 2D**; tap 3D for terrain, globe and buildings (loaded only on demand, choice remembered). Station clusters are drawn as the FilRadio sun
 - **600+ stations** from [radio-browser.info](https://www.radio-browser.info/), merged and de-duplicated, with backup streams
 - **Location search**: type a city or province (Cebu, Davao, Bohol…) to list stations within 45 km, nearest first; or tap *near me*
 - **For OFWs**: streams work from any country; visitors abroad get a welcome note

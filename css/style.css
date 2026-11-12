@@ -606,3 +606,7 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
   .credit .about { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .credit p { margin-bottom: 4px; }
 }
+
+/* 3D button tip on first visit */
+.fab.hint { animation: fab-hint 1.2s var(--ease) infinite; }
+@keyframes fab-hint { 0%, 100% { box-shadow: var(--shadow-sm), 0 0 0 0 rgba(255,201,60,.8); } 60% { box-shadow: var(--shadow-sm), 0 0 0 12px rgba(255,201,60,0); } }
