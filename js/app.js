@@ -222,20 +222,28 @@
   // Starts as a flat 2D map (no terrain, no globe, no 3D buildings) so it loads fast.
   const map = new maplibregl.Map({
     container: "map",
-    pixelRatio: Math.min(devicePixelRatio || 1, isMobile() ? 1.75 : 2),
+    // Phones: render at 1.5x (sharp enough, far less GPU/memory than 3x) and keep a smaller tile cache
+    // so iOS Safari doesn't reload the tab for using too much memory.
+    pixelRatio: Math.min(devicePixelRatio || 1, isMobile() ? 1.5 : 2),
+    maxTileCacheSize: isMobile() ? 60 : 200,
+    refreshExpiredTiles: false,
     fadeDuration: 150,
     style: `https://tiles.openfreemap.org/styles/${dark ? "dark" : "liberty"}`,
     bounds: PH_BOUNDS,
-    fitBoundsOptions: { padding: mapPadding() },
+    fitBoundsOptions: { padding: startPadding() },
     maxPitch: 78,
     attributionControl: { compact: true },
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
   map.on("error", (e) => console.warn("[map]", e.error?.message || e));
+  // Phones can drop the WebGL context under memory pressure; MapLibre restores it, we just say so.
+  map.on("webglcontextlost", () => toast("Reloading the map…"));
+  map.on("webglcontextrestored", () => map.triggerRepaint());
 
   // Pin images drawn on canvas — one per band, plus "playing" and "unknown".
   async function makePins() {
-    try { await document.fonts.load('20px "Share Tech Mono"'); } catch {}
+    // Wait briefly for the LCD font, but never hold the pins back on a slow mobile connection.
+    try { await Promise.race([document.fonts.load('20px "Share Tech Mono"'), new Promise((r) => setTimeout(r, 700))]); } catch {}
     const defs = {
       "pin-FM": [BRAND.fm, "#fff", "FM"],
       "pin-AM": [BRAND.am, "#fff", "AM"],
@@ -305,7 +313,17 @@
 
   const emptyFC = { type: "FeatureCollection", features: [] };
 
+  // Map details we don't need: shop/restaurant icons compete with station pins and cost tile processing.
+  // Hidden layers are skipped entirely when tiles are parsed, so this makes every tile lighter.
+  const SKIP_LAYERS = /^(poi_|road_one_way_arrow|highway-shield|road_shield_us)|_hatching$/;
+  const SKIP_ON_PHONE = /^(building|highway-name-path|highway-name-minor|landuse_track|landuse_pitch|aeroway_taxiway)$|path_pedestrian/;
+
   map.once("style.load", async () => {
+    for (const layer of map.getStyle().layers) {
+      if (SKIP_LAYERS.test(layer.id) || (isMobile() && SKIP_ON_PHONE.test(layer.id))) {
+        map.setLayoutProperty(layer.id, "visibility", "none");
+      }
+    }
     // 3D buildings stay hidden until the user switches to 3D.
     if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", "none");
     await makePins();
@@ -372,6 +390,12 @@
   });
   // Restore 3D only after the first full load (terrain must not be added mid-load).
   map.once("load", () => { if (is3D) set3D(true, false); });
+
+  // First view on phones: tighter framing so the islands fill the space between search bar and list.
+  function startPadding() {
+    if (!isMobile()) return mapPadding();
+    return { top: 118, bottom: Math.round(innerHeight * 0.5) + 6, left: 8, right: 52 };
+  }
 
   function mapPadding() {
     if (isMobile()) {
