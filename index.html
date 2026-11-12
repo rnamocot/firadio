@@ -60,7 +60,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FilRadio" />
-  <script src="js/gtm.js?v=19"></script>
+  <script src="js/gtm.js?v=25"></script>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png" />
@@ -73,7 +73,7 @@
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css?v=19" />
+  <link rel="stylesheet" href="css/style.css?v=25" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo — rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -102,6 +102,8 @@
       <symbol id="i-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5v-5Z"/><path d="M16.5 11h1.2a2.3 2.3 0 0 1 0 4.6h-1.5"/><path d="M8.5 3.5v2.5M12.5 3.5v2.5" style="stroke:var(--sun)"/></symbol>
       <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2" style="fill:var(--sun);stroke:var(--sun)"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol>
       <symbol id="i-rows" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11"/><rect x="3" y="4.5" width="4" height="4" rx="1.2" style="fill:var(--sun);stroke:none"/><rect x="3" y="10" width="4" height="4" rx="1.2" fill="currentColor" stroke="none"/><rect x="3" y="15.5" width="4" height="4" rx="1.2" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r="1.4" style="fill:var(--sun);stroke:none"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.3-5.4"/><path d="M19.6 3.8v4.4h-4.4"/><circle cx="12" cy="12" r="2.3" style="fill:var(--sun);stroke:none"/></symbol>
     </defs>
   </svg>
   <div class="app">
@@ -120,6 +122,9 @@
       <div class="fabs">
         <button class="fab" id="toggle3d" aria-pressed="true" title="Switch 2D / 3D">
           <svg class="i" aria-hidden="true"><use href="#i-3d"/></svg><span class="fab-label">3D</span>
+        </button>
+        <button class="fab" id="refreshApp" hidden title="Refresh FilRadio" aria-label="Refresh FilRadio">
+          <svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>
         </button>
         <button class="fab" id="recenter" title="Show the whole Philippines" aria-label="Show the whole Philippines">
           <svg class="i" aria-hidden="true"><use href="#i-sun"/></svg>
@@ -179,11 +184,10 @@
           <div class="sheet-title">
             <h2>Stations</h2>
             <span id="listCount"></span>
-            <button class="view-toggle" id="viewToggle" type="button" aria-pressed="false" title="Show stations as a grid" aria-label="Switch between list and grid">
-              <svg class="i v-grid" aria-hidden="true"><use href="#i-grid"/></svg>
-              <svg class="i v-rows" aria-hidden="true"><use href="#i-rows"/></svg>
-              <span class="v-label">Grid</span>
-            </button>
+            <div class="view-switch" id="viewSwitch" role="group" aria-label="View stations by">
+              <button type="button" data-view="map" aria-pressed="true" title="Stations on the map"><svg class="i" aria-hidden="true"><use href="#i-locate"/></svg><span>Map</span></button>
+              <button type="button" data-view="grid" aria-pressed="false" title="All stations as a grid"><svg class="i" aria-hidden="true"><use href="#i-grid"/></svg><span>Grid</span></button>
+            </div>
           </div>
           <div class="sheet-filters">
             <label class="toggle" id="directWrap" title="Only show stations that play inside FilRadio (hides ones that open in your browser's player)" hidden>
@@ -196,6 +200,16 @@
               <span class="switch"></span>
               <span>Unknown city</span>
             </label>
+            <button class="info-btn" id="filterInfo" type="button" aria-expanded="false" aria-controls="filterHelp" title="What do these mean?">
+              <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
+            </button>
+          </div>
+          <div class="filter-help" id="filterHelp" hidden>
+            <dl>
+              <div id="helpDirect"><dt>Plays here</dt><dd>Shows only stations that play right inside FilRadio. Turn it off to also see older stations that open in your browser's own player instead (marked <b>↗ Browser</b>).</dd></div>
+              <div><dt>Unknown city</dt><dd>Some stations don't say where they broadcast from. They appear as grey pins near Manila. Turn it off to hide them.</dd></div>
+            </dl>
+            <button class="help-ok" id="filterHelpOk" type="button">Got it</button>
           </div>
         </div>
         <ul class="list" id="list">
@@ -289,12 +303,16 @@
         <span>Map</span>
       </button>
       <button class="tab" data-tab="list">
-        <svg class="i" aria-hidden="true"><use href="#i-tuner"/></svg>
-        <span>Stations</span>
+        <svg class="i" aria-hidden="true"><use href="#i-rows"/></svg>
+        <span>List</span>
+      </button>
+      <button class="tab" data-tab="grid">
+        <svg class="i" aria-hidden="true"><use href="#i-grid"/></svg>
+        <span>Grid</span>
       </button>
       <button class="tab" data-tab="now">
         <svg class="i" aria-hidden="true"><use href="#i-onair"/></svg>
-        <span>On air</span>
+        <span>Playing</span>
       </button>
     </nav>
 
@@ -308,9 +326,9 @@
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js?v=19" defer></script>
-  <script src="js/traffic.js?v=19" defer></script>
-  <script src="js/install-guide.js?v=19" defer></script>
-  <script src="js/app.js?v=19" defer></script>
+  <script src="js/places.js?v=25" defer></script>
+  <script src="js/traffic.js?v=25" defer></script>
+  <script src="js/install-guide.js?v=25" defer></script>
+  <script src="js/app.js?v=25" defer></script>
 </body>
 </html>

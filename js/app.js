@@ -28,6 +28,8 @@
   let query = "";
   let current = null;
   let hls = null;
+  let gridView = false; // "Grid" view: all stations as cards
+  let mView = "list";    // phones: "map" (map only) | "list" (playlist) | "grid" (cards)
   let is3D = false; // 2D first for a fast start; 3D loads on demand
   let mapReady = false;
   let installEvt = null;
@@ -623,7 +625,8 @@
           <div class="name">${esc(st.name)}</div>
           <div class="meta">${dist}${st.external ? `<b class="ext-chip" title="Opens in your browser's own player">↗ Browser</b>` : ""}${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
         </div>
-        <span class="bars"><i></i><i></i><i></i></span>`;
+        <span class="bars"><i></i><i></i><i></i></span>
+        <span class="row-play" aria-hidden="true">${ICON.play}</span>`;
       frag.appendChild(li);
     });
     list.appendChild(frag);
@@ -652,9 +655,9 @@
     if (!st) return;
     li.classList.remove("tap"); void li.offsetWidth; li.classList.add("tap");
     tapStation(st);
-    if (gridView) return; // browsing the grid: keep it open, the player bar shows what's on
-    if (isMobile()) { setSheet("peek"); setTimeout(() => focus(st), 120); }
-    else focus(st);
+    // Grid (any device) and phones' List/Grid: keep browsing; the player bar shows what's on.
+    if (gridView || isMobile()) return;
+    focus(st);
   });
 
   // ======================================================
@@ -837,7 +840,7 @@
   });
   $("nLocate").addEventListener("click", () => {
     if (!current) return;
-    closeNow(); setSheet("peek");
+    closeNow(); setView("map", { save: false });
     setTimeout(() => focus(current), 200);
   });
   let lastStep = 0;
@@ -896,7 +899,7 @@
 
   function sheetY(state) {
     const H = sheet.clientHeight;
-    return state === "full" ? 0 : state === "half" ? Math.round(H * 0.5) : H - 74;
+    return state === "full" ? 0 : state === "half" ? Math.round(H * 0.5) : state === "hidden" ? H + 40 : H - 74;
   }
   function setSheet(state) {
     if (!isMobile()) return;
@@ -905,7 +908,7 @@
     syncTabs();
   }
   function syncTabs() {
-    const active = nowOpen ? "now" : sheetState === "peek" ? "map" : "list";
+    const active = nowOpen ? "now" : isMobile() ? mView : gridView ? "grid" : "map";
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === active));
   }
   function openNow() {
@@ -934,7 +937,7 @@
     if (navigator.vibrate) navigator.vibrate(8);
     if (tab.dataset.tab === "now") return openNow();
     closeNow();
-    setSheet(tab.dataset.tab === "map" ? "peek" : "full");
+    setView(tab.dataset.tab);
   });
 
   // Drag the sheet by its grip
@@ -979,7 +982,7 @@
   })();
 
   addEventListener("resize", () => { if (isMobile()) setSheet(sheetState); });
-  mq.addEventListener("change", () => { if (isMobile()) setSheet("half"); else sheet.style.removeProperty("--sheet-y"); });
+  mq.addEventListener("change", () => { if (isMobile()) setView(mView, { save: false }); else sheet.style.removeProperty("--sheet-y"); });
 
   // ======================================================
   // Search & filters
@@ -995,20 +998,27 @@
       $("sidebar").classList.add("open");
       if (isMobile() && sheetState !== "full") setSheet("full");
     }
+    // Phones: search results show as a card grid right under the search bar (the saved view is untouched).
+    $("sidebar").classList.toggle("grid", gridView || (isMobile() && !!search.value));
     debounce = setTimeout(() => { query = search.value.trim().toLowerCase(); render(); }, 140);
   });
   search.addEventListener("focus", () => {
     searchBox.classList.add("focused");
     if (isMobile()) { closeNow(); setSheet("full"); }
   });
-  search.addEventListener("blur", () => searchBox.classList.remove("focused"));
+  search.addEventListener("blur", () => {
+    searchBox.classList.remove("focused");
+    if (isMobile() && !search.value) setTimeout(() => { if (!search.value && document.activeElement !== search) setView(mView, { save: false }); }, 150);
+  });
   search.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { search.blur(); if (visible[0] && query) { $("list").querySelector("li[data-id]")?.click(); } }
     if (e.key === "Escape") { search.value = ""; search.dispatchEvent(new Event("input")); search.blur(); }
   });
   $("searchClear").addEventListener("mousedown", (e) => e.preventDefault()); // keep focus
   $("searchClear").addEventListener("click", () => { search.value = ""; search.dispatchEvent(new Event("input")); search.focus(); });
-  $("searchBack").addEventListener("click", () => { search.blur(); setSheet("half"); });
+  $("searchBack").addEventListener("click", () => {
+    search.value = ""; search.dispatchEvent(new Event("input")); search.blur(); setView(mView, { save: false });
+  });
 
   // Near me (device location, only on tap)
   $("nearMe").addEventListener("click", () => {
@@ -1053,37 +1063,66 @@
     render();
   });
   $("showUnknown").addEventListener("change", render);
-  // "Plays here" only matters on https (where old http streams are blocked); remembered per device.
+  // "Plays here" only matters on https (where old http streams are blocked).
+  // It always starts ON; switching it off only lasts for the current visit.
   $("directWrap").hidden = !SECURE;
-  try { if (localStorage.getItem("filradio.direct") === "0") $("directOnly").checked = false; } catch {}
-  if (!SECURE) $("directOnly").checked = false;
-  $("directOnly").addEventListener("change", () => {
-    try { localStorage.setItem("filradio.direct", $("directOnly").checked ? "1" : "0"); } catch {}
-    render();
+  $("directOnly").checked = SECURE;
+  try { localStorage.removeItem("filradio.direct"); } catch {}
+  // Filter definitions: open on a first visit, then only when the (i) button is tapped.
+  $("helpDirect").hidden = !SECURE;
+  function showFilterHelp(open) {
+    $("filterHelp").hidden = !open;
+    $("filterInfo").setAttribute("aria-expanded", String(open));
+  }
+  $("filterInfo").addEventListener("click", () => showFilterHelp($("filterHelp").hidden));
+  $("filterHelpOk").addEventListener("click", () => {
+    showFilterHelp(false);
+    try { localStorage.setItem("filradio.filterHelp", "seen"); } catch {}
   });
+  // Auto-open only where there's room for it and the list (tall desktop screens).
+  try { if (!isMobile() && innerHeight >= 900 && !localStorage.getItem("filradio.filterHelp")) showFilterHelp(true); } catch {}
+
+  $("directOnly").addEventListener("change", render);
   $("sheetToggle").addEventListener("click", () => $("sidebar").classList.toggle("open"));
 
+  // ---------- Phone views: Map (map only) / List (playlist) / Grid (cards) ----------
+  function setView(v, { save = true } = {}) {
+    mView = v;
+    if (save) { try { localStorage.setItem("filradio.mview", v); } catch {} }
+    if (v === "grid") setGrid(true);
+    else {
+      if (gridView) setGrid(false, { sheet: false });
+      setSheet(v === "map" ? "hidden" : "half");
+    }
+    syncTabs();
+  }
+
   // ---------- Grid view: browse every station as cards ----------
-  let gridView = false;
-  function setGrid(on) {
+  function setGrid(on, { sheet: moveSheet = true } = {}) {
     gridView = on;
     $("sidebar").classList.toggle("grid", on);
     if (on) $("sidebar").classList.add("open");
-    const b = $("viewToggle");
-    b.setAttribute("aria-pressed", String(on));
-    b.title = on ? "Back to list and map" : "Show stations as a grid";
-    b.querySelector(".v-label").textContent = on ? "List" : "Grid";
+    $("viewSwitch").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.view === "grid") === on)));
     try { localStorage.setItem("filradio.view", on ? "grid" : "list"); } catch {}
-    if (isMobile()) setSheet(on ? "full" : "half");
+    if (isMobile() && moveSheet) setSheet(on ? "full" : "half");
     $("list").scrollTop = 0;
     $("sheet").scrollTop = 0;
+    syncTabs();
   }
-  $("viewToggle").addEventListener("click", () => setGrid(!gridView));
+  $("viewSwitch").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-view]");
+    if (b) setGrid(b.dataset.view === "grid");
+  });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && gridView && !document.querySelector("dialog[open]")) setGrid(false); });
   // Restore the last view; filradio.xyz/?view=grid opens straight into the grid (handy for sharing).
   try {
-    const wantGrid = new URLSearchParams(location.search).get("view") === "grid" || localStorage.getItem("filradio.view") === "grid";
-    if (wantGrid) requestAnimationFrame(() => setGrid(true));
+    const urlView = new URLSearchParams(location.search).get("view");
+    if (isMobile()) {
+      const v = ["map", "list", "grid"].includes(urlView) ? urlView : localStorage.getItem("filradio.mview") || "list";
+      requestAnimationFrame(() => setView(v, { save: false }));
+    } else if (urlView === "grid" || localStorage.getItem("filradio.view") === "grid") {
+      requestAnimationFrame(() => setGrid(true));
+    }
   } catch {}
 
   // ======================================================
@@ -1096,6 +1135,7 @@
   const mobileInstall = $("installBtn").cloneNode(true);
   mobileInstall.id = "installBtnM";
   mobileInstall.classList.add("in-sheet");
+  mobileInstall.querySelector("span").textContent = "Install app";
   document.querySelector(".sheet-title").insertBefore(mobileInstall, $("listCount").nextSibling);
 
   // Install buttons are always offered (except inside the installed app). Browsers with a built-in
@@ -1114,6 +1154,13 @@
     btn.addEventListener("click", () => (installEvt ? nativePrompt() : window.FilGuide?.open()));
   }
   $("howInstall").addEventListener("click", (e) => { e.preventDefault(); window.FilGuide?.open({ canPrompt: !!installEvt, onPrompt: nativePrompt }); });
+  // Installed app has no browser reload button: offer one (also picks up new versions).
+  $("refreshApp").hidden = !standalone;
+  $("refreshApp").addEventListener("click", async () => {
+    $("refreshApp").classList.add("spinning");
+    try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch {}
+    location.reload();
+  });
   addEventListener("appinstalled", () => { $("installBtn").hidden = true; mobileInstall.hidden = true; });
 
   // OFWs and Filipinos abroad: a warm welcome once a week (streams work from any country).
@@ -1155,7 +1202,6 @@
   // Boot
   // ======================================================
   setPlayIcons();
-  if (isMobile()) requestAnimationFrame(() => setSheet("half"));
 
   (async () => {
     try {

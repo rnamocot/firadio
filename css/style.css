@@ -682,9 +682,9 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
   .sheet-title { gap: 6px; }
   .sheet-title .install { height: 28px; padding: 0 9px 0 7px; font-size: 11.5px; }
 }
-@media (max-width: 400px) {
+@media (max-width: 340px) {
   .sheet-title .install span { display: none; }
-  .sheet-title .install { width: 28px; padding: 0; justify-content: center; }
+  .sheet-title .install { width: 30px; padding: 0; justify-content: center; }
 }
 @media (max-width: 330px) {
   .toggle > span:last-child { display: none; }
@@ -778,4 +778,77 @@ dialog.guide[open] .guide-card { animation: guide-in .45s var(--ease); }
   .sidebar.grid .credit .foot-row { margin: 0; gap: 18px; }
   .sidebar.grid .bmc { display: inline-flex; margin: 0 0 0 auto; padding: 8px 14px; }
   .sidebar.grid .credit > p { margin: 0; width: 100%; }
+}
+
+/* Filter definitions */
+.info-btn {
+  width: 26px; height: 26px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); padding: 0;
+  display: grid; place-items: center; cursor: pointer; margin-left: -6px;
+}
+.info-btn:hover, .info-btn[aria-expanded="true"] { color: var(--text); background: var(--panel-2); }
+.info-btn svg.i { width: 18px; height: 18px; }
+.filter-help {
+  margin: 0 14px 10px; padding: 12px 14px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line);
+  font-size: 12.5px; line-height: 1.45; animation: row-in .35s var(--ease);
+}
+.filter-help[hidden] { display: none; }
+.filter-help dl { margin: 0; display: grid; gap: 8px; }
+.filter-help dt { font-weight: 800; font-stretch: 112%; color: var(--text); }
+.filter-help dd { margin: 2px 0 0; color: var(--muted); }
+.filter-help b { color: var(--text); font: 11px var(--mono); }
+.help-ok { margin-top: 10px; border: 0; border-radius: 999px; padding: 6px 14px; background: var(--ink); color: var(--paper); font: 700 12px var(--display); cursor: pointer; }
+@media (prefers-color-scheme: dark) { .help-ok { background: var(--sun); color: var(--sun-ink); } }
+@media (max-width: 760px) { .filter-help { margin: 0 18px 10px; } }
+.sidebar.grid .filter-help { max-width: 640px; }
+
+/* Map | Grid switch (desktop) */
+.view-switch { margin-left: auto; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 2px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); }
+.view-switch button {
+  display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; padding: 5px 11px 5px 9px; border-radius: 999px;
+  font: 700 12px var(--display); color: var(--muted); cursor: pointer; transition: background .2s, color .2s;
+}
+.view-switch button svg.i { width: 15px; height: 15px; }
+.view-switch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-sm); }
+@media (prefers-color-scheme: dark) { .view-switch button[aria-pressed="true"] { background: var(--sun); color: var(--sun-ink); } }
+/* Phones use the tab bar (Map | Grid | On air) instead */
+@media (max-width: 760px) { .view-switch { display: none; } }
+
+/* ---------- Phones: playlist rows, toasts at the bottom, refresh button ---------- */
+.row-play { display: none; }
+.fab[hidden] { display: none; }
+.fab.spinning svg { animation: spin-near .8s linear infinite; }
+@media (max-width: 760px) {
+  .sidebar:not(.grid) .list li[data-id] .row-play {
+    display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: var(--panel-2); color: var(--text);
+  }
+  .sidebar:not(.grid) .list li[data-id] .row-play svg.i { width: 16px; height: 16px; margin-left: 2px; }
+  .sidebar:not(.grid) .list li.playing .row-play { display: none; }
+  .list li[data-id] .bars { margin-right: 10px; }
+  .toast {
+    top: auto; bottom: calc(var(--tab-h) + 84px); transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+    transition: transform .3s var(--ease), opacity .3s; text-align: center;
+  }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
+  .tab svg { width: 50px; padding: 3px 13px; }
+}
+
+/* Phones: Install sits on the right of the Stations title as a clear pill */
+@media (max-width: 760px) {
+  .sheet-title { align-items: center; }
+  .sheet-title .install {
+    margin-left: auto; height: 30px; padding: 0 12px 0 10px; gap: 6px; border-radius: 999px;
+    background: var(--sun); color: var(--sun-ink); border: 0; font: 800 12px var(--display); box-shadow: var(--shadow-sm);
+  }
+  .sheet-title .install svg.i { width: 15px; height: 15px; }
+  .sheet-title .install svg.i circle { display: none; }
+}
+
+/* Desktop footer: compact two-row layout (coffee as a pill, not a full-width bar) */
+@media (min-width: 761px) {
+  .credit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 14px 12px; }
+  .credit .about-box { margin: 0; flex: 1 1 auto; }
+  .credit .foot-row { margin: 0; gap: 14px; flex: 1 1 100%; order: 2; }
+  .credit .bmc { display: inline-flex; margin: 0; padding: 6px 12px; font-size: 12px; order: 4; }
+  .credit > p { margin: 0; order: 3; flex: 1 1 auto; }
 }

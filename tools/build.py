@@ -48,9 +48,28 @@ def strip_html_comments(path):
         f.write(html)
 
 
+def _force_remove(func, path, _exc):
+    # Windows: clear read-only flags and retry
+    os.chmod(path, 0o666)
+    func(path)
+
+
+def clean_dist():
+    if not os.path.exists(DIST):
+        os.makedirs(DIST)
+        return
+    # Empty the folder instead of deleting it (Windows keeps a lock on open folders).
+    for name in os.listdir(DIST):
+        p = os.path.join(DIST, name)
+        if os.path.isdir(p):
+            shutil.rmtree(p, onerror=_force_remove)
+        else:
+            os.chmod(p, 0o666)
+            os.remove(p)
+
+
 def main():
-    shutil.rmtree(DIST, ignore_errors=True)
-    os.makedirs(DIST)
+    clean_dist()
     for f in FILES:
         shutil.copy2(os.path.join(ROOT, f), os.path.join(DIST, f))
     for d in DIRS:
