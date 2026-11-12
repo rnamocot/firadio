@@ -1280,7 +1280,6 @@
   $("onAirOnly").addEventListener("change", render);
   $("favOnly").addEventListener("change", render);
   updateFavCount();
-  $("sheetToggle").addEventListener("click", () => $("sidebar").classList.toggle("open"));
 
   // Re-run the entrance animation of the visible rows/cards (after a view switch).
   function replayListAnim() {
