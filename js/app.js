@@ -561,7 +561,7 @@
     try { localStorage.setItem("filradio.theme", next); } catch {}
     $("themeBtn").setAttribute("aria-pressed", String(dark));
     $("darkMapToggle").checked = dark;
-    $("themeBtn").title = dark ? "Switch to light map" : "Switch to dark map";
+    $("themeBtn").title = dark ? "Light mode" : "Dark mode";
     applyMapStyle();
   }
   function applyMapStyle() {
