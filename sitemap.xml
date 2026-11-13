@@ -10,4 +10,10 @@
       <image:title>FilRadio — Philippine radio on a 3D map (filradio.xyz)</image:title>
     </image:image>
   </url>
+  <url>
+    <loc>https://filradio.xyz/privacy.html</loc>
+    <lastmod>2026-11-13</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
 </urlset>

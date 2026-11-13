@@ -52,3 +52,12 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 2
 }
 
 .hint { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Privacy page */
+.prose { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 8px 22px 18px; }
+.prose h2 { margin: 22px 0 6px; font-size: 16px; font-weight: 800; font-stretch: 125%; letter-spacing: -.01em; }
+.prose p, .prose li { color: var(--text); }
+.prose ul { padding-left: 20px; }
+.prose a { color: inherit; text-decoration-color: var(--sun); text-decoration-thickness: 2px; text-underline-offset: 2px; }
+.prose .updated { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
+.back { margin-left: auto; color: var(--muted); font-size: 14px; }
