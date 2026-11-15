@@ -146,14 +146,14 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
   - `?v=N` on every asset in `index.html`, `stats.html`, `privacy.html` and in the `SHELL` list in `sw.js`
   - `VERSION = "filradio-vN"` in `sw.js`
 
-  Current version: **72**.
+  Current version: **73**.
 
 ### Station data
 
 - `tools/update_stations.py` downloads Philippine stations from the public radio directory, merges duplicates, pins them to cities (`js/places.js` gazetteer), and checks each stream once to mark which are on air.
 - Output: `data/stations.json`. The app only ever reads this file from its own domain.
 - Stations with no city in the directory are matched against `window.PH_STATION_HOMES` in `js/places.js` (call signs like DZMM, DZRH, DWTM and brands like Magic 89.9, Barangay LS, MOR), so big Mega Manila stations get pinned to Metro Manila / Quezon City instead of "Unknown city". It is used only when the gazetteer finds no place, so "Love Radio Cebu" still goes to Cebu. Add new patterns there when listeners report a missing station.
-- Search always finds a station by name, even with the "Unknown city" filter off.
+- The default list shows every station, including those with no known city (grey pins near Manila, "Location unknown"). The **Unknown city** filter narrows the list to only those stations.
 - In the browser the list is cached for 6 hours per device; after a failed fetch the app waits 60 s before retrying.
 
 ### SEO

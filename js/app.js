@@ -562,7 +562,8 @@
   }
 
   function focus(st, opts = {}) {
-    if (st.unknown && !$("showUnknown").checked) { $("showUnknown").checked = true; render(); }
+    // "Unknown city" shows only city-less stations; leave it when jumping to a station with a city.
+    if (!st.unknown && $("showUnknown").checked) { $("showUnknown").checked = false; render(); }
     map.flyTo({
       center: [st.lng, st.lat], zoom: 12.5, pitch: is3D ? 58 : 0, bearing: is3D ? map.getBearing() : 0,
       padding: mapPadding(), duration: reduceMotion ? 0 : 2200, essential: true,
@@ -729,13 +730,14 @@
 
   function render() {
     // "Plays here": hide stations that can only open in the browser's own player.
-    // Default view: stations that play here AND have a known city ("Unknown city" starts off).
-    const showUnk = $("showUnknown").checked;
+    // Default view lists every station that plays here, including ones with no known city (grey pins
+    // near Manila). The "Unknown city" filter narrows the list to only those city-less stations.
+    const onlyUnk = $("showUnknown").checked;
     const favOnly = $("favOnly").checked, onAirOnly = $("onAirOnly").checked, directOnly = $("directOnly").checked;
     // Favorites shows every saved station regardless of the other filters.
     const base = favOnly
       ? stations.filter((st) => favs.has(st.key))
-      : stations.filter((st) => (!directOnly || !st.external) && (showUnk || !st.unknown || (query && st.hay.includes(query))) && (!onAirOnly || st.onAir !== false));
+      : stations.filter((st) => (!directOnly || !st.external) && (!onlyUnk || st.unknown) && (!onAirOnly || st.onAir !== false));
     const area = currentArea();
     if (area) {
       for (const st of base) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);
@@ -752,11 +754,10 @@
       visible = base.filter(matches);
     }
     lastAreaKey = area ? area.key : null;
-    const showUnknown = $("showUnknown").checked;
 
     if (mapReady) {
       map.getSource("st").setData({ type: "FeatureCollection", features: visible.filter((s) => !s.unknown).map(toFeature) });
-      map.getSource("unk").setData({ type: "FeatureCollection", features: showUnknown && !area ? visible.filter((s) => s.unknown).map(toFeature) : [] });
+      map.getSource("unk").setData({ type: "FeatureCollection", features: !area ? visible.filter((s) => s.unknown).map(toFeature) : [] });
     }
 
     const pool = area ? base.filter((s) => s.dist <= AREA_KM || (query && !nearMe && s.hay.includes(query)))
