@@ -20,6 +20,13 @@
   const list = $("chatList"), form = $("chatForm"), input = $("chatInput"), send = $("chatSend");
   const note = $("chatNote"), online = $("chatOnline"), nameBtn = $("chatName"), nameForm = $("chatNameForm"), nameInput = $("chatNameInput"), renameBtn = $("chatRename");
   const typingEl = $("chatTyping"), jump = $("chatJump"), count = $("chatCount");
+  const pabatiBtn = $("chatPabati"), flagOpt = $("chatFlagOpt");
+  const FLAG_KEY = "filradio-chat-flag";
+  // Real flag images (open-source flag-icons, ~1 KB SVG each, from jsDelivr; cached by the browser
+  // and the service worker). Falls back to a 2-letter badge if an image can't load.
+  const FLAG_URL = (c) => `https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/${c.toLowerCase()}.svg`;
+  const regionNames = (() => { try { return new Intl.DisplayNames([navigator.language || "en"], { type: "region" }); } catch { return null; } })();
+  let pabatiOn = false;
 
   let ws = null, open = false, retry = 0, retryT = 0, idleT = 0, pingT = 0, noteT = 0, cooldownT = 0, typingT = 0;
   let myName = "", lastSent = "", mutedUntil = 0, nextSend = 0, lastTyping = 0;
@@ -41,6 +48,7 @@
     const u = new URL(URL_WS);
     const saved = store.get();
     if (saved) u.searchParams.set("name", saved);
+    if (!showFlag()) u.searchParams.set("flag", "0");
     ws = new WebSocket(u);
     ws.onopen = () => { retry = 0; clearInterval(pingT); pingT = setInterval(() => ws?.readyState === 1 && ws.send("ping"), PING_MS); };
     ws.onmessage = (e) => { if (e.data !== "pong") try { onData(JSON.parse(e.data)); } catch {} };
@@ -117,7 +125,11 @@
       case "err":
         if (d.code === "muted") { mutedUntil = d.until; setSendable(); }
         if (d.code === "slow" || d.code === "busy") nextSend = Math.max(nextSend, d.until || 0);
-        if (d.code === "blocked" || d.code === "dupe") { input.value = lastSent; lastSent = ""; updateCount(); }
+        if (d.code === "blocked" || d.code === "dupe" || d.code === "pabati") { input.value = lastSent; lastSent = ""; updateCount(); }
+        if (d.code === "pabati") {
+          setPabati(true);
+          d.msg += d.until ? ` You can send the next one at ${fmtTime(d.until)}, or send it as a normal message.` : "";
+        }
         setNote(d.msg, d.code === "muted" ? 0 : 5000, false, true);
         setSendable();
         break;
@@ -135,6 +147,7 @@
     li.dataset.ts = m.ts;
     const isMine = mine.has(m.id);
     if (isMine) li.classList.add("me");
+    if (m.g) li.classList.add("pabati");
     const head = document.createElement("div");
     head.className = "chat-meta";
     const who = document.createElement("b");
@@ -142,7 +155,10 @@
     who.style.setProperty("--hue", hue(m.n));
     const when = document.createElement("time");
     when.textContent = fmtTime(m.ts);
-    head.append(who, when);
+    if (m.g) { const tag = document.createElement("span"); tag.className = "chat-pb"; tag.textContent = "Pabati"; head.append(tag); }
+    head.append(who);
+    if (m.c && /^[A-Z]{2}$/.test(m.c)) head.append(flagEl(m.c));
+    head.append(when);
     if (isMine) { const you = document.createElement("span"); you.className = "chat-tag"; you.textContent = "you"; head.append(you); }
     if (m.s) {
       const st = document.createElement("span");
@@ -176,7 +192,8 @@
   function regroup(li) {
     if (!li || !li.classList.contains("chat-msg")) return;
     const prev = li.previousElementSibling;
-    const same = prev?.classList.contains("chat-msg") && prev.dataset.n === li.dataset.n && li.dataset.ts - prev.dataset.ts < GROUP_MS;
+    const same = prev?.classList.contains("chat-msg") && !prev.classList.contains("pabati") && !li.classList.contains("pabati")
+      && prev.dataset.n === li.dataset.n && li.dataset.ts - prev.dataset.ts < GROUP_MS;
     li.classList.toggle("cont", !!same);
   }
   function regroupAll() { for (const li of list.children) regroup(li); }
@@ -206,6 +223,32 @@
     if (names.length) typingT = setTimeout(renderTyping, Math.min(...typers.values()) - now + 50);
   }
 
+  function flagEl(c) {
+    const name = regionNames?.of(c) || c;
+    const img = document.createElement("img");
+    img.className = "chat-flagimg";
+    img.src = FLAG_URL(c);
+    img.alt = name; img.title = name;
+    img.width = 16; img.height = 12;
+    img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+    img.onerror = () => {
+      const s = document.createElement("span");
+      s.className = "chat-cc"; s.textContent = c; s.title = name;
+      img.replaceWith(s);
+    };
+    return img;
+  }
+
+  function showFlag() { try { return localStorage.getItem(FLAG_KEY) !== "0"; } catch { return true; } }
+
+  // Pabati (shout-out) mode: the next message is sent as a highlighted greeting.
+  function setPabati(on) {
+    pabatiOn = on;
+    pabatiBtn.setAttribute("aria-pressed", String(on));
+    form.classList.toggle("pabati", on);
+    setSendable();
+  }
+
   function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
   const isAtEnd = () => list.scrollHeight - list.scrollTop - list.clientHeight < 60;
   function scrollEnd() { list.scrollTop = list.scrollHeight; jump.hidden = true; }
@@ -225,7 +268,7 @@
     const muted = mutedUntil > now;
     const connected = ws?.readyState === 1;
     input.disabled = muted || !connected;
-    input.placeholder = muted ? `Muted until ${fmtTime(mutedUntil)}` : connected ? "Type a message…" : "Offline";
+    input.placeholder = muted ? `Muted until ${fmtTime(mutedUntil)}` : !connected ? "Offline" : pabatiOn ? "Pabati po kay… (who are you greeting?)" : "Type a message…";
     send.disabled = input.disabled || now < nextSend || !input.value.trim();
     clearTimeout(cooldownT);
     const wake = Math.max(muted ? mutedUntil : 0, nextSend);
@@ -286,6 +329,7 @@
     const msg = { t: "msg", text };
     const st = currentStation();
     if (st) msg.st = st;
+    if (pabatiOn) { msg.g = 1; setPabati(false); }
     sendJson(msg);
     lastSent = text;
     lastTyping = 0;
@@ -308,6 +352,13 @@
     nameForm.hidden = true;
     renameBtn.focus({ preventScroll: true });
   }
+  pabatiBtn.addEventListener("click", () => { setPabati(!pabatiOn); input.focus(); });
+  flagOpt.checked = showFlag();
+  flagOpt.addEventListener("change", () => {
+    try { localStorage.setItem(FLAG_KEY, flagOpt.checked ? "1" : "0"); } catch {}
+    sendJson({ t: "flag", on: flagOpt.checked });
+    setNote(flagOpt.checked ? "Your country flag will show on new messages." : "Your country flag is hidden.", 3000);
+  });
   nameBtn.addEventListener("click", openName);
   renameBtn.addEventListener("click", openName);
   $("chatNameCancel").addEventListener("click", closeName);

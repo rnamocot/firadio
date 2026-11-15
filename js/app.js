@@ -1545,6 +1545,88 @@
   setTimeout(hideSplash, 4000); // safety net
 
   // ======================================================
+  // Sleep timer (runs only in the browser): Off > 15 > 30 > 60 > 90 min, fades out, then stops
+  // ======================================================
+  const SLEEP_STEPS = [0, 15, 30, 60, 90];
+  const SLEEP_FADE_MS = 10e3;
+  let sleepIdx = 0, sleepEnd = 0, sleepTick = 0, sleepFade = 0;
+
+  function sleepLabel() {
+    const left = sleepEnd ? Math.max(1, Math.ceil((sleepEnd - Date.now()) / 60e3)) : 0;
+    for (const id of ["pSleep", "nSleep"]) {
+      const b = $(id);
+      if (!b) continue;
+      b.classList.toggle("on", !!sleepEnd);
+      b.setAttribute("aria-pressed", String(!!sleepEnd));
+      const t = b.querySelector(".sleep-left");
+      if (t) t.textContent = sleepEnd ? `${left}m` : "";
+      b.title = sleepEnd ? `Sleep timer: stops in ${left} min (tap to change)` : "Sleep timer";
+    }
+    const n = $("nSleepText");
+    if (n) n.textContent = sleepEnd ? `Stops in ${left} min` : "Sleep timer";
+  }
+
+  function stopSleep() {
+    clearInterval(sleepTick); clearInterval(sleepFade);
+    if (sleepFade) audio.volume = +$("pVolume").value;
+    sleepEnd = 0; sleepFade = 0; sleepIdx = 0;
+    sleepLabel();
+  }
+
+  function startSleep(min) {
+    stopSleep();
+    if (!min) return;
+    sleepIdx = SLEEP_STEPS.indexOf(min);
+    sleepEnd = Date.now() + min * 60e3;
+    sleepTick = setInterval(() => {
+      const left = sleepEnd - Date.now();
+      if (left <= SLEEP_FADE_MS && !sleepFade) {
+        const from = audio.volume, t0 = Date.now();
+        sleepFade = setInterval(() => {
+          const k = Math.min(1, (Date.now() - t0) / SLEEP_FADE_MS);
+          audio.volume = from * (1 - k);
+          if (k >= 1) {
+            audio.pause();
+            stopSleep();          // also restores the volume for next time
+            toast("Sleep timer: radio stopped. Good night!", 4000);
+          }
+        }, 200);
+      }
+      sleepLabel();
+    }, 1000);
+    sleepLabel();
+  }
+
+  function cycleSleep() {
+    const next = SLEEP_STEPS[(sleepIdx + 1) % SLEEP_STEPS.length];
+    startSleep(next);
+    toast(next ? `Sleep timer: radio stops in ${next} minutes` : "Sleep timer off", 2200);
+  }
+  for (const id of ["pSleep", "nSleep"]) $(id)?.addEventListener("click", cycleSleep);
+
+  // ======================================================
+  // Resume: remember the last station that actually played; offer it on the next visit
+  // ======================================================
+  const LAST_KEY = "filradio.last";
+  audio.addEventListener("playing", () => { try { if (current) localStorage.setItem(LAST_KEY, current.key); } catch {} });
+
+  function offerResume() {
+    if (QUIET || current) return;
+    let key = "";
+    try { key = localStorage.getItem(LAST_KEY) || ""; } catch {}
+    const st = key && stations.find((s) => s.key === key);
+    const box = $("resume");
+    if (!st || !box) return;
+    $("resumeName").textContent = st.name;
+    box.hidden = false;
+    const hide = () => { box.hidden = true; clearTimeout(t); };
+    const t = setTimeout(hide, 20e3);
+    $("resumePlay").onclick = () => { hide(); play(st); };
+    $("resumeX").onclick = hide;
+    audio.addEventListener("play", hide, { once: true });
+  }
+
+  // ======================================================
   // Boot
   // ======================================================
   setPlayIcons();
@@ -1561,6 +1643,7 @@
       }
       render();
       hideSplash();
+      setTimeout(offerResume, 1200);
     } catch (e) {
       hideSplash();
       console.error(e);

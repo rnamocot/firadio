@@ -117,6 +117,8 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
 - **Favorites** saved on the device
 - **Dark mode**
 - **Mobile app layout**: floating search, bottom sheet, full-screen Now Playing with a tuning dial
+- **Sleep timer**: moon button on the mini player (and "Sleep timer" on the phone's Now Playing screen). Each tap cycles Off, 15, 30, 60, 90 minutes; the button shows minutes left; at the end the sound fades out over 10 s and stops. Browser only.
+- **Continue listening**: the last station that actually played is remembered on the device (`filradio.last`); on the next visit a "Continue listening" card offers it with one tap (hidden after 20 s, or when anything plays). Browser only.
 - **Lock-screen and car controls** via the Media Session API (audio works over CarPlay / Android Auto)
 - **Installable PWA** with an illustrated install guide for desktop, Android and iPhone/iPad
 - **Works offline** for the app itself and the last station list
@@ -142,7 +144,7 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
   - `?v=N` on every asset in `index.html`, `stats.html`, `privacy.html` and in the `SHELL` list in `sw.js`
   - `VERSION = "filradio-vN"` in `sw.js`
 
-  Current version: **68**.
+  Current version: **69**.
 
 ### Station data
 
@@ -171,6 +173,8 @@ Source: `chat-worker/` (server) and `js/chat.js` (client). One global room.
 - **Listening to**: if you are playing a station when you send, its name shows next to yours (from the mini player). It goes through the word filter and is dropped if it breaks a rule.
 - **No look-alike names**: a name used by someone else right now (or in the visible history) can't be taken; on connect, digits are added (`maria117`).
 - A character counter appears when 40 or fewer characters are left.
+- **Country flag** next to names, from Cloudflare's `request.cf.country` (2 letters only, nothing else about the visitor). Shown as a real flag image from the open-source [flag-icons](https://github.com/lipis/flag-icons) set (`cdn.jsdelivr.net/npm/flag-icons@7.2.3`, about 1 KB SVG each, loaded lazily and cached by the browser and service worker); a 2-letter badge is the fallback. Hover shows the country name. Each person can turn it off under **Change name** ("Show my country flag", saved in `localStorage` key `filradio-chat-flag`, sent as `?flag=0` / `{t:"flag", on}`).
+- **Pabati (shout-out)**: the megaphone button in the message bar sends the next message as a highlighted "Pabati" card. Limited to 1 per person every 10 minutes (stored in the person's `u:<hash>` record as `g`).
 
 ### Why this design
 
@@ -205,16 +209,17 @@ sequenceDiagram
 
 | Direction | Message | Meaning |
 | --- | --- | --- |
-| client → server | `{t:"msg", text, st?}` | Send a message; `st` = station being played (optional, max 40 chars, filtered) |
+| client → server | `{t:"msg", text, st?, g?}` | Send a message; `st` = station being played (optional, max 40 chars, filtered); `g:1` = pabati |
+| client → server | `{t:"flag", on}` | Show or hide your country flag on new messages |
 | client → server | `{t:"report", id}` | Report a message |
 | client → server | `{t:"name", name}` | Change display name |
 | client → server | `{t:"typing"}` | "Is typing" (client sends at most every 4 s; server relays at most every 3 s, never stores it) |
 | client → server | `ping` (plain text) | Keep-alive, auto-answered `pong` |
 | server → client | `{t:"init", name, online, muted, msgs}` | Sent on connect |
-| server → client | `{t:"msg", m:{id,n,x,ts,s?}, online}` | New message (`s` = station tag) |
+| server → client | `{t:"msg", m:{id,n,x,ts,s?,c?,g?}, online}` | New message (`s` = station tag, `c` = country code, `g` = pabati) |
 | server → client | `{t:"typing", n}` | Someone else is typing |
 | server → client | `{t:"del", id}` / `{t:"clear"}` | Message removed / room cleared |
-| server → client | `{t:"err", code, msg, until}` | `slow`, `busy`, `blocked`, `dupe`, `muted`, `name` |
+| server → client | `{t:"err", code, msg, until}` | `slow`, `busy`, `blocked`, `dupe`, `muted`, `name`, `pabati` |
 | server → client | `{t:"reported", id}` / `{t:"name", name}` | Acknowledgements |
 
 Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash and report list never leave the server.
@@ -259,7 +264,7 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 | Key | Content |
 | --- | --- |
 | `msgs` | Array of the last 50 messages: `{id, n, x, ts, h, rep[]}` (`h` = IP hash) |
-| `u:<hash>` | `{strikes[], mutes, until}` per person |
+| `u:<hash>` | `{strikes[], mutes, until, g}` per person (`g` = time of last pabati) |
 | `words` | Extra blocked words added by the admin |
 
 ### Secrets (Cloudflare, never in git)

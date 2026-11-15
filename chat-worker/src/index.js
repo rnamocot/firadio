@@ -23,6 +23,7 @@ const LIMITS = {
   framesPer10s: 20,        // any frames (junk included); more = bot, socket is dropped
   typingGapMs: 3000,       // "is typing" relayed at most once every 3 s per person
   stationLen: 40,          // "listening to" station name
+  pabatiGapMs: 10 * 60e3,  // 1 pabati (shout-out) every 10 minutes per person
 };
 
 const SEC_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" };
@@ -65,6 +66,9 @@ export default {
     const h = await hashIp(ip, env.IP_SALT || "filradio");
     const fwd = new Request(req);
     fwd.headers.set("X-Who", h);
+    // Country from Cloudflare (2 letters only; nothing else about the visitor is kept).
+    const cc = String(req.cf?.country || "").toUpperCase();
+    fwd.headers.set("X-Country", /^[A-Z]{2}$/.test(cc) && !["XX", "T1"].includes(cc) ? cc : "");
     return env.ROOM.get(env.ROOM.idFromName("global")).fetch(fwd);
   },
 };
@@ -122,7 +126,8 @@ export class ChatRoom extends DurableObject {
     // Someone else is using this name right now: add digits so nobody can pose as them.
     for (let i = 0; i < 5 && this.nameTaken(name, h); i++) name = `${name.slice(0, 16)}${Math.floor(10 + Math.random() * 990)}`;
     if (this.nameTaken(name, h)) name = guestName();
-    server.serializeAttachment({ h, name, sent: [], fr: [] });
+    const c = req.headers.get("X-Country") || "";
+    server.serializeAttachment({ h, name, sent: [], fr: [], c, fl: url.searchParams.get("flag") !== "0" });
 
     this.prune();
     const user = await this.user(h);
@@ -153,6 +158,7 @@ export class ChatRoom extends DurableObject {
 
     if (m.t === "msg") return this.onMessage(ws, a, m);
     if (m.t === "typing") return this.onTyping(ws, a, now);
+    if (m.t === "flag") { a.fl = !!m.on; ws.serializeAttachment(a); return; }
     if (m.t === "report") return this.onReport(ws, a, String(m.id || ""));
     if (m.t === "name" && typeof m.name === "string") {
       const n = cleanName(m.name);
@@ -190,6 +196,11 @@ export class ChatRoom extends DurableObject {
     }
     // Same message twice in a row = spam
     if (a.lastText && a.lastText === text.toLowerCase()) return err(ws, "dupe", "You already sent that.");
+    // Pabati (shout-out): highlighted, so only 1 every 10 minutes per person (kept with their record).
+    const pabati = m.g === 1 || m.g === true;
+    if (pabati && now - (user.g || 0) < LIMITS.pabatiGapMs) {
+      return err(ws, "pabati", "You can send 1 pabati every 10 minutes.", user.g + LIMITS.pabatiGapMs);
+    }
 
     a.sent.push(now); a.lastText = text.toLowerCase();
     ws.serializeAttachment(a);
@@ -204,6 +215,13 @@ export class ChatRoom extends DurableObject {
 
     const msg = { id: crypto.randomUUID().slice(0, 12), n: a.name, x: text, ts: now, h: a.h, rep: [] };
     if (s) msg.s = s;
+    if (a.c && a.fl !== false) msg.c = a.c;
+    if (pabati) {
+      msg.g = 1;
+      user.g = now;
+      await this.ctx.storage.put(`u:${a.h}`, user);
+      if (!(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(now + 86400e3);
+    }
     this.msgs.push(msg);
     this.prune();
     await this.ctx.storage.put("msgs", this.msgs);
@@ -286,7 +304,7 @@ export class ChatRoom extends DurableObject {
   async alarm() {
     const old = Date.now() - 30 * 86400e3;
     const users = await this.ctx.storage.list({ prefix: "u:" });
-    const stale = [...users].filter(([, u]) => u.until < old && !u.strikes.some((t) => t > old)).map(([k]) => k);
+    const stale = [...users].filter(([, u]) => u.until < old && !u.strikes.some((t) => t > old) && !((u.g || 0) > old)).map(([k]) => k);
     for (let i = 0; i < stale.length; i += 128) await this.ctx.storage.delete(stale.slice(i, i + 128));
     if (users.size > stale.length) await this.ctx.storage.setAlarm(Date.now() + 86400e3);
   }
@@ -338,7 +356,7 @@ export class ChatRoom extends DurableObject {
 }
 
 // What other people see (never the hashed IP or report list).
-const pub = (x) => (x.s ? { id: x.id, n: x.n, x: x.x, ts: x.ts, s: x.s } : { id: x.id, n: x.n, x: x.x, ts: x.ts });
+const pub = (x) => ({ id: x.id, n: x.n, x: x.x, ts: x.ts, ...(x.s && { s: x.s }), ...(x.c && { c: x.c }), ...(x.g && { g: 1 }) });
 function err(ws, code, msg, until = 0) {
   try { ws.send(JSON.stringify({ t: "err", code, msg, until })); } catch {}
 }

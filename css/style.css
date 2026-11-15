@@ -1568,9 +1568,8 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
 
 /* Messages */
 .chat-list { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 2px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--c-line) transparent; }
-.chat-msg { padding: 6px 8px 7px 10px; border-radius: 8px; border-left: 2px solid transparent; }
+.chat-msg { padding: 6px 8px 7px; border-radius: 8px; }
 .chat-msg:hover { background: rgba(255, 255, 255, .03); }
-.chat-msg.me { border-left-color: var(--c-sun); }
 .chat-meta { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
 .chat-meta b { font-weight: 700; color: hsl(var(--hue, 220) 65% 72%); }
 .chat-msg.me .chat-meta b { color: var(--c-sun); }
@@ -1667,3 +1666,50 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
   .app:has(.player:not([hidden])) .chat { bottom: 168px; height: min(540px, calc(100% - 200px)); }
 }
 @media (prefers-reduced-motion: reduce) { .chat, .chat-fab { animation: none; } }
+
+/* ---------- Sleep timer ---------- */
+.now-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.sleep-btn.on { color: var(--sun); }
+.player .sleep-btn { position: relative; }
+.player .sleep-btn.on { width: auto; padding: 0 8px; display: inline-flex; gap: 3px; color: var(--sun); }
+.sleep-left { font: 700 11px var(--mono); }
+.sleep-left:empty { display: none; }
+.now .sleep-btn.on { border-color: rgba(255, 201, 60, .55); color: var(--sun); }
+
+/* ---------- Resume last station ---------- */
+.resume {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 31; display: flex; align-items: center; gap: 4px;
+  max-width: calc(100% - 32px); padding: 6px; border-radius: 18px; background: var(--ink); color: var(--paper);
+  box-shadow: var(--shadow); animation: rise .35s var(--ease);
+}
+html.dark .resume { background: var(--panel); color: var(--text); border: 1px solid var(--line); }
+.resume[hidden] { display: none; }
+.resume-play { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 12px 4px 4px; border: 0; background: none; color: inherit; cursor: pointer; text-align: left; }
+.resume-ico { width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: var(--sun); color: var(--sun-ink); }
+.resume-ico svg { width: 18px; height: 18px; }
+.resume-text { display: grid; min-width: 0; }
+.resume-text small { font: 500 11px var(--mono); opacity: .7; }
+.resume-text b { font-size: 14.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.resume-x { width: 32px; height: 32px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 10px; background: none; color: inherit; opacity: .6; cursor: pointer; }
+.resume-x:hover { opacity: 1; }
+.resume-x svg { width: 16px; height: 16px; }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .resume { left: 10px; right: 10px; transform: none; bottom: calc(var(--tab-h) + 10px); animation: rise-m .35s var(--ease); }
+  .resume-text b { max-width: none; }
+}
+
+/* ---------- Chat: country flag, pabati ---------- */
+.chat-cc { display: inline-block; font: 600 9.5px var(--mono); line-height: 1; padding: 2px 3px; border-radius: 3px; border: 1px solid var(--c-line); color: var(--c-dim); cursor: default; }
+.chat-flagimg { width: 16px; height: 12px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255, 255, 255, .12); align-self: center; }
+.chat-pb { padding: 1px 6px; border-radius: 4px; background: var(--c-sun); color: var(--sun-ink); font: 800 10px var(--display); letter-spacing: .02em; }
+.chat-msg.pabati { margin: 4px 0; padding: 8px 10px 9px; background: rgba(255, 201, 60, .1); }
+.chat-msg.pabati:hover { background: rgba(255, 201, 60, .13); }
+.chat-msg.pabati p { font-size: 14.5px; font-weight: 600; }
+.chat-pabati { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--c-dim); cursor: pointer; }
+.chat-pabati svg { width: 20px; height: 20px; --sun: currentColor; }
+.chat-pabati:hover { color: var(--c-text); }
+.chat-pabati[aria-pressed="true"] { background: var(--c-sun); color: var(--sun-ink); }
+.chat-form { padding-left: 4px; }
+.chat-form.pabati { border-color: var(--c-sun); }
+.cn-flag { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--c-text); cursor: pointer; }
+.cn-flag input { width: 15px; height: 15px; margin: 0; accent-color: var(--c-sun); }
