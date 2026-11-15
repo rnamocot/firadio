@@ -1,0 +1,29 @@
+name = "filradio-chat"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Served at wss://chat.filradio.xyz/ws (filradio.xyz is already on Cloudflare).
+routes = [{ pattern = "chat.filradio.xyz", custom_domain = true }]
+
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "ChatRoom"
+
+# SQLite-backed Durable Objects work on the free Workers plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]
+
+# Edge rate limits (free): checked before anything reaches the chat room.
+[[ratelimits]]
+name = "CONNECT_LIMIT"
+namespace_id = "7101"
+simple = { limit = 10, period = 60 }
+
+[[ratelimits]]
+name = "ADMIN_LIMIT"
+namespace_id = "7102"
+simple = { limit = 5, period = 60 }
+
+[observability]
+enabled = false
