@@ -10,6 +10,9 @@ import shutil
 import subprocess
 import sys
 import zipfile
+import datetime
+import html
+import json
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DIST = os.path.join(ROOT, "dist")
@@ -48,6 +51,45 @@ def strip_html_comments(path):
         f.write(html)
 
 
+def popular_stations(limit=40):
+    """Top stations by listener votes, as crawlable text for search engines."""
+    with open(os.path.join(ROOT, "data", "stations.json"), encoding="utf-8") as f:
+        rows = json.load(f)["d"]
+    seen, names = set(), []
+    for r in sorted(rows, key=lambda r: -(r.get("v") or 0)):
+        name = re.sub(r"\s+", " ", (r.get("n") or "")).strip()
+        key = re.sub(r"[^a-z0-9]", "", name.lower())
+        if not name or len(name) > 40 or key in seen or not r.get("ok"):
+            continue
+        seen.add(key)
+        names.append(html.escape(name))
+        if len(names) >= limit:
+            break
+    return names
+
+
+def seo_pass():
+    """Fill the popular-stations paragraph and stamp the sitemap with today's date (dist/ only)."""
+    idx = os.path.join(DIST, "index.html")
+    with open(idx, encoding="utf-8") as f:
+        page = f.read()
+    names = popular_stations()
+    text = ("<b>Popular stations on FilRadio:</b> " + ", ".join(names) + ".") if names else ""
+    page = page.replace('<p class="about popular" id="popularStations"></p>',
+                        f'<p class="about popular" id="popularStations">{text}</p>', 1)
+    with open(idx, "w", encoding="utf-8", newline="\n") as f:
+        f.write(page)
+
+    sm = os.path.join(DIST, "sitemap.xml")
+    with open(sm, encoding="utf-8") as f:
+        xml = f.read()
+    today = datetime.date.today().isoformat()
+    xml = re.sub(r"(<loc>https://filradio\.xyz/</loc>\s*<lastmod>)[^<]*", rf"\g<1>{today}", xml, count=1)
+    with open(sm, "w", encoding="utf-8", newline="\n") as f:
+        f.write(xml)
+    return len(names)
+
+
 def _force_remove(func, path, _exc):
     # Windows: clear read-only flags and retry
     os.chmod(path, 0o666)
@@ -74,6 +116,8 @@ def main():
         shutil.copy2(os.path.join(ROOT, f), os.path.join(DIST, f))
     for d in DIRS:
         shutil.copytree(os.path.join(ROOT, d), os.path.join(DIST, d))
+    n = seo_pass()
+    print(f"SEO: {n} popular stations added, sitemap dated today")
     for dirpath, _, files in os.walk(DIST):
         for f in files:
             p = os.path.join(dirpath, f)

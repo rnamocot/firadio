@@ -1713,3 +1713,23 @@ html.dark .resume { background: var(--panel); color: var(--text); border: 1px so
 .chat-form.pabati { border-color: var(--c-sun); }
 .cn-flag { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--c-text); cursor: pointer; }
 .cn-flag input { width: 15px; height: 15px; margin: 0; accent-color: var(--c-sun); }
+
+/* One-time "chat is here" hint above the pill */
+.chat-hint {
+  position: fixed; right: 16px; bottom: 102px; z-index: 29; margin: 0; padding: 9px 13px; border-radius: 12px;
+  background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; box-shadow: var(--shadow); cursor: pointer;
+  animation: rise-hint .3s var(--ease);
+}
+html.dark .chat-hint { background: var(--panel); color: var(--text); border: 1px solid var(--line); }
+.chat-hint[hidden] { display: none; }
+.chat-hint::after { content: ""; position: absolute; right: 28px; bottom: -6px; width: 12px; height: 12px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
+@keyframes rise-hint { from { opacity: 0; transform: translateY(6px); } }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .chat-hint { right: 12px; bottom: calc(var(--tab-h) + 74px); }
+  .app:has(.player:not([hidden])) .chat-hint { bottom: calc(var(--tab-h) + 146px); }
+}
+@media (min-width: 761px) and (max-width: 1020px) {
+  .app:has(.player:not([hidden])) .chat-hint { bottom: 166px; }
+}
+@media (prefers-reduced-motion: reduce) { .chat-hint { animation: none; } }
+.about.popular:empty { display: none; }

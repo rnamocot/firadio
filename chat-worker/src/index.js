@@ -24,6 +24,7 @@ const LIMITS = {
   typingGapMs: 3000,       // "is typing" relayed at most once every 3 s per person
   stationLen: 40,          // "listening to" station name
   pabatiGapMs: 10 * 60e3,  // 1 pabati (shout-out) every 10 minutes per person
+  presenceGapMs: 10e3,     // "X online" pushed on join/leave at most once every 10 s (whole room)
 };
 
 const SEC_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" };
@@ -98,6 +99,8 @@ export class ChatRoom extends DurableObject {
     this.msgs = [];
     this.words = [];
     this.roomTimes = [];
+    this.lastPresence = 0;
+    this.lastCount = 0;
     // "ping" -> "pong" is answered by Cloudflare without waking this object (free keep-alive).
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
     ctx.blockConcurrencyWhile(async () => {
@@ -136,6 +139,7 @@ export class ChatRoom extends DurableObject {
       muted: user.until > Date.now() ? user.until : 0,
       msgs: this.msgs.map(pub),
     }));
+    await this.presence({ joined: server });
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -220,12 +224,13 @@ export class ChatRoom extends DurableObject {
       msg.g = 1;
       user.g = now;
       await this.ctx.storage.put(`u:${a.h}`, user);
-      if (!(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(now + 86400e3);
+      await this.scheduleCleanup();
     }
     this.msgs.push(msg);
     this.prune();
     await this.ctx.storage.put("msgs", this.msgs);
-    this.broadcast({ t: "msg", m: pub(msg), online: this.ctx.getWebSockets().length });
+    this.lastCount = this.ctx.getWebSockets().length;
+    this.broadcast({ t: "msg", m: pub(msg), online: this.lastCount });
   }
 
   // "is typing": relayed to everyone else, never stored. Throttled; muted people are skipped.
@@ -288,7 +293,7 @@ export class ChatRoom extends DurableObject {
     }
     // Keep the record for a while after the mute ends, so repeat offenders get longer mutes.
     await this.ctx.storage.put(`u:${h}`, u);
-    if (!(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(now + 86400e3);
+    await this.scheduleCleanup();
     return muted;
   }
 
@@ -300,13 +305,35 @@ export class ChatRoom extends DurableObject {
     this.broadcast({ t: "del", id });
   }
 
-  // Daily clean-up: forget people whose last mute ended more than 30 days ago.
+  // One alarm slot serves two jobs: the daily clean-up and the follow-up online count.
+  async armAlarm(at) {
+    const cur = await this.ctx.storage.getAlarm();
+    if (!cur || at < cur) await this.ctx.storage.setAlarm(at);
+  }
+
+  async scheduleCleanup() {
+    let at = await this.ctx.storage.get("cleanAt");
+    if (!at) { at = Date.now() + 86400e3; await this.ctx.storage.put("cleanAt", at); }
+    await this.armAlarm(at);
+  }
+
   async alarm() {
-    const old = Date.now() - 30 * 86400e3;
-    const users = await this.ctx.storage.list({ prefix: "u:" });
-    const stale = [...users].filter(([, u]) => u.until < old && !u.strikes.some((t) => t > old) && !((u.g || 0) > old)).map(([k]) => k);
-    for (let i = 0; i < stale.length; i += 128) await this.ctx.storage.delete(stale.slice(i, i + 128));
-    if (users.size > stale.length) await this.ctx.storage.setAlarm(Date.now() + 86400e3);
+    const now = Date.now();
+    // Follow-up online count (a change was skipped by the 10 s limit).
+    this.lastPresence = 0;
+    await this.presence();
+    // Daily clean-up: forget people whose last mute/strike/pabati is older than 30 days.
+    const cleanAt = await this.ctx.storage.get("cleanAt");
+    if (cleanAt && now >= cleanAt) {
+      const old = now - 30 * 86400e3;
+      const users = await this.ctx.storage.list({ prefix: "u:" });
+      const stale = [...users].filter(([, u]) => u.until < old && !u.strikes.some((t) => t > old) && !((u.g || 0) > old)).map(([k]) => k);
+      for (let i = 0; i < stale.length; i += 128) await this.ctx.storage.delete(stale.slice(i, i + 128));
+      if (users.size > stale.length) await this.ctx.storage.put("cleanAt", now + 86400e3);
+      else await this.ctx.storage.delete("cleanAt");
+    }
+    const next = await this.ctx.storage.get("cleanAt");
+    if (next) await this.armAlarm(next);
   }
 
   prune() {
@@ -319,8 +346,22 @@ export class ChatRoom extends DurableObject {
     for (const ws of this.ctx.getWebSockets()) try { ws.send(s); } catch {}
   }
 
-  async webSocketClose(ws, code) { try { ws.close(code === 1005 ? 1000 : code, "bye"); } catch {} }
-  async webSocketError(ws) { try { ws.close(1011, "error"); } catch {} }
+  async webSocketClose(ws, code) { try { ws.close(code === 1005 ? 1000 : code, "bye"); } catch {} await this.presence({ left: ws }); }
+  async webSocketError(ws) { try { ws.close(1011, "error"); } catch {} await this.presence({ left: ws }); }
+
+  // Push the online count when people join or leave: at most once every 10 s for the whole room,
+  // only if the number changed, never stored. A change inside the 10 s window is sent when the
+  // window ends (one alarm), so the count never stays wrong.
+  async presence({ joined = null, left = null } = {}) {
+    const now = Date.now();
+    const open = this.ctx.getWebSockets().filter((s) => s !== left && s.readyState === 1);
+    if (open.length === this.lastCount) return;
+    if (now - this.lastPresence < LIMITS.presenceGapMs) return this.armAlarm(this.lastPresence + LIMITS.presenceGapMs);
+    this.lastPresence = now;
+    this.lastCount = open.length;
+    const msg = JSON.stringify({ t: "online", n: open.length });
+    for (const s of open) if (s !== joined) try { s.send(msg); } catch {}
+  }
 
   // ----- admin: POST /admin with Authorization: Bearer <ADMIN_TOKEN> -----
   async admin(b) {

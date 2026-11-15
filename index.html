@@ -6,7 +6,7 @@
 
   <!-- SEO -->
   <title>FilRadio | Listen to Philippine FM &amp; AM Radio Live, Anywhere</title>
-  <meta name="description" content="FilRadio: stream 600+ Philippine radio stations free, live on a 3D map. FM, AM and online stations from Manila, Cebu, Davao, Iloilo and more. Made for Filipinos at home and OFWs abroad." />
+  <meta name="description" content="Listen to 600+ Philippine FM, AM and online radio stations live and free on a map. Manila, Cebu, Davao and more, for Pinoys at home and OFWs abroad." />
   <meta name="keywords" content="FilRadio, Philippine radio, Pinoy radio online, OFW radio, Filipino radio abroad, FM radio Philippines, AM radio Philippines, live radio streaming, Manila radio, Cebu radio, Davao radio, Bombo Radyo, Brigada News FM, radio map" />
   <meta name="author" content="Ren" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.adtrafficquality.google; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google; worker-src 'self' blob:; child-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http: wss://chat.filradio.xyz ws://localhost:8787; object-src 'none'; base-uri 'self'; form-action 'none'" />
@@ -19,17 +19,17 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="FilRadio" />
   <meta property="og:title" content="FilRadio: Philippine Radio, Live Anywhere" />
-  <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
+  <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations, plus a listener chat." />
   <meta property="og:url" content="https://filradio.xyz/" />
-  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=69" />
+  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=71" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:locale" content="en_PH" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="FilRadio: Philippine Radio, Live Anywhere" />
-  <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations." />
-  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=69" />
+  <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations, plus a listener chat." />
+  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=71" />
   <meta name="twitter:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:image:type" content="image/png" />
   <meta name="application-name" content="FilRadio" />
@@ -37,28 +37,56 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "FilRadio",
-    "url": "https://filradio.xyz/",
-    "description": "Interactive 3D map of Philippine FM, AM and online radio stations with live streaming.",
-    "applicationCategory": "MultimediaApplication",
-    "operatingSystem": "Any",
-    "inLanguage": ["en", "fil"],
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PHP" },
-    "author": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
-    "creator": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
-    "spatialCoverage": { "@type": "Country", "name": "Philippines" },
-    "audience": { "@type": "Audience", "audienceType": "Filipinos in the Philippines and OFWs abroad" },
-    "publisher": { "@type": "Person", "name": "Ren", "url": "https://www.renienamocot.com/" },
-    "screenshot": "https://filradio.xyz/og-image.png?v=69",
-    "image": "https://filradio.xyz/icons/icon-512.png?v=69",
-    "featureList": [
-      "Live Philippine FM, AM and online radio",
-      "Map, list and grid views",
-      "Search by station, city or province",
-      "Stations near you",
-      "Installable app for phone and desktop",
-      "Works for OFWs abroad"
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://filradio.xyz/#website",
+        "name": "FilRadio",
+        "alternateName": ["Fil Radio", "FilRadio Philippine Radio"],
+        "url": "https://filradio.xyz/",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://filradio.xyz/#ren" }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://filradio.xyz/#app",
+        "name": "FilRadio",
+        "url": "https://filradio.xyz/",
+        "description": "Listen to 600+ Philippine FM, AM and online radio stations live and free on an interactive map, with a listener chat for Filipinos at home and OFWs abroad.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and a modern web browser",
+        "inLanguage": ["en", "fil"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PHP" },
+        "author": { "@id": "https://filradio.xyz/#ren" },
+        "creator": { "@id": "https://filradio.xyz/#ren" },
+        "publisher": { "@id": "https://filradio.xyz/#ren" },
+        "isPartOf": { "@id": "https://filradio.xyz/#website" },
+        "spatialCoverage": { "@type": "Country", "name": "Philippines" },
+        "audience": { "@type": "Audience", "audienceType": "Filipinos in the Philippines and OFWs abroad" },
+        "screenshot": "https://filradio.xyz/og-image.png",
+        "image": "https://filradio.xyz/icons/icon-512.png",
+        "featureList": [
+          "Live Philippine FM, AM and online radio",
+          "Stations pinned on a 2D and 3D map of the Philippines",
+          "Map, list and grid views",
+          "Search by station, city or province",
+          "Stations near you",
+          "Favorites and continue listening",
+          "Sleep timer",
+          "Listener chat with country flags and pabati shout-outs",
+          "Dark mode",
+          "Installable app for phone and desktop",
+          "Works abroad for OFWs"
+        ]
+      },
+      {
+        "@type": "Person",
+        "@id": "https://filradio.xyz/#ren",
+        "name": "Ren",
+        "url": "https://www.renienamocot.com/"
+      }
     ]
   }
   </script>
@@ -70,12 +98,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FilRadio" />
   <meta name="google-adsense-account" content="ca-pub-8135151574386158" />
-  <script src="js/theme.js?v=69"></script>
-  <script src="js/gtm.js?v=69"></script>
+  <script src="js/theme.js?v=71"></script>
+  <script src="js/gtm.js?v=71"></script>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon.svg?v=69" type="image/svg+xml" />
-  <link rel="icon" href="icons/favicon-64.png?v=69" sizes="64x64" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=69" />
+  <link rel="icon" href="icon.svg?v=71" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-64.png?v=71" sizes="64x64" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=71" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -84,7 +112,7 @@
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css?v=69" />
+  <link rel="stylesheet" href="css/style.css?v=71" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo: rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -135,7 +163,7 @@
   <div class="splash" id="splash" aria-hidden="true">
     <div class="splash-mark">
       <span class="splash-wave"></span><span class="splash-wave"></span><span class="splash-wave"></span>
-      <img src="icon.svg?v=69" alt="" width="104" height="104" />
+      <img src="icon.svg?v=71" alt="" width="104" height="104" />
     </div>
     <p class="splash-name">Fil<b>Radio</b></p>
     <div class="splash-dial"><span class="splash-needle"></span></div>
@@ -206,7 +234,7 @@
             <svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>
           </button>
           <div class="credit-pop" id="creditPop" hidden>
-            <div class="cp-head"><img src="icon.svg?v=69" alt="" width="40" height="40" /><p><b>FilRadio</b><span>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></span></p></div>
+            <div class="cp-head"><img src="icon.svg?v=71" alt="" width="40" height="40" /><p><b>FilRadio</b><span>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Ren</a></span></p></div>
             <a class="cp-bmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a>
             <a class="cp-link" href="#install" id="cpInstall">How to install the app</a>
             <a class="cp-osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Map data © OpenStreetMap</a>
@@ -220,7 +248,7 @@
     <aside class="sidebar open" id="sidebar">
       <div class="topbar">
         <header class="brand">
-          <img class="logo" src="icon.svg?v=69" alt="FilRadio logo" width="40" height="40" />
+          <img class="logo" src="icon.svg?v=71" alt="FilRadio logo" width="40" height="40" />
           <div class="brand-text">
             <h1>Fil<span>Radio</span></h1>
             <p class="sub" id="summary">Tuning in…</p>
@@ -233,7 +261,7 @@
         <div class="controls">
           <div class="search" id="searchBox">
             <span class="search-lead">
-              <img class="search-mark" src="icon.svg?v=69" alt="" width="32" height="32" />
+              <img class="search-mark" src="icon.svg?v=71" alt="" width="32" height="32" />
               <button class="search-back" id="searchBack" type="button" aria-label="Close search" tabindex="-1">
                 <svg class="i" aria-hidden="true"><use href="#i-back"/></svg>
               </button>
@@ -318,6 +346,7 @@
         <footer class="credit">
           <details class="about-box">
             <summary>About FilRadio</summary>
+            <p class="about popular" id="popularStations"></p>
             <p class="about">
               FilRadio lets you listen to Philippine radio for free, from Luzon to Visayas to Mindanao:
               FM music stations, AM news and talk radio such as Bombo Radyo, Brigada News FM and Radyo Pilipinas,
@@ -500,6 +529,7 @@
       </form>
     </section>
 
+    <p class="chat-hint" id="chatHint" role="status" hidden>Chat with other listeners here</p>
     <button type="button" class="chat-fab" id="chatBtn" aria-expanded="false" aria-controls="chatPanel" title="Chat with listeners" aria-label="Chat with listeners">
       <span class="cf-ico" aria-hidden="true">
         <svg class="i cf-open"><use href="#i-chat"/></svg>
@@ -534,16 +564,16 @@
   </div>
 
   <noscript>
-    <p style="padding:24px;font-family:sans-serif">FilRadio needs JavaScript to show the radio map and play Philippine radio stations.</p>
+    <p style="padding:24px;font-family:sans-serif">FilRadio is a free website for listening to 600+ Philippine FM, AM and online radio stations live, from Luzon to Visayas to Mindanao, for Filipinos at home and OFWs abroad. It needs JavaScript to show the radio map and play stations.</p>
   </noscript>
 
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js?v=69" defer></script>
-  <script src="js/traffic.js?v=69" defer></script>
-  <script src="js/install-guide.js?v=69" defer></script>
-  <script src="js/app.js?v=69" defer></script>
-  <script src="js/chat.js?v=69" defer></script>
+  <script src="js/places.js?v=71" defer></script>
+  <script src="js/traffic.js?v=71" defer></script>
+  <script src="js/install-guide.js?v=71" defer></script>
+  <script src="js/app.js?v=71" defer></script>
+  <script src="js/chat.js?v=71" defer></script>
 </body>
 </html>

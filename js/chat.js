@@ -104,6 +104,9 @@
         else jump.hidden = false;
         break;
       }
+      case "online":
+        setOnline(d.n);
+        break;
       case "typing":
         if (d.n && d.n !== myName) { typers.set(d.n, Date.now() + TYPING_SHOW_MS); renderTyping(); }
         break;
@@ -300,7 +303,19 @@
     else idleT = setTimeout(disconnect, IDLE_CLOSE_MS);
   }
 
-  btn.addEventListener("click", () => setOpen(!open));
+  btn.addEventListener("click", () => { hideHint(); setOpen(!open); });
+
+  // One-time hint for first-time visitors (stored on the device, never shown again).
+  const hint = $("chatHint");
+  const HINT_KEY = "filradio-chat-hint";
+  function hideHint() { if (hint) hint.hidden = true; }
+  setTimeout(() => {
+    if (!hint || open || /[?&]shot(=|&|$)/.test(location.search)) return;
+    try { if (localStorage.getItem(HINT_KEY)) return; localStorage.setItem(HINT_KEY, "1"); } catch { return; }
+    hint.hidden = false;
+    setTimeout(hideHint, 9000);
+  }, 6000);
+  hint?.addEventListener("click", () => { hideHint(); setOpen(true); });
   $("chatClose").addEventListener("click", () => setOpen(false));
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && open && !nameForm.contains(document.activeElement)) setOpen(false); });
   note.addEventListener("click", () => { if (note.classList.contains("retry")) { retry = 0; connect(); } });

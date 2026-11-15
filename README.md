@@ -70,6 +70,8 @@ flowchart LR
 ### Hostinger
 
 - Plain static hosting. The **contents** of `dist/` go into `public_html` over FTP or hPanel File Manager.
+- **Cloudflare DNS records** (only these): A `filradio.xyz` → `195.35.62.140` (Hostinger website IP, Proxied), CNAME `www` → `filradio.xyz` (Proxied), Worker `chat` → `filradio-chat`, A `ftp` (unused by FTP clients; upload using the IP). No AAAA records and nothing pointing to `cdn.hstgr.net`.
+- Hostinger shows "Domain isn't connected" because the nameservers are Cloudflare's. That is expected; never switch the nameservers back.
 - **Hostinger CDN is off.** It can't run while the domain uses Cloudflare nameservers, and stacking both caused HTTP 429.
 - Hostinger's edge (responses carry `platform: hostinger` and `x-hcdn-request-id`) rate-limits traffic. When too many requests arrive through Cloudflare it answers **429** for everything. The Cloudflare cache rule below is what keeps this from happening.
 
@@ -144,13 +146,23 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
   - `?v=N` on every asset in `index.html`, `stats.html`, `privacy.html` and in the `SHELL` list in `sw.js`
   - `VERSION = "filradio-vN"` in `sw.js`
 
-  Current version: **69**.
+  Current version: **71**.
 
 ### Station data
 
 - `tools/update_stations.py` downloads Philippine stations from the public radio directory, merges duplicates, pins them to cities (`js/places.js` gazetteer), and checks each stream once to mark which are on air.
 - Output: `data/stations.json`. The app only ever reads this file from its own domain.
 - In the browser the list is cached for 6 hours per device; after a failed fetch the app waits 60 s before retrying.
+
+### SEO
+
+- `<title>` (about 60 chars) and meta description (about 150 chars, under Google's cut-off), canonical URL, `robots` with large image previews, Google site verification.
+- Open Graph and Twitter card with `og-image.png` (1200x630).
+- JSON-LD `@graph`: `WebSite` (site name and alternate names), `WebApplication` (description, free offer, feature list) and `Person` (author), linked by `@id`.
+- **Crawlable station names**: `tools/build.py` writes the 40 most-voted playable stations into the "About FilRadio" box of `dist/index.html` (`#popularStations`), so searches like "DZRH live" have real text to match. The source `index.html` keeps the paragraph empty (hidden with CSS).
+- `sitemap.xml` (home page with image, privacy page); the build stamps the home page `<lastmod>` with the build date. `robots.txt` points to it. `stats.html` is `noindex`.
+- `<noscript>` text describes the site for crawlers without JavaScript.
+- After a release with new content, resubmit the sitemap in Google Search Console if needed.
 
 ### Content rules
 
@@ -166,6 +178,7 @@ Source: `chat-worker/` (server) and `js/chat.js` (client). One global room.
 
 - A yellow **Chat** pill at the bottom right (bounces twice a few seconds after load so people notice it) opens the chat panel. The panel is dark in both themes, like the radio display: plain header with the online count, a one-line rules note, messages with coloured names and small monospace times, and a yellow edge on your own messages. Open, the pill becomes a round close button.
 - **Changing your name**: tap your name or the **Change name** button under the messages, type a new name, then **Save** (Enter) or **Cancel** (Esc). First-time chatters get a one-time tip explaining this, and the SYS rules line mentions it too. Names are 2 to 20 letters or numbers and go through the word filter. The name is remembered on the device (`localStorage` keys `filradio-chat-name` and `filradio-chat-name-set`).
+- First-time visitors see a one-time hint above the pill ("Chat with other listeners here") for 9 s; never again on that device (`filradio-chat-hint`). The chat is never opened automatically (it would cover the screen on phones and connect every visitor).
 - Report: hover a message (always visible on touch screens) and tap the flag.
 - **Typing indicator** above the name row: "Ana is typing…", "Ana and Ben are typing…", "3 people are typing…". Hidden after about 5 s without news or when that person's message arrives.
 - **Order**: oldest at the top, newest at the bottom, in the order the server received them (server timestamps). If you have scrolled up, new messages don't pull you down; a **New messages** button appears instead.
@@ -218,6 +231,7 @@ sequenceDiagram
 | server → client | `{t:"init", name, online, muted, msgs}` | Sent on connect |
 | server → client | `{t:"msg", m:{id,n,x,ts,s?,c?,g?}, online}` | New message (`s` = station tag, `c` = country code, `g` = pabati) |
 | server → client | `{t:"typing", n}` | Someone else is typing |
+| server → client | `{t:"online", n}` | Online count after joins/leaves (at most once every 10 s for the whole room, only when it changed; a change inside the window is sent when it ends) |
 | server → client | `{t:"del", id}` / `{t:"clear"}` | Message removed / room cleared |
 | server → client | `{t:"err", code, msg, until}` | `slow`, `busy`, `blocked`, `dupe`, `muted`, `name`, `pabati` |
 | server → client | `{t:"reported", id}` / `{t:"name", name}` | Acknowledgements |
@@ -231,6 +245,7 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 | Message length | 200 characters (frames over 1000 bytes close the socket) |
 | Name length | 2 to 20 letters/numbers |
 | Per person | 1 message every 4 s, 8 per minute, no exact repeats |
+| Online count push | on join/leave only, max once per 10 s per room, never stored; skipped changes are sent by one follow-up alarm (max 6 a minute, only during join/leave bursts) |
 | Typing signal | relayed at most once every 3 s per person; muted people are never shown |
 | Whole room | 40 messages per 10 s |
 | Any frames (junk included) | 20 per 10 s, else socket dropped + strike |
@@ -266,6 +281,7 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 | `msgs` | Array of the last 50 messages: `{id, n, x, ts, h, rep[]}` (`h` = IP hash) |
 | `u:<hash>` | `{strikes[], mutes, until, g}` per person (`g` = time of last pabati) |
 | `words` | Extra blocked words added by the admin |
+| `cleanAt` | When the next daily clean-up runs (the single alarm also sends follow-up online counts) |
 
 ### Secrets (Cloudflare, never in git)
 
@@ -372,7 +388,8 @@ Permanent changes to limits or word lists: edit `chat-worker/src/index.js` / `fi
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| Site returns **429**, header `x-hcdn-request-id` | Hostinger edge rate limit; Cloudflare not caching | Check the cache rule expression is `(http.host eq "filradio.xyz")`; purge; `cf-cache-status` must not be `DYNAMIC`. If it persists, ask Hostinger support to lift the limit / allow Cloudflare IPs. |
+| Site shows Hostinger **"Parked Domain"** page, or **429** / **525**, header `x-hcdn-request-id` | Cloudflare DNS still points at **Hostinger CDN** addresses (extra A/AAAA records, or `www` CNAME to `*.cdn.hstgr.net`) | Cloudflare DNS must have only: A `@` → website IP from hPanel (Websites → Dashboard → Website IP, currently `195.35.62.140`), CNAME `www` → `filradio.xyz`, Worker `chat`. Delete every other A/AAAA for `@` and anything pointing to `cdn.hstgr.net`. Purge Everything. |
+| Site returns **429**, header `x-hcdn-request-id` (and DNS is correct) | Hostinger edge rate limit; Cloudflare not caching | Check the cache rule expression is `(http.host eq "filradio.xyz")`; purge; `cf-cache-status` must not be `DYNAMIC`. If it persists, ask Hostinger support to lift the limit / allow Cloudflare IPs. |
 | Old version still showing after upload | Cloudflare cache (2 h) or service worker | Purge Everything; make sure `?v=N` and `filradio-vN` were bumped. |
 | Chat says "Chat is offline" | Worker not deployed or blocked by CSP | `curl https://chat.filradio.xyz/` should return 404 (Worker alive). Check `connect-src` in `index.html` includes `wss://chat.filradio.xyz`. |
 | Chat 403 from a new domain or port | Origin not in `ORIGINS` | Add it in `chat-worker/src/index.js`, redeploy. |
