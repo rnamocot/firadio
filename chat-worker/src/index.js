@@ -25,7 +25,12 @@ const LIMITS = {
   stationLen: 40,          // "listening to" station name
   pabatiGapMs: 10 * 60e3,  // 1 pabati (shout-out) every 10 minutes per person
   presenceGapMs: 10e3,     // "X online" pushed on join/leave at most once every 10 s (whole room)
+  wordLen: 30,             // longest word allowed (stops pasted gibberish walls)
+  emojis: 15,              // most emojis in one message
+  reactGapMs: 600,         // reactions: at most 1 every 0.6 s per person
+  reactsPerMin: 30,        // and 30 per minute
 };
+const REACTIONS = 6;       // the client owns the emoji list (like, love, haha, wow, sad, angry); the server only counts 0..5
 
 const SEC_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" };
 const deny = (status, text = "") => new Response(text, { status, headers: SEC_HEADERS });
@@ -138,6 +143,8 @@ export class ChatRoom extends DurableObject {
       t: "init", name, online: this.ctx.getWebSockets().length,
       muted: user.until > Date.now() ? user.until : 0,
       msgs: this.msgs.map(pub),
+      // This person's own reactions, so their picks show highlighted after a reload.
+      mr: Object.fromEntries(this.msgs.filter((x) => x.re && h in x.re).map((x) => [x.id, x.re[h]])),
     }));
     await this.presence({ joined: server });
     return new Response(null, { status: 101, webSocket: client });
@@ -164,6 +171,7 @@ export class ChatRoom extends DurableObject {
     if (m.t === "typing") return this.onTyping(ws, a, now);
     if (m.t === "flag") { a.fl = !!m.on; ws.serializeAttachment(a); return; }
     if (m.t === "report") return this.onReport(ws, a, String(m.id || ""));
+    if (m.t === "react") return this.onReact(ws, a, String(m.id || ""), m.e);
     if (m.t === "name" && typeof m.name === "string") {
       const n = cleanName(m.name);
       if (!n) return err(ws, "name", "Name must be 2 to 20 letters or numbers.");
@@ -190,8 +198,12 @@ export class ChatRoom extends DurableObject {
     if (this.roomTimes.length >= LIMITS.roomPer10s) return err(ws, "busy", "Chat is very busy. Try again in a few seconds.", now + 5000);
 
     if (typeof m.text !== "string") return;
-    const text = tidy(m.text).slice(0, LIMITS.maxLen);
+    // Cut by characters, not UTF-16 units, so an emoji is never split in half.
+    const text = [...tidy(m.text)].slice(0, LIMITS.maxLen).join("").trim();
     if (!text) return;
+    // Spam walls: very long "words" and emoji floods are refused (no warning, text is given back).
+    if (text.split(" ").some((w) => [...w].length > LIMITS.wordLen)) return err(ws, "long", `Words longer than ${LIMITS.wordLen} letters aren't allowed.`);
+    if ((text.match(/\p{Extended_Pictographic}/gu) || []).length > LIMITS.emojis) return err(ws, "long", `Too many emojis. Use ${LIMITS.emojis} or fewer.`);
     const why = check(text, this.words);
     if (why) {
       const muted = await this.strike(ws, a.h);
@@ -250,6 +262,30 @@ export class ChatRoom extends DurableObject {
       if (a && a.h !== h && a.name.toLowerCase() === n) return true;
     }
     return this.msgs.some((x) => x.h !== h && x.n.toLowerCase() === n);
+  }
+
+  // Reactions (like Facebook): one per person per message; picking the same one again removes it.
+  // Stored on the message as { hash: index }; others only ever see the counts.
+  async onReact(ws, a, id, e) {
+    const now = Date.now();
+    if (!Number.isInteger(e) || e < -1 || e >= REACTIONS) return;
+    const msg = this.msgs.find((x) => x.id === id);
+    if (!msg) return;
+    const user = await this.user(a.h);
+    if (user.until > now) return err(ws, "muted", "You're muted for breaking the chat rules.", user.until);
+    a.rx = (a.rx || []).filter((t) => now - t < 60e3);
+    if (now - (a.rx[a.rx.length - 1] || 0) < LIMITS.reactGapMs || a.rx.length >= LIMITS.reactsPerMin) {
+      return err(ws, "react", "Slow down with the reactions a little.");
+    }
+    const re = msg.re || (msg.re = {});
+    if (e === -1) { if (!(a.h in re)) return; delete re[a.h]; }
+    else { if (re[a.h] === e) return; re[a.h] = e; }
+    a.rx.push(now); ws.serializeAttachment(a);
+    await this.ctx.storage.put("msgs", this.msgs);
+    // Tell all of this person's tabs which one they picked, then everyone the new counts.
+    const mineMsg = JSON.stringify({ t: "reacted", id, e });
+    for (const s of this.ctx.getWebSockets(a.h)) try { s.send(mineMsg); } catch {}
+    this.broadcast({ t: "react", id, r: rxCounts(re) });
   }
 
   async onReport(ws, a, id) {
@@ -397,7 +433,14 @@ export class ChatRoom extends DurableObject {
 }
 
 // What other people see (never the hashed IP or report list).
-const pub = (x) => ({ id: x.id, n: x.n, x: x.x, ts: x.ts, ...(x.s && { s: x.s }), ...(x.c && { c: x.c }), ...(x.g && { g: 1 }) });
+const pub = (x) => ({ id: x.id, n: x.n, x: x.x, ts: x.ts, ...(x.s && { s: x.s }), ...(x.c && { c: x.c }), ...(x.g && { g: 1 }),
+  ...(x.re && Object.keys(x.re).length && { r: rxCounts(x.re) }) });
+/** { hash: index } -> [count per reaction] */
+function rxCounts(re) {
+  const r = new Array(REACTIONS).fill(0);
+  for (const v of Object.values(re)) if (v >= 0 && v < REACTIONS) r[v]++;
+  return r;
+}
 function err(ws, code, msg, until = 0) {
   try { ws.send(JSON.stringify({ t: "err", code, msg, until })); } catch {}
 }

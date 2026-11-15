@@ -18,10 +18,12 @@ const SUBSTR = [
   "kantot", "kantut", "kinantot", "jakol", "jakul", "nagjajakol", "salsal", "hindot", "hindut", "kupal", "pokpok",
   "chupa", "tsupa", "chupain", "tsupain", "burat", "puday", "pekpek", "kepyas", "iyutan", "libog", "malibog",
   "tamod", "jabol", "kalibugan", "bayag", "etits", "kiffy", "pukingina", "pukinang", "gagong", "ulol",
-  "ulul", "letse", "lintik", "bwisit", "bwiset", 
+  "ulul", "letse", "lintik", "bwisit", "bwiset",
+  "dyakol", "dyakul", "jakolan", "salsalan", "kantotan", "manyak", "kalibog", "libugan", "ratbu", "torjak", "torjack",
+  "chupaan", "tsupaan", "pokpokan", "putaragis", "pakingshet", "pakshit", "lecheng", "tangna", "tangena", "pukeng",
   // Bisaya
   "yawa", "yawaa", "pisti", "piste", "buang", "iyot", "bisong", "atay ka",
-  "giatay", 
+  "giatay", "iyotan", "iyutan", "yawaon", "pisting", "bilatay", "otinon", "lubotan",
 ];
 
 // Matched only as a whole word (these appear inside innocent words: "class", "Sussex", "grape", "analysis").
@@ -30,6 +32,12 @@ const EXACT = [
   "rape", "raped", "raping", "anal", "tits", "tit", "hoe", "hoes", "titi", "tite", "otin", "oten", "bogo", "bugo", "bilat", "bilatan", "inamo", "inamu", "rapist", "rapists", "pedo", "pedos", "horny", "hornie", "escort", "escorts", "thot", "puta", "putas", "gago", "gaga", "gaguh",
   "tanga", "bobo", "boba", "bubu", "tae", "pepe", "puke", "puki", "kantotan", "inutil", "ungas",
   "suso", "dede", "utong", "bayot", "bayut", "kys", "stfu", "wtf", "gtfo", "bj", "pm4pm", "dm4dm", "sugar daddy",
+  // more sexual words and spellings (Tagalog, Bisaya, English slang)
+  "belat", "belatan", "eyot", "eyut", "eyotan", "eyutan", "eut", "eutan", "iyut", "yot",
+  "sx", "sexo", "seks", "secks", "segs", "seggs", "smex", "sexting", "sexual", "sexually", "kinky", "fetish", "nudes",
+  "nudez", "bewbs", "booty", "fwb", "fubu", "bjob", "lubot", "pisot", "hubad", "hubo",
+  "malandi", "landi", "kiffy", "pepek", "pekpekan", "puday", "pukeng", "jakol", "kantutan", "iyotin", "kantutin",
+  "titing", "bobong", "tangang", "gagi", "olol", "hinayupak", "punyemas", "pucha", "putcha",
 ];
 
 // Multi-word phrases (checked against the cleaned, space-separated text).
@@ -39,6 +47,14 @@ const PHRASES = [
   "atay ka", "boang ka", "buang ka", "bogo ka", "yawa ka", "pisti ka", "ulol ka", "gago ka", "tanga ka", "bobo ka",
   "inutil ka", "pakyu ka", "f u", "f off", "suck my", "suck it", "eat my", "ride me", "wanna fuck", "lets have sex",
   "check my bio", "link in bio", "free money", "earn money", "click here", "crypto giveaway",
+  // sexual requests
+  "sex video", "sex vid", "sex scandal", "scandal video", "nude pics", "nudes pls", "send nude",
+  "s x", "for sale ako", "fubu ako", "fwb ako", "eut tayo", "iyot tayo",
+  "kantot tayo", "chupa ko", "libog ako", "horny ako", "sabay tayo maligo",
+  // threats (Tagalog, Bisaya, English)
+  "papatayin kita", "patayin kita", "patayin ko ikaw", "papatyon tika", "patyon tika", "patyon ta ka",
+  "i will kill", "ill kill you", "i kill you", "kill u", "rape you", "rape u", "die bitch", "sana mamatay",
+  "mamatay ka", "mamatay ka na", "bobombahin",
 ];
 
 const LEET = { "0": "o", "1": "i", "!": "i", "|": "i", "3": "e", "4": "a", "@": "a", "5": "s", "$": "s", "7": "t", "+": "t", "8": "b", "9": "g", "2": "z" };
@@ -50,7 +66,7 @@ const subSet = SUBSTR.filter((w) => !w.includes(" "));
 const exactSet = new Set(EXACT.filter((w) => !w.includes(" ")));
 const phraseList = [...PHRASES, ...SUBSTR.filter((w) => w.includes(" ")), ...EXACT.filter((w) => w.includes(" "))];
 // Long, unmistakable words also checked with every space removed ("f u c k i n g", "p u t a n g i n a").
-const NO_SQUASH = new Set(["tangina", "tanginamo", "piste", "pisti", "letse", "lintik", "bwisit", "bwiset", "buang", "naked", "boner", "tamod", "burat",
+const NO_SQUASH = new Set(["manyak", "tangna", "tangena", "ratbu", "lecheng", "tangina", "tanginamo", "piste", "pisti", "letse", "lintik", "bwisit", "bwiset", "buang", "naked", "boner", "tamod", "burat",
   "motherf", "etits", "creampie", "threesome", "penis", "chupa", "titty", "skank", "hentai"]);
 const SQUASH = subSet.filter((w) => w.length >= 5 && !NO_SQUASH.has(w));
 
@@ -120,7 +136,8 @@ export function tidy(text) {
     .replace(/[̀-ͯ҉]{2,}/g, "")             // zalgo
     .replace(/[\u0000-\u0008\u000b-\u001f\u007f​-‏⁠-⁤﻿]/g, "")
     .replace(/\s+/g, " ").trim()
-    .replace(/(.)\1{4,}/g, "$1$1$1$1");                     // "loooooool" -> "loooool"
+    .replace(/(.)\1{4,}/gu, "$1$1$1$1")                    // "loooooool" -> "loooool", emoji floods too
+    .replace(/(.{2,12}?)\1{4,}/gu, "$1$1$1$1");            // "hahahaha..." / "lol lol lol..." -> 4 repeats
   const letters = s.replace(/[^A-Za-z]/g, "");
   if (letters.length > 10 && letters.replace(/[^A-Z]/g, "").length / letters.length > 0.7) {
     s = s.charAt(0) + s.slice(1).toLowerCase();

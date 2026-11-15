@@ -27,7 +27,7 @@ The page connects to `ws://localhost:8787` automatically when opened from localh
 |---|---|
 | Edge (before the room wakes up) | Only filradio.xyz may connect. Max 10 connects per minute per IP. Admin: 5 tries per minute, timing-safe check. |
 | Connection | Max 2 tabs per person, 400 people in the room. Chat connects only while the panel is open and disconnects 1 minute after closing it. Keep-alive pings are answered by Cloudflare for free. |
-| Messages | 200 characters max. 1 message every 4 s, 8 per minute. No repeats. Room-wide cap of 40 messages per 10 s. |
+| Messages | 200 characters max. 1 message every 4 s, 8 per minute. No repeats. Words over 30 letters and more than 15 emojis refused; `hahaha…` / `lol lol…` / emoji runs shortened. Room-wide cap of 40 messages per 10 s. |
 | Bots | More than 20 frames in 10 s, malformed data or oversized frames: socket dropped and a strike given. |
 | Filter | English, Tagalog and Bisaya swearing, sexual words, slurs and threats. Catches `f.u.c.k`, `fuuuck`, `sh1t`, `p u t a`, look-alike letters. Blocks links, emails, phone numbers and @handles. Bad names become `Listener1234`. |
 | Auto-removal | Each blocked message is a warning. 3 warnings in an hour: muted 30 min, then 24 h, then 7 days, and all their messages are removed. 3 reports from different people remove a message and give its sender a warning. Messages auto-delete after 6 hours. |

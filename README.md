@@ -189,6 +189,7 @@ Source: `chat-worker/` (server) and `js/chat.js` (client). One global room.
 - **No look-alike names**: a name used by someone else right now (or in the visible history) can't be taken; on connect, digits are added (`maria117`).
 - A character counter appears when 40 or fewer characters are left.
 - **Country flag** next to names, from Cloudflare's `request.cf.country` (2 letters only, nothing else about the visitor). Shown as a real flag image from the open-source [flag-icons](https://github.com/lipis/flag-icons) set (`cdn.jsdelivr.net/npm/flag-icons@7.2.3`, about 1 KB SVG each, loaded lazily and cached by the browser and service worker); a 2-letter badge is the fallback. Hover shows the country name. Each person can turn it off under **Change name** ("Show my country flag", saved in `localStorage` key `filradio-chat-flag`, sent as `?flag=0` / `{t:"flag", on}`).
+- **Reactions (like Facebook)**: hover a message (always visible on phones) and tap the smiley to pick 👍 ❤️ 😂 😮 😢 😡. One per person per message; pick another to change it, the same one to remove it. A pill under the message shows the top 3 and the total, outlined yellow if one is yours. Max 1 reaction every 0.6 s and 30 per minute per person; muted people can't react. Others only see counts, never who reacted.
 - **Pabati (shout-out)**: the megaphone button in the message bar sends the next message as a highlighted "Pabati" card. Limited to 1 per person every 10 minutes (stored in the person's `u:<hash>` record as `g`).
 
 ### Why this design
@@ -227,15 +228,17 @@ sequenceDiagram
 | client → server | `{t:"msg", text, st?, g?}` | Send a message; `st` = station being played (optional, max 40 chars, filtered); `g:1` = pabati |
 | client → server | `{t:"flag", on}` | Show or hide your country flag on new messages |
 | client → server | `{t:"report", id}` | Report a message |
+| client → server | `{t:"react", id, e}` | React: `e` = 0..5 (👍 ❤️ 😂 😮 😢 😡), `-1` removes |
 | client → server | `{t:"name", name}` | Change display name |
 | client → server | `{t:"typing"}` | "Is typing" (client sends at most every 4 s; server relays at most every 3 s, never stores it) |
 | client → server | `ping` (plain text) | Keep-alive, auto-answered `pong` |
 | server → client | `{t:"init", name, online, muted, msgs}` | Sent on connect |
 | server → client | `{t:"msg", m:{id,n,x,ts,s?,c?,g?}, online}` | New message (`s` = station tag, `c` = country code, `g` = pabati) |
 | server → client | `{t:"typing", n}` | Someone else is typing |
+| server → client | `{t:"react", id, r}` / `{t:"reacted", id, e}` | New reaction counts `r` (6 numbers) for everyone / your own pick (to all your tabs) |
 | server → client | `{t:"online", n}` | Online count after joins/leaves (at most once every 10 s for the whole room, only when it changed; a change inside the window is sent when it ends) |
 | server → client | `{t:"del", id}` / `{t:"clear"}` | Message removed / room cleared |
-| server → client | `{t:"err", code, msg, until}` | `slow`, `busy`, `blocked`, `dupe`, `muted`, `name`, `pabati` |
+| server → client | `{t:"err", code, msg, until}` | `slow`, `busy`, `blocked`, `dupe`, `long`, `muted`, `name`, `pabati` |
 | server → client | `{t:"reported", id}` / `{t:"name", name}` | Acknowledgements |
 
 Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash and report list never leave the server.
@@ -245,6 +248,7 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 | Limit | Value |
 | --- | --- |
 | Message length | 200 characters (frames over 1000 bytes close the socket) |
+| Spam walls | Words over 30 letters and more than 15 emojis are refused (no warning, text given back). Repeats are shortened: `hahahaha…`, `lol lol lol…`, emoji runs keep 4. Long pastes are cut at 200 with a note. |
 | Name length | 2 to 20 letters/numbers |
 | Per person | 1 message every 4 s, 8 per minute, no exact repeats |
 | Online count push | on join/leave only, max once per 10 s per room, never stored; skipped changes are sent by one follow-up alarm (max 6 a minute, only during join/leave bursts) |
@@ -267,7 +271,8 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 - Also blocked: **links** (any `http`, `www.`, `something.com/.ph/.xyz…`, "dot com"), **emails**, **phone numbers** (7+ digits, `09xx`, `+63`), **@handles**.
 - ALL-CAPS messages are toned down, and long repeated characters are shortened.
 - Names go through the same filter; a bad name becomes `Listener1234` (and a strike when changed to one).
-- Known innocent words that pass: petition, therapist, leche flan, ilagay, bilateral, appetite, competitive, Sussex, grapes, analysis, "mata ng ina".
+- Also covers spelling variants of sexual words (`belat`, `eyot`, `eut`, `iyut`, `s*x`, `seggs`, `8080` read as "bobo"), sexual requests ("sex video", "eut tayo") and threats in Tagalog, Bisaya and English ("papatayin kita", "papatyon tika", "i will kill").
+- Known innocent words that pass: petition, therapist, leche flan, ilagay, bilateral, appetite, competitive, Sussex, grapes, analysis, "mata ng ina", belated, peyote, "nood tayo", "hayop sa galing", "papatayin ko ang ilaw".
 
 ### Strikes, mutes and automatic removal
 
@@ -280,7 +285,7 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 
 | Key | Content |
 | --- | --- |
-| `msgs` | Array of the last 50 messages: `{id, n, x, ts, h, rep[]}` (`h` = IP hash) |
+| `msgs` | Array of the last 50 messages: `{id, n, x, ts, h, rep[], re?}` (`h` = IP hash, `re` = `{hash: reaction index}`) |
 | `u:<hash>` | `{strikes[], mutes, until, g}` per person (`g` = time of last pabati) |
 | `words` | Extra blocked words added by the admin |
 | `cleanAt` | When the next daily clean-up runs (the single alarm also sends follow-up online counts) |

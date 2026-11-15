@@ -1733,3 +1733,26 @@ html.dark .chat-hint { background: var(--panel); color: var(--text); border: 1px
 }
 @media (prefers-reduced-motion: reduce) { .chat-hint { animation: none; } }
 .about.popular:empty { display: none; }
+
+/* ---------- Chat: reactions (like Facebook) ---------- */
+.chat-react { position: absolute; top: 4px; right: 28px; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--c-dim); cursor: pointer; opacity: 0; transition: opacity .15s, color .15s; }
+.chat-msg.noflag .chat-react { right: 4px; }
+.chat-msg.cont .chat-react { top: 0; }
+.chat-msg:hover .chat-react, .chat-react:focus-visible, .chat-react[aria-expanded="true"] { opacity: 1; }
+@media (hover: none) { .chat-react { opacity: .55; } }
+.chat-react svg { width: 15px; height: 15px; }
+.chat-react:hover, .chat-react[aria-expanded="true"] { color: var(--c-sun); }
+.chat-meta { padding-right: 52px; }
+.chat-msg.noflag .chat-meta { padding-right: 28px; }
+.chat-rx { display: inline-flex; align-items: center; gap: 0; margin-top: 4px; padding: 2px 8px 2px 4px; border-radius: 999px; border: 1px solid var(--c-line); background: var(--c-bg2); color: var(--c-dim); font: 600 11px var(--mono); line-height: 1; cursor: pointer; transition: border-color .15s; }
+.chat-rx[hidden] { display: none; }
+.chat-rx:hover { border-color: var(--c-dim); }
+.chat-rx .rx-e { font-size: 13px; margin-right: -2px; }
+.chat-rx .rx-n { margin-left: 6px; }
+.chat-rx.mine { border-color: var(--c-sun); color: var(--c-sun); }
+.chat-pick { display: flex; gap: 2px; width: max-content; max-width: 100%; margin: 6px 0 2px; padding: 4px; border-radius: 999px; background: var(--c-bg2); border: 1px solid var(--c-line); box-shadow: 0 8px 22px rgba(0, 0, 0, .4); animation: pick-in .16s var(--ease); }
+@keyframes pick-in { from { opacity: 0; transform: translateY(4px) scale(.95); } }
+.chat-pick button { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; font-size: 21px; line-height: 1; cursor: pointer; transition: transform .12s var(--ease), background .12s; }
+.chat-pick button:hover, .chat-pick button:focus-visible { transform: scale(1.25) translateY(-2px); outline: none; background: rgba(255, 255, 255, .06); }
+.chat-pick button[aria-pressed="true"] { background: rgba(255, 201, 60, .2); }
+@media (prefers-reduced-motion: reduce) { .chat-pick { animation: none; } .chat-pick button { transition: none; } }

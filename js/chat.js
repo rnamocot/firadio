@@ -31,6 +31,11 @@
   let ws = null, open = false, retry = 0, retryT = 0, idleT = 0, pingT = 0, noteT = 0, cooldownT = 0, typingT = 0;
   let myName = "", lastSent = "", mutedUntil = 0, nextSend = 0, lastTyping = 0;
   const mine = new Set(), reported = new Set();
+  // Reactions, like Facebook. The order must match the server (it only counts positions 0..5).
+  const RX = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+  const RX_NAMES = ["Like", "Love", "Haha", "Wow", "Sad", "Angry"];
+  const myRx = new Map(); // message id -> my reaction index
+  let pickFor = null;     // the message whose reaction picker is open
   const typers = new Map(); // name -> time to hide
 
   const store = {
@@ -80,6 +85,9 @@
         myName = d.name; nameBtn.textContent = myName;
         if (!store.get()) store.set(myName);
         mutedUntil = d.muted || 0;
+        myRx.clear();
+        for (const [id, e] of Object.entries(d.mr || {})) myRx.set(id, e);
+        pickFor = null;
         list.replaceChildren(...d.msgs.map(row));
         if (!d.msgs.length) list.append(emptyRow());
         regroupAll();
@@ -112,12 +120,24 @@
         break;
       case "del": {
         const li = list.querySelector(`[data-id="${CSS.escape(d.id)}"]`);
-        if (li) { const next = li.nextElementSibling; li.remove(); regroup(next); }
+        if (li) { if (pickFor === li) pickFor = null; const next = li.nextElementSibling; li.remove(); regroup(next); }
         break;
       }
       case "clear":
+        pickFor = null;
         list.replaceChildren(emptyRow());
         break;
+      case "react": {
+        const li = list.querySelector(`[data-id="${CSS.escape(d.id)}"]`);
+        if (li) { li._r = d.r; renderRx(li); }
+        break;
+      }
+      case "reacted": {
+        if (d.e === -1) myRx.delete(d.id); else myRx.set(d.id, d.e);
+        const li = list.querySelector(`[data-id="${CSS.escape(d.id)}"]`);
+        if (li) renderRx(li);
+        break;
+      }
       case "reported":
         markReported(d.id);
         break;
@@ -128,7 +148,7 @@
       case "err":
         if (d.code === "muted") { mutedUntil = d.until; setSendable(); }
         if (d.code === "slow" || d.code === "busy") nextSend = Math.max(nextSend, d.until || 0);
-        if (d.code === "blocked" || d.code === "dupe" || d.code === "pabati") { input.value = lastSent; lastSent = ""; updateCount(); }
+        if (d.code === "blocked" || d.code === "dupe" || d.code === "pabati" || d.code === "long") { input.value = lastSent; lastSent = ""; updateCount(); }
         if (d.code === "pabati") {
           setPabati(true);
           d.msg += d.until ? ` You can send the next one at ${fmtTime(d.until)}, or send it as a normal message.` : "";
@@ -171,6 +191,16 @@
       st.append(m.s);
       head.append(st);
     }
+    if (isMine || m.n === myName) li.classList.add("noflag");
+    const rb = document.createElement("button");
+    rb.type = "button";
+    rb.className = "chat-react";
+    rb.title = "React";
+    rb.setAttribute("aria-label", `React to message from ${m.n}`);
+    rb.setAttribute("aria-expanded", "false");
+    rb.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-react"/></svg>';
+    rb.addEventListener("click", (e) => { e.stopPropagation(); togglePicker(li); });
+    li.append(rb);
     if (!isMine && m.n !== myName) {
       const flag = document.createElement("button");
       flag.type = "button";
@@ -187,7 +217,14 @@
     }
     const p = document.createElement("p");
     p.textContent = m.x;
-    li.append(head, p);
+    const rx = document.createElement("button");
+    rx.type = "button";
+    rx.className = "chat-rx";
+    rx.hidden = true;
+    rx.addEventListener("click", (e) => { e.stopPropagation(); togglePicker(li); });
+    li.append(head, p, rx);
+    li._r = m.r || null;
+    renderRx(li);
     return li;
   }
 
@@ -205,6 +242,66 @@
     const f = list.querySelector(`[data-id="${CSS.escape(id)}"] .chat-flag`);
     if (f) { f.disabled = true; f.title = "Reported. Thank you."; }
   }
+
+  // Summary pill under a message: top 3 reactions and the total, highlighted if one is yours.
+  function renderRx(li) {
+    const el = li.querySelector(".chat-rx");
+    if (!el) return;
+    const r = li._r || [];
+    const total = r.reduce((a, b) => a + b, 0);
+    el.hidden = !total;
+    if (!total) return;
+    const mineIdx = myRx.get(li.dataset.id);
+    const top = r.map((n, i) => [n, i]).filter(([n]) => n).sort((a, b) => b[0] - a[0]).slice(0, 3);
+    el.classList.toggle("mine", mineIdx !== undefined);
+    el.replaceChildren(...top.map(([, i]) => { const s = document.createElement("span"); s.className = "rx-e"; s.textContent = RX[i]; return s; }),
+      Object.assign(document.createElement("span"), { className: "rx-n", textContent: String(total) }));
+    const parts = r.map((n, i) => (n ? `${RX[i]} ${n}` : "")).filter(Boolean);
+    el.title = parts.join("   ") + (mineIdx !== undefined ? `\nYou: ${RX[mineIdx]} ${RX_NAMES[mineIdx]}` : "");
+    el.setAttribute("aria-label", `Reactions: ${r.map((n, i) => (n ? `${n} ${RX_NAMES[i]}` : "")).filter(Boolean).join(", ")}.${mineIdx !== undefined ? ` You reacted ${RX_NAMES[mineIdx]}.` : ""} Tap to react.`);
+  }
+
+  function closePicker() {
+    if (!pickFor) return;
+    pickFor.querySelector(".chat-pick")?.remove();
+    pickFor.querySelector(".chat-react")?.setAttribute("aria-expanded", "false");
+    pickFor = null;
+  }
+
+  function togglePicker(li) {
+    const same = pickFor === li;
+    closePicker();
+    if (same) return;
+    if (ws?.readyState !== 1) return setNote("Not connected. Try again in a moment.", 3000, false, true);
+    if (mutedUntil > Date.now()) return setNote(`You're muted until ${fmtTime(mutedUntil)}.`, 3000, false, true);
+    const id = li.dataset.id;
+    const cur = myRx.get(id);
+    const box = document.createElement("div");
+    box.className = "chat-pick";
+    box.setAttribute("role", "group");
+    box.setAttribute("aria-label", "Pick a reaction");
+    RX.forEach((emo, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = emo;
+      b.title = cur === i ? `${RX_NAMES[i]} (tap to remove)` : RX_NAMES[i];
+      b.setAttribute("aria-label", RX_NAMES[i]);
+      b.setAttribute("aria-pressed", String(cur === i));
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sendJson({ t: "react", id, e: cur === i ? -1 : i });
+        closePicker();
+      });
+      box.append(b);
+    });
+    li.append(box);
+    li.querySelector(".chat-react")?.setAttribute("aria-expanded", "true");
+    pickFor = li;
+    box.scrollIntoView({ block: "nearest" });
+    box.firstChild.focus({ preventScroll: true });
+  }
+
+  document.addEventListener("click", (e) => { if (pickFor && !pickFor.contains(e.target)) closePicker(); });
 
   function emptyRow() {
     const li = document.createElement("li");
@@ -317,7 +414,11 @@
   }, 6000);
   hint?.addEventListener("click", () => { hideHint(); setOpen(true); });
   $("chatClose").addEventListener("click", () => setOpen(false));
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && open && !nameForm.contains(document.activeElement)) setOpen(false); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !open || nameForm.contains(document.activeElement)) return;
+    if (pickFor) { const rb = pickFor.querySelector(".chat-react"); closePicker(); rb?.focus({ preventScroll: true }); return; }
+    setOpen(false);
+  });
   note.addEventListener("click", () => { if (note.classList.contains("retry")) { retry = 0; connect(); } });
   jump.addEventListener("click", scrollEnd);
   list.addEventListener("scroll", () => { if (!jump.hidden && isAtEnd()) jump.hidden = true; }, { passive: true });
@@ -336,6 +437,12 @@
       lastTyping = now;
       sendJson({ t: "typing" });
     }
+  });
+  // A paste longer than the box allows is cut by the browser; say so instead of cutting silently.
+  input.addEventListener("paste", (e) => {
+    const pasted = e.clipboardData?.getData("text") || "";
+    const room = MAX_LEN - input.value.length + (input.selectionEnd - input.selectionStart);
+    if (pasted.length > room) setNote(`Messages are limited to ${MAX_LEN} characters, so your paste was cut.`, 4000, false, true);
   });
   form.addEventListener("submit", (e) => {
     e.preventDefault();
