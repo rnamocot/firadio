@@ -1,72 +1,409 @@
 # FilRadio
 
 Listen to Philippine FM, AM and online radio on a 3D map, at home or abroad. Tap a pin and it plays live.
+Includes a moderated global listener chat.
 
 **Live:** https://filradio.xyz/
 
 ![FilRadio](og-image.png)
 
-## Features
+---
+
+## Contents
+
+1. [Architecture at a glance](#architecture-at-a-glance)
+2. [Hosting and infrastructure](#hosting-and-infrastructure)
+3. [Website (static PWA)](#website-static-pwa)
+4. [Global chat](#global-chat)
+5. [Security and abuse protection](#security-and-abuse-protection)
+6. [Privacy](#privacy)
+7. [Run locally](#run-locally)
+8. [Deploy checklist](#deploy-checklist)
+9. [Moderation](#moderation)
+10. [Troubleshooting](#troubleshooting)
+11. [Repository structure](#repository-structure)
+
+---
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+    V[Visitor browser / installed PWA]
+    subgraph CF[Cloudflare: DNS + proxy for filradio.xyz]
+        CACHE[Edge cache<br/>Cache Rule: Cache static site]
+        W[Worker: filradio-chat<br/>chat.filradio.xyz]
+        DO[(Durable Object: ChatRoom<br/>SQLite storage)]
+    end
+    H[Hostinger shared hosting<br/>public_html = dist/]
+    S[Radio station streams]
+    M[Map tiles: OpenFreeMap, EOX, AWS terrain]
+    A[Google Tag Manager / AdSense<br/>Abacus visit counter]
+
+    V -- HTTPS pages, JS, CSS, stations.json --> CACHE
+    CACHE -- cache miss only --> H
+    V -- WebSocket wss://chat.filradio.xyz/ws<br/>only while chat panel is open --> W
+    W --> DO
+    V -- audio, direct --> S
+    V -- tiles, direct --> M
+    V --> A
+```
+
+| Piece | Where it runs | What it does |
+| --- | --- | --- |
+| Website | Hostinger (static files from `dist/`) behind Cloudflare | Map, station list, player, PWA. No server code, no database. |
+| Edge cache | Cloudflare | Serves almost every page/file so Hostinger is rarely hit. |
+| Chat server | Cloudflare Worker + one Durable Object (`chat-worker/`) | Real-time chat, rate limits, word filter, strikes, mutes, reports. Never touches Hostinger. |
+| Station data | `data/stations.json`, generated offline by `tools/update_stations.py` | Visitors never call the upstream directory. |
+| Audio | Station servers, directly from the browser | FilRadio never proxies audio. |
+
+---
+
+## Hosting and infrastructure
+
+### Domain and DNS
+
+- Domain `filradio.xyz` uses **Cloudflare nameservers**. Cloudflare proxies the site (orange cloud).
+- `chat.filradio.xyz` is a **Workers custom domain**, created automatically by `wrangler deploy` (see `chat-worker/wrangler.toml`).
+- The Worker has **no `workers.dev` URL and no preview URLs** (`workers_dev = false`, `preview_urls = false`), so the chat is reachable at one address only.
+
+### Hostinger
+
+- Plain static hosting. The **contents** of `dist/` go into `public_html` over FTP or hPanel File Manager.
+- **Hostinger CDN is off.** It can't run while the domain uses Cloudflare nameservers, and stacking both caused HTTP 429.
+- Hostinger's edge (responses carry `platform: hostinger` and `x-hcdn-request-id`) rate-limits traffic. When too many requests arrive through Cloudflare it answers **429** for everything. The Cloudflare cache rule below is what keeps this from happening.
+
+### Cloudflare cache rule (required)
+
+Cloudflare → filradio.xyz → **Caching → Cache Rules** → rule **"Cache static site"**:
+
+| Setting | Value |
+| --- | --- |
+| Expression | `(http.host eq "filradio.xyz")` (Hostname equals, not "URI Full") |
+| Cache eligibility | Eligible for cache |
+| Edge TTL | Ignore cache-control header, use **2 hours** |
+| Status code TTL | 400 to 599: no cache (never cache Hostinger 429/5xx pages) |
+| Browser TTL | Respect origin |
+
+The rule does not match `chat.filradio.xyz`, so the chat is never cached.
+
+Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` should say `HIT` (or `MISS` on the first request), never `DYNAMIC`.
+
+**Because of this rule you must purge Cloudflare after every upload** (Caching → Configuration → Purge Everything), or visitors keep the previous version for up to 2 hours.
+
+### Recommended extra Cloudflare settings (free)
+
+- Cache rule → **Cache key → Query string: Ignore**, so `?x=random` requests can't bypass the cache.
+- **Security → WAF → Rate limiting rule**: Hostname equals `filradio.xyz`, 60 requests / 10 s per IP, Block 1 minute.
+- **Security → Bots → Bot Fight Mode**: On.
+
+### Cost
+
+- Hostinger: existing plan, load reduced to cache misses.
+- Cloudflare: **Workers Free plan**. If the daily free quota is ever exhausted, the chat pauses until it resets. Nothing is billed. Keep the account on the free plan to keep this guarantee.
+
+---
+
+## Website (static PWA)
+
+### Features
 
 - **Map that starts in fast 2D**; tap 3D for terrain, globe and buildings (loaded only on demand, choice remembered). Station clusters are drawn as the FilRadio sun
-- **600+ stations** from [radio-browser.info](https://www.radio-browser.info/), merged and de-duplicated, with backup streams
+- **600+ stations**, merged and de-duplicated, with backup streams
 - **Location search**: type a city or province (Cebu, Davao, Bohol…) to list stations within 45 km, nearest first; or tap *near me*
 - **For OFWs**: streams work from any country; visitors abroad get a welcome note
-- **Views**: phones get Map · List (playlist) · Grid · Playing tabs; desktop has a Map | Grid switch
-- **Filters**: "Plays here" (on by default) and "Unknown city" (off by default), explained behind an (i) button
+- **Views**: phones get Map, List, Radio, Grid and Playing tabs in a floating dock; desktop has a Map | Grid switch
+- **Filters**: "Plays here", "On air", "Favorites", "Unknown city", explained behind an (i) button
+- **Favorites** saved on the device
+- **Dark mode**
 - **Mobile app layout**: floating search, bottom sheet, full-screen Now Playing with a tuning dial
-- **Icon**: radio on a Philippine-flag tile (`icon.svg`, PNGs via `tools/make_icons.py`)
 - **Lock-screen and car controls** via the Media Session API (audio works over CarPlay / Android Auto)
 - **Installable PWA** with an illustrated install guide for desktop, Android and iPhone/iPad
-- **Works offline** for the app itself and the last station list (radio streams and new map areas need internet)
-- **SEO**: meta tags, Open Graph / Twitter cards with app screenshots, JSON-LD, image sitemap, robots.txt
-- **Visitor counter** (Abacus, one count per device per day)
+- **Works offline** for the app itself and the last station list
+- **Global listener chat** (floating bubble, bottom right). See [Global chat](#global-chat)
+- **SEO**: meta tags, Open Graph / Twitter cards, JSON-LD, image sitemap, robots.txt
+- **Ads and analytics**: Google AdSense (Auto ads) and GTM, both skipped on localhost; `ads.txt`; `privacy.html`
+- **Visitor counter** and anonymous traffic-source report at `/stats.html` (Abacus counters, one count per device per day)
 
-## Safety and server load
+### How the page is put together
 
-- Station list is fetched once and cached for 6 hours per device; after a failed fetch the app waits 60 s before retrying and uses the cached list
-- radio-browser "click" votes are sent at most once per station per device per day
-- Next/previous is throttled; only one stream connection is open at a time; stream fallbacks are bounded
-- Visitor counter: one hit per device per day, never from localhost
-- Content-Security-Policy, no inline event handlers, all station text escaped, only http(s) links allowed
+- No framework and no bundler. Each feature is a plain IIFE script loaded with `defer`:
+  `places.js`, `traffic.js`, `install-guide.js`, `app.js`, `chat.js`. `theme.js` and `gtm.js` load early in `<head>`.
+- **Icons** are one inline SVG sprite in `index.html` (`<symbol id="i-…">`), used with `<use href="#i-…">`.
+- **Design tokens** are CSS variables on `:root` in `css/style.css`; dark mode overrides them on `html.dark`.
+- **Layouts**: desktop/tablet uses `@media (min-width: 761px), (min-width: 481px) and (max-height: 500px)`;
+  phones use `@media (max-width: 760px) and (min-height: 501px), (max-width: 480px)`.
+- **Content-Security-Policy** is a `<meta>` tag in `index.html`. `connect-src` allows `wss://chat.filradio.xyz` (and `ws://localhost:8787` for development).
 
-## Speed
+### Service worker and cache busting
 
-- All scripts are `defer`; hls.js loads only when an HLS station is played
-- Map pixel ratio is capped on high-density phones; off-screen list rows use `content-visibility`
-- Preconnect to map tiles, station API and CDN; service worker caches the app shell and libraries
+- `sw.js` caches the app shell (network first, cache as offline fallback) and versioned CDN libraries (cache first). Streams, tiles and APIs are never cached.
+- **On every release** bump the version everywhere:
+  - `?v=N` on every asset in `index.html`, `stats.html`, `privacy.html` and in the `SHELL` list in `sw.js`
+  - `VERSION = "filradio-vN"` in `sw.js`
+
+  Current version: **66**.
+
+### Station data
+
+- `tools/update_stations.py` downloads Philippine stations from the public radio directory, merges duplicates, pins them to cities (`js/places.js` gazetteer), and checks each stream once to mark which are on air.
+- Output: `data/stations.json`. The app only ever reads this file from its own domain.
+- In the browser the list is cached for 6 hours per device; after a failed fetch the app waits 60 s before retrying.
+
+### Content rules
+
+- No em dashes in any visible text, titles or meta tags (use a colon, pipe or comma).
+
+---
+
+## Global chat
+
+Source: `chat-worker/` (server) and `js/chat.js` (client). One global room.
+
+### Why this design
+
+- The website is static and Hostinger is easily rate-limited, so the chat **runs entirely on Cloudflare**.
+- **Durable Object with WebSocket Hibernation**: one object holds the room. Idle connections cost nothing; the object sleeps between messages.
+- Keep-alive `ping` frames are answered by Cloudflare automatically (`setWebSocketAutoResponse`) without waking the room.
+- The client **connects only while the chat panel is open** and disconnects 60 s after it is closed or the tab is hidden. Visitors who never open chat create zero chat traffic.
+
+### Flow
+
+```mermaid
+sequenceDiagram
+    participant B as Browser (js/chat.js)
+    participant W as Worker (edge)
+    participant R as ChatRoom (Durable Object)
+    B->>W: GET wss://chat.filradio.xyz/ws?name=…  (Origin: https://filradio.xyz)
+    W->>W: check path, Origin, Upgrade, query length,<br/>CONNECT_LIMIT 10/min per IP
+    W->>W: hash IP: SHA-256(IP_SALT + IP)
+    W->>R: forward with X-Who: <hash>
+    R->>R: socket caps, name filter
+    R-->>B: {t:"init", name, online, muted, msgs[last 50]}
+    B->>R: {t:"msg", text}
+    R->>R: mute? rate limits? flood guard? word filter? duplicate?
+    alt clean
+        R-->>B: broadcast {t:"msg", m:{id,n,x,ts}, online} to everyone
+    else blocked
+        R-->>B: {t:"err", code:"blocked", msg:"… (warning 1 of 3)"}
+    end
+```
+
+### Message protocol (JSON over WebSocket)
+
+| Direction | Message | Meaning |
+| --- | --- | --- |
+| client → server | `{t:"msg", text}` | Send a message |
+| client → server | `{t:"report", id}` | Report a message |
+| client → server | `{t:"name", name}` | Change display name |
+| client → server | `ping` (plain text) | Keep-alive, auto-answered `pong` |
+| server → client | `{t:"init", name, online, muted, msgs}` | Sent on connect |
+| server → client | `{t:"msg", m:{id,n,x,ts}, online}` | New message |
+| server → client | `{t:"del", id}` / `{t:"clear"}` | Message removed / room cleared |
+| server → client | `{t:"err", code, msg, until}` | `slow`, `busy`, `blocked`, `dupe`, `muted`, `name` |
+| server → client | `{t:"reported", id}` / `{t:"name", name}` | Acknowledgements |
+
+Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash and report list never leave the server.
+
+### Limits (`LIMITS` in `chat-worker/src/index.js`)
+
+| Limit | Value |
+| --- | --- |
+| Message length | 200 characters (frames over 1000 bytes close the socket) |
+| Name length | 2 to 20 letters/numbers |
+| Per person | 1 message every 4 s, 8 per minute, no exact repeats |
+| Whole room | 40 messages per 10 s |
+| Any frames (junk included) | 20 per 10 s, else socket dropped + strike |
+| Connections | 2 tabs per person (oldest is closed), 400 in the room |
+| Connects at the edge | 10 per minute per IP (`CONNECT_LIMIT` binding) |
+| Admin attempts | 5 per minute per IP (`ADMIN_LIMIT` binding) |
+| History | Last 50 messages, deleted after 6 hours |
+
+### Word filter (`chat-worker/src/filter.js`)
+
+- Lists: **English, Tagalog and Bisaya** swearing, sexual words, slurs, threats and solicitation phrases.
+  - `SUBSTR`: matched inside words (`fucking`, `putanginamo`)
+  - `EXACT`: whole words only, for words that hide inside innocent words (`ass`/class, `rape`/grape, `tite`/appetite)
+  - `PHRASES`: multi-word (`tang ina`, `send nudes`, `kill yourself`, `dm me`)
+  - Extra words added live by the admin endpoint (stored in the Durable Object)
+- Normalisation before matching: Unicode NFKC/NFKD, accents and zalgo removed, zero-width characters removed, leetspeak (`0→o 1→i 3→e 4→a 5→s 7→t @→a $→s`), Cyrillic/Greek look-alikes, separators inside words (`f.u.c.k`, `f*ck`), spaced letters (`p u t a`), repeated letters (`fuuuck`), and a no-spaces check for long unmistakable words.
+- Also blocked: **links** (any `http`, `www.`, `something.com/.ph/.xyz…`, "dot com"), **emails**, **phone numbers** (7+ digits, `09xx`, `+63`), **@handles**.
+- ALL-CAPS messages are toned down, and long repeated characters are shortened.
+- Names go through the same filter; a bad name becomes `Listener1234` (and a strike when changed to one).
+- Known innocent words that pass: petition, therapist, leche flan, ilagay, bilateral, appetite, competitive, Sussex, grapes, analysis, "mata ng ina".
+
+### Strikes, mutes and automatic removal
+
+- Each blocked message = 1 warning ("warning 1 of 3").
+- **3 warnings within 1 hour → muted**: 30 minutes, then 24 hours, then 7 days for repeat offenders. All their messages are removed for everyone when muted.
+- **Reports**: 3 different people reporting a message removes it and gives the sender a warning. Max 10 reports per person per hour; you can't report yourself.
+- Records are kept per **hashed IP**, and a daily alarm forgets people 30 days after their last mute.
+
+### Durable Object storage
+
+| Key | Content |
+| --- | --- |
+| `msgs` | Array of the last 50 messages: `{id, n, x, ts, h, rep[]}` (`h` = IP hash) |
+| `u:<hash>` | `{strikes[], mutes, until}` per person |
+| `words` | Extra blocked words added by the admin |
+
+### Secrets (Cloudflare, never in git)
+
+| Name | Purpose |
+| --- | --- |
+| `IP_SALT` | Salt for hashing IPs |
+| `ADMIN_TOKEN` | Moderation password (24+ characters) |
+
+A local copy lives in `chat-worker/.dev.vars` (git-ignored, also used by `wrangler dev`). Upload with `npx wrangler secret bulk .dev.vars`.
+
+---
+
+## Security and abuse protection
+
+**Website**
+- Static files only: no server code, forms, logins or database to attack.
+- Content-Security-Policy, no inline event handlers, all station text escaped, only http(s) links allowed.
+- Cloudflare cache in front; Hostinger only sees cache misses. Recommended WAF rate limit and Bot Fight Mode above.
+- Station list cached 6 h per device; retries back off; directory "click" votes at most once per station per device per day; one stream connection at a time; next/previous throttled.
+
+**Chat**
+- Origin allowlist (`ORIGINS` in `chat-worker/src/index.js`): `https://filradio.xyz`, `https://www.filradio.xyz`, and localhost ports 5173/5500 for development.
+- Everything that can be rejected is rejected **at the edge before the room wakes up**: wrong path or method (404), wrong Origin (403), not a WebSocket (426), long query (414), too many connects (429).
+- Malformed JSON, non-object frames, wrong types or oversized frames close the socket.
+- Admin endpoint: POST only, timing-safe token comparison, token must be 24+ characters, body max 2 KB, rate-limited.
+- Messages are rendered with `textContent` only (no HTML injection); message ids are server-generated.
+- Server-side everything: editing the page cannot bypass any limit or filter.
+
+---
+
+## Privacy
+
+- See `privacy.html`. No accounts; location ("near me") stays on the device.
+- Chat: messages and names are public and auto-deleted after 6 hours. Only a salted hash of the IP is stored (never the IP) for rate limits and mutes, forgotten 30 days after the last warning. The chosen name is kept in `localStorage` (`filradio-chat-name`).
+
+---
 
 ## Run locally
 
-Static site, no build step:
+Website (static, no build step):
 
 ```sh
-python -m http.server 5173
+python -m http.server 5173     # or VS Code Live Server on port 5500
 # open http://localhost:5173
 ```
 
-## Deploy
+Chat server (optional, for testing chat locally):
 
 ```sh
-python tools/update_stations.py   # refresh data/stations.json (monthly is plenty)
-python tools/build.py             # minify into dist/ and create ../filradio-xyz-upload.zip
+cd chat-worker
+npm install
+npx wrangler dev --port 8787
 ```
 
-Upload the contents of `dist/` (or the zip) to the web root of `filradio.xyz`. HTTPS is required for install and most streams.
-Visitors' browsers load the station list from `data/stations.json` on this domain, never from the upstream directory.
+On `localhost`/`127.0.0.1` the page connects to `ws://localhost:8787/ws` automatically; in production it uses `wss://chat.filradio.xyz/ws`.
 
-## Files
+---
 
-| Path | Purpose |
-| --- | --- |
-| `index.html` | Page, SEO tags, CSP, branded SVG icon set |
-| `css/style.css` | Design system, desktop + mobile layouts, motion |
-| `js/app.js` | Data, band detection, map, player, location search, mobile shell, PWA, counter |
-| `js/install-guide.js` | Illustrated install guide |
-| `js/traffic.js`, `stats.html`, `js/stats.js`, `css/stats.css` | Anonymous traffic sources report at /stats.html |
-| `js/places.js` | Philippine places gazetteer used to pin stations |
-| `sw.js`, `manifest.webmanifest` | PWA |
-| `icons/` | App icons and fallback radio artwork |
-| `screenshots/`, `og-image.png` | Install dialog screenshots and social preview |
+## Deploy checklist
+
+### Website (every release)
+
+```sh
+python tools/update_stations.py   # optional: refresh data/stations.json (daily keeps "On air" fresh)
+# bump ?v=N and filradio-vN (see "Service worker and cache busting")
+python tools/build.py             # minified dist/ + ../filradio-xyz-upload.zip
+```
+
+1. Upload the **contents** of `dist/` to `public_html` (FTP or hPanel). Upload only `dist/`; never `chat-worker/`, `tools/` or `.dev.vars`.
+2. Cloudflare → **Purge Everything**.
+3. Check: `curl -sI https://filradio.xyz/` returns `200`.
+
+### Chat server (only when `chat-worker/` changes)
+
+```sh
+cd chat-worker
+npx wrangler login                 # first time on a machine
+npx wrangler secret bulk .dev.vars # first time, or when rotating secrets
+npx wrangler deploy
+```
+
+First deploy on a new Cloudflare account: open **Workers & Pages** in the dashboard once so the account gets its workers.dev subdomain (Cloudflare requires it even though this Worker doesn't use it).
+
+---
+
+## Moderation
+
+```sh
+T="<ADMIN_TOKEN from chat-worker/.dev.vars>"
+A="https://chat.filradio.xyz/admin"
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"list"}'                           # messages + report counts
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"del","id":"MSG_ID"}'              # delete one message
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"ban","id":"MSG_ID","hours":168}'  # mute sender, remove their messages
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"addword","word":"newword"}'       # block a word immediately
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"delword","word":"newword"}'
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"clear"}'                          # wipe the chat
+```
+
+Permanent changes to limits or word lists: edit `chat-worker/src/index.js` / `filter.js`, then `npx wrangler deploy`.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Site returns **429**, header `x-hcdn-request-id` | Hostinger edge rate limit; Cloudflare not caching | Check the cache rule expression is `(http.host eq "filradio.xyz")`; purge; `cf-cache-status` must not be `DYNAMIC`. If it persists, ask Hostinger support to lift the limit / allow Cloudflare IPs. |
+| Old version still showing after upload | Cloudflare cache (2 h) or service worker | Purge Everything; make sure `?v=N` and `filradio-vN` were bumped. |
+| Chat says "Chat is offline" | Worker not deployed or blocked by CSP | `curl https://chat.filradio.xyz/` should return 404 (Worker alive). Check `connect-src` in `index.html` includes `wss://chat.filradio.xyz`. |
+| Chat 403 from a new domain or port | Origin not in `ORIGINS` | Add it in `chat-worker/src/index.js`, redeploy. |
+| `wrangler deploy` error 10063 "need a workers.dev subdomain" | New Cloudflare account | Open Workers & Pages in the dashboard once, retry. |
+| Chat "Opened in another tab" | Same person opened a 3rd tab | Expected (2 tabs max). |
+| An innocent word is blocked | Filter false positive | Move the word from `SUBSTR` to `EXACT`, or add it to `NO_SQUASH`, in `filter.js`; redeploy. |
+
+---
+
+## Repository structure
+
+```
+filradio/
+├── index.html              Page, SEO tags, CSP, SVG icon sprite, chat panel markup
+├── stats.html              Anonymous traffic-sources report
+├── privacy.html            Privacy policy (AdSense, analytics, chat)
+├── manifest.webmanifest    PWA manifest
+├── sw.js                   Service worker (app shell + CDN cache)
+├── ads.txt                 AdSense seller declaration
+├── robots.txt, sitemap.xml SEO
+├── icon.svg, og-image.png  App icon, social preview
+├── css/
+│   ├── style.css           Design system, desktop + mobile layouts, chat styles
+│   └── stats.css           Stats + privacy pages
+├── js/
+│   ├── app.js              Data, band detection, map, player, search, mobile shell, PWA, counter
+│   ├── chat.js             Chat client (connects only while open, reconnect/backoff, report, rename)
+│   ├── places.js           Philippine places gazetteer for pinning stations
+│   ├── traffic.js          Anonymous traffic-source counting (shared with stats.html)
+│   ├── stats.js            Stats page
+│   ├── install-guide.js    Illustrated install guide
+│   ├── theme.js            Early dark-mode switch (no flash)
+│   └── gtm.js              GTM + AdSense loader (skipped on localhost)
+├── data/stations.json      Station snapshot (generated)
+├── icons/, screenshots/    App icons, fallback artwork, install screenshots
+├── tools/
+│   ├── build.py            Builds dist/ (terser JS, minified CSS, HTML comments stripped) + upload zip
+│   ├── update_stations.py  Refreshes data/stations.json and on-air status
+│   └── make_icons.py       Generates PNG icons
+├── chat-worker/            Chat server, deployed to Cloudflare (NOT uploaded to Hostinger)
+│   ├── wrangler.toml       Worker config: custom domain, Durable Object, rate-limit bindings
+│   ├── package.json        wrangler dev / deploy scripts
+│   ├── README.md           Chat deploy + moderation quick guide
+│   └── src/
+│       ├── index.js        Worker (edge checks) + ChatRoom Durable Object
+│       └── filter.js       Word / spam filter
+└── dist/                   Build output, upload this (git-ignored)
+```
+
+Git-ignored: `dist/`, `node_modules/`, `chat-worker/node_modules/`, `chat-worker/.wrangler/`, `chat-worker/.dev.vars`, `*.log`.
+
+---
 
 FilRadio · Created by [Ren](https://www.renienamocot.com/).
