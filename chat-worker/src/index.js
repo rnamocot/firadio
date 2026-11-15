@@ -21,6 +21,8 @@ const LIMITS = {
   reportsToHide: 3,        // distinct people reporting a message removes it
   reportsPerHour: 10,
   framesPer10s: 20,        // any frames (junk included); more = bot, socket is dropped
+  typingGapMs: 3000,       // "is typing" relayed at most once every 3 s per person
+  stationLen: 40,          // "listening to" station name
 };
 
 const SEC_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" };
@@ -117,6 +119,9 @@ export class ChatRoom extends DurableObject {
 
     let name = cleanName(url.searchParams.get("name"));
     if (!name || check(name)) name = guestName();
+    // Someone else is using this name right now: add digits so nobody can pose as them.
+    for (let i = 0; i < 5 && this.nameTaken(name, h); i++) name = `${name.slice(0, 16)}${Math.floor(10 + Math.random() * 990)}`;
+    if (this.nameTaken(name, h)) name = guestName();
     server.serializeAttachment({ h, name, sent: [], fr: [] });
 
     this.prune();
@@ -147,12 +152,14 @@ export class ChatRoom extends DurableObject {
     if (!m || typeof m !== "object" || typeof m.t !== "string") return ws.close(1003, "Bad data");
 
     if (m.t === "msg") return this.onMessage(ws, a, m);
+    if (m.t === "typing") return this.onTyping(ws, a, now);
     if (m.t === "report") return this.onReport(ws, a, String(m.id || ""));
     if (m.t === "name" && typeof m.name === "string") {
       const n = cleanName(m.name);
       if (!n) return err(ws, "name", "Name must be 2 to 20 letters or numbers.");
       const why = check(n);
       if (why) { await this.strike(ws, a.h); return err(ws, "name", "That name isn't allowed."); }
+      if (this.nameTaken(n, a.h)) return err(ws, "name", "Someone else is using that name right now. Try another.");
       a.name = n; ws.serializeAttachment(a);
       ws.send(JSON.stringify({ t: "name", name: n }));
     }
@@ -188,11 +195,38 @@ export class ChatRoom extends DurableObject {
     ws.serializeAttachment(a);
     this.roomTimes.push(now);
 
+    // Optional "listening to" station; dropped silently if it breaks any rule.
+    let s = "";
+    if (typeof m.st === "string") {
+      s = tidy(m.st).replace(/[^\p{L}\p{N} .,&'()+\-/:!]/gu, "").slice(0, LIMITS.stationLen).trim();
+      if (s && check(s, this.words)) s = "";
+    }
+
     const msg = { id: crypto.randomUUID().slice(0, 12), n: a.name, x: text, ts: now, h: a.h, rep: [] };
+    if (s) msg.s = s;
     this.msgs.push(msg);
     this.prune();
     await this.ctx.storage.put("msgs", this.msgs);
     this.broadcast({ t: "msg", m: pub(msg), online: this.ctx.getWebSockets().length });
+  }
+
+  // "is typing": relayed to everyone else, never stored. Throttled; muted people are skipped.
+  async onTyping(ws, a, now) {
+    if (now - (a.ty || 0) < LIMITS.typingGapMs) return;
+    a.ty = now; ws.serializeAttachment(a);
+    if ((await this.user(a.h)).until > now) return;
+    const s = JSON.stringify({ t: "typing", n: a.name });
+    for (const other of this.ctx.getWebSockets()) if (other !== ws) try { other.send(s); } catch {}
+  }
+
+  /** True if a different person is using this name now, or posted with it in the visible history. */
+  nameTaken(name, h) {
+    const n = name.toLowerCase();
+    for (const s of this.ctx.getWebSockets()) {
+      const a = s.deserializeAttachment();
+      if (a && a.h !== h && a.name.toLowerCase() === n) return true;
+    }
+    return this.msgs.some((x) => x.h !== h && x.n.toLowerCase() === n);
   }
 
   async onReport(ws, a, id) {
@@ -304,7 +338,7 @@ export class ChatRoom extends DurableObject {
 }
 
 // What other people see (never the hashed IP or report list).
-const pub = (x) => ({ id: x.id, n: x.n, x: x.x, ts: x.ts });
+const pub = (x) => (x.s ? { id: x.id, n: x.n, x: x.x, ts: x.ts, s: x.s } : { id: x.id, n: x.n, x: x.x, ts: x.ts });
 function err(ws, code, msg, until = 0) {
   try { ws.send(JSON.stringify({ t: "err", code, msg, until })); } catch {}
 }

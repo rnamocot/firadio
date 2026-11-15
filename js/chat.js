@@ -9,16 +9,22 @@
   const IDLE_CLOSE_MS = 60e3;   // disconnect a minute after the panel closes / tab is hidden
   const PING_MS = 50e3;         // keep-alive (answered by Cloudflare without waking the room)
   const GAP_MS = 4000;          // matches the server's 1 message / 4 s
+  const TYPING_SEND_MS = 4000;  // send "typing" at most once every 4 s
+  const TYPING_SHOW_MS = 5500;  // hide someone's "typing" after this long without news
+  const GROUP_MS = 120e3;       // same person within 2 min = one group (name shown once)
+  const MAX_LEN = 200;
 
   const $ = (id) => document.getElementById(id);
   const btn = $("chatBtn"), panel = $("chatPanel");
   if (!btn || !panel) return;
   const list = $("chatList"), form = $("chatForm"), input = $("chatInput"), send = $("chatSend");
   const note = $("chatNote"), online = $("chatOnline"), nameBtn = $("chatName"), nameForm = $("chatNameForm"), nameInput = $("chatNameInput"), renameBtn = $("chatRename");
+  const typingEl = $("chatTyping"), jump = $("chatJump"), count = $("chatCount");
 
-  let ws = null, open = false, retry = 0, retryT = 0, idleT = 0, pingT = 0, noteT = 0, cooldownT = 0;
-  let myName = "", lastSent = "", mutedUntil = 0, nextSend = 0;
+  let ws = null, open = false, retry = 0, retryT = 0, idleT = 0, pingT = 0, noteT = 0, cooldownT = 0, typingT = 0;
+  let myName = "", lastSent = "", mutedUntil = 0, nextSend = 0, lastTyping = 0;
   const mine = new Set(), reported = new Set();
+  const typers = new Map(); // name -> time to hide
 
   const store = {
     get: () => { try { return localStorage.getItem(NAME_KEY) || ""; } catch { return ""; } },
@@ -42,6 +48,7 @@
       clearInterval(pingT);
       ws = null;
       panel.classList.remove("live");
+      typers.clear(); renderTyping();
       setSendable();
       if (!open || document.hidden) return;
       if (e.code === 4000) return setNote("Chat is open in another tab.", 0, true);
@@ -57,6 +64,8 @@
     if (ws) { ws.onclose = null; try { ws.close(1000); } catch {} ws = null; }
   }
 
+  const sendJson = (o) => { if (ws?.readyState === 1) ws.send(JSON.stringify(o)); };
+
   function onData(d) {
     switch (d.t) {
       case "init":
@@ -65,26 +74,36 @@
         mutedUntil = d.muted || 0;
         list.replaceChildren(...d.msgs.map(row));
         if (!d.msgs.length) list.append(emptyRow());
+        regroupAll();
         setOnline(d.online);
         setNote("");
         // First-timers get a hint on how to pick their own name.
         if (!store.named()) setNote(`You're ${myName}. Tap "Change name" below to pick your own.`, 10000);
         setSendable();
-        scrollEnd(true);
+        scrollEnd();
         break;
       case "msg": {
         list.querySelector(".chat-empty")?.remove();
         if (d.m.n === myName && d.m.x === lastSent) { mine.add(d.m.id); lastSent = ""; }
-        const atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
-        list.append(row(d.m));
-        while (list.children.length > 80) list.firstChild.remove();
+        const atEnd = isAtEnd();
+        const li = row(d.m);
+        list.append(li);
+        regroup(li);
+        while (list.children.length > 80) { list.firstChild.remove(); regroup(list.firstChild); }
+        typers.delete(d.m.n); renderTyping();
         setOnline(d.online);
-        scrollEnd(atEnd || mine.has(d.m.id));
+        if (atEnd || mine.has(d.m.id)) scrollEnd();
+        else jump.hidden = false;
         break;
       }
-      case "del":
-        list.querySelector(`[data-id="${CSS.escape(d.id)}"]`)?.remove();
+      case "typing":
+        if (d.n && d.n !== myName) { typers.set(d.n, Date.now() + TYPING_SHOW_MS); renderTyping(); }
         break;
+      case "del": {
+        const li = list.querySelector(`[data-id="${CSS.escape(d.id)}"]`);
+        if (li) { const next = li.nextElementSibling; li.remove(); regroup(next); }
+        break;
+      }
       case "clear":
         list.replaceChildren(emptyRow());
         break;
@@ -98,7 +117,7 @@
       case "err":
         if (d.code === "muted") { mutedUntil = d.until; setSendable(); }
         if (d.code === "slow" || d.code === "busy") nextSend = Math.max(nextSend, d.until || 0);
-        if (d.code === "blocked" || d.code === "dupe") { input.value = lastSent; lastSent = ""; }
+        if (d.code === "blocked" || d.code === "dupe") { input.value = lastSent; lastSent = ""; updateCount(); }
         setNote(d.msg, d.code === "muted" ? 0 : 5000, false, true);
         setSendable();
         break;
@@ -112,7 +131,10 @@
     const li = document.createElement("li");
     li.className = "chat-msg";
     li.dataset.id = m.id;
-    if (mine.has(m.id)) li.classList.add("me");
+    li.dataset.n = m.n;
+    li.dataset.ts = m.ts;
+    const isMine = mine.has(m.id);
+    if (isMine) li.classList.add("me");
     const head = document.createElement("div");
     head.className = "chat-meta";
     const who = document.createElement("b");
@@ -120,9 +142,17 @@
     who.style.setProperty("--hue", hue(m.n));
     const when = document.createElement("time");
     when.textContent = fmtTime(m.ts);
-    if (mine.has(m.id)) { const you = document.createElement("span"); you.className = "chat-tag"; you.textContent = "you"; head.append(when, who, you); }
-    else head.append(when, who);
-    if (!mine.has(m.id) && m.n !== myName) {
+    head.append(who, when);
+    if (isMine) { const you = document.createElement("span"); you.className = "chat-tag"; you.textContent = "you"; head.append(you); }
+    if (m.s) {
+      const st = document.createElement("span");
+      st.className = "chat-st";
+      st.title = `Listening to ${m.s}`;
+      st.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-onair"/></svg>';
+      st.append(m.s);
+      head.append(st);
+    }
+    if (!isMine && m.n !== myName) {
       const flag = document.createElement("button");
       flag.type = "button";
       flag.className = "chat-flag";
@@ -131,16 +161,25 @@
       flag.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-flag"/></svg>';
       if (reported.has(m.id)) flag.disabled = true;
       flag.addEventListener("click", () => {
-        if (ws?.readyState === 1) ws.send(JSON.stringify({ t: "report", id: m.id }));
+        sendJson({ t: "report", id: m.id });
         reported.add(m.id); markReported(m.id);
       });
-      head.append(flag);
+      li.append(flag);
     }
     const p = document.createElement("p");
     p.textContent = m.x;
     li.append(head, p);
     return li;
   }
+
+  // Consecutive messages from the same person within 2 minutes show the name only once.
+  function regroup(li) {
+    if (!li || !li.classList.contains("chat-msg")) return;
+    const prev = li.previousElementSibling;
+    const same = prev?.classList.contains("chat-msg") && prev.dataset.n === li.dataset.n && li.dataset.ts - prev.dataset.ts < GROUP_MS;
+    li.classList.toggle("cont", !!same);
+  }
+  function regroupAll() { for (const li of list.children) regroup(li); }
 
   function markReported(id) {
     const f = list.querySelector(`[data-id="${CSS.escape(id)}"] .chat-flag`);
@@ -154,8 +193,22 @@
     return li;
   }
 
+  function renderTyping() {
+    clearTimeout(typingT);
+    const now = Date.now();
+    for (const [n, until] of typers) if (until <= now) typers.delete(n);
+    const names = [...typers.keys()];
+    typingEl.textContent = !names.length ? ""
+      : names.length === 1 ? `${names[0]} is typing…`
+      : names.length === 2 ? `${names[0]} and ${names[1]} are typing…`
+      : `${names.length} people are typing…`;
+    typingEl.classList.toggle("on", names.length > 0);
+    if (names.length) typingT = setTimeout(renderTyping, Math.min(...typers.values()) - now + 50);
+  }
+
   function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
-  function scrollEnd(force) { if (force) list.scrollTop = list.scrollHeight; }
+  const isAtEnd = () => list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+  function scrollEnd() { list.scrollTop = list.scrollHeight; jump.hidden = true; }
   function setOnline(n) { if (n) online.textContent = `${n} online`; panel.classList.add("live"); }
 
   function setNote(text, ms = 0, retryable = false, warn = false) {
@@ -179,6 +232,20 @@
     if (wake > now) cooldownT = setTimeout(setSendable, Math.min(wake - now + 50, 2 ** 31 - 1));
   }
 
+  function updateCount() {
+    const left = MAX_LEN - input.value.length;
+    count.hidden = left > 40;
+    count.textContent = String(left);
+    count.classList.toggle("low", left <= 10);
+  }
+
+  // The station this listener is playing right now (shown next to their message).
+  function currentStation() {
+    const player = $("player");
+    if (!player || player.hidden || !player.classList.contains("live")) return "";
+    return ($("pName")?.textContent || "").trim().slice(0, 40);
+  }
+
   // ---------- panel ----------
   function setOpen(v) {
     open = v;
@@ -194,6 +261,8 @@
   $("chatClose").addEventListener("click", () => setOpen(false));
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && open && !nameForm.contains(document.activeElement)) setOpen(false); });
   note.addEventListener("click", () => { if (note.classList.contains("retry")) { retry = 0; connect(); } });
+  jump.addEventListener("click", scrollEnd);
+  list.addEventListener("scroll", () => { if (!jump.hidden && isAtEnd()) jump.hidden = true; }, { passive: true });
 
   document.addEventListener("visibilitychange", () => {
     clearTimeout(idleT);
@@ -201,14 +270,27 @@
     else if (open) connect();
   });
 
-  input.addEventListener("input", setSendable);
+  input.addEventListener("input", () => {
+    setSendable();
+    updateCount();
+    const now = Date.now();
+    if (input.value.trim() && now - lastTyping > TYPING_SEND_MS && mutedUntil <= now) {
+      lastTyping = now;
+      sendJson({ t: "typing" });
+    }
+  });
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.replace(/\s+/g, " ").trim();
     if (!text || send.disabled || ws?.readyState !== 1) return;
-    ws.send(JSON.stringify({ t: "msg", text }));
+    const msg = { t: "msg", text };
+    const st = currentStation();
+    if (st) msg.st = st;
+    sendJson(msg);
     lastSent = text;
+    lastTyping = 0;
     input.value = "";
+    updateCount();
     nextSend = Date.now() + GAP_MS;
     setSendable();
   });
@@ -234,7 +316,7 @@
     const n = nameInput.value.replace(/\s+/g, " ").trim();
     if (n.length < 2) return setNote("Name must be 2 to 20 letters or numbers.", 4000, false, true);
     if (ws?.readyState !== 1) return setNote("Not connected. Try again in a moment.", 4000, false, true);
-    if (n !== myName) ws.send(JSON.stringify({ t: "name", name: n }));
+    if (n !== myName) sendJson({ t: "name", name: n });
     closeName();
   });
   nameInput.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeName(); } });

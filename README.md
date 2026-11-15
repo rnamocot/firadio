@@ -142,7 +142,7 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
   - `?v=N` on every asset in `index.html`, `stats.html`, `privacy.html` and in the `SHELL` list in `sw.js`
   - `VERSION = "filradio-vN"` in `sw.js`
 
-  Current version: **67**.
+  Current version: **68**.
 
 ### Station data
 
@@ -165,6 +165,12 @@ Source: `chat-worker/` (server) and `js/chat.js` (client). One global room.
 - A yellow **Chat** pill at the bottom right (bounces twice a few seconds after load so people notice it) opens the chat panel. The panel is dark in both themes, like the radio display: plain header with the online count, a one-line rules note, messages with coloured names and small monospace times, and a yellow edge on your own messages. Open, the pill becomes a round close button.
 - **Changing your name**: tap your name or the **Change name** button under the messages, type a new name, then **Save** (Enter) or **Cancel** (Esc). First-time chatters get a one-time tip explaining this, and the SYS rules line mentions it too. Names are 2 to 20 letters or numbers and go through the word filter. The name is remembered on the device (`localStorage` keys `filradio-chat-name` and `filradio-chat-name-set`).
 - Report: hover a message (always visible on touch screens) and tap the flag.
+- **Typing indicator** above the name row: "Ana is typing…", "Ana and Ben are typing…", "3 people are typing…". Hidden after about 5 s without news or when that person's message arrives.
+- **Order**: oldest at the top, newest at the bottom, in the order the server received them (server timestamps). If you have scrolled up, new messages don't pull you down; a **New messages** button appears instead.
+- **Grouping**: messages from the same person within 2 minutes show the name only once.
+- **Listening to**: if you are playing a station when you send, its name shows next to yours (from the mini player). It goes through the word filter and is dropped if it breaks a rule.
+- **No look-alike names**: a name used by someone else right now (or in the visible history) can't be taken; on connect, digits are added (`maria117`).
+- A character counter appears when 40 or fewer characters are left.
 
 ### Why this design
 
@@ -199,12 +205,14 @@ sequenceDiagram
 
 | Direction | Message | Meaning |
 | --- | --- | --- |
-| client → server | `{t:"msg", text}` | Send a message |
+| client → server | `{t:"msg", text, st?}` | Send a message; `st` = station being played (optional, max 40 chars, filtered) |
 | client → server | `{t:"report", id}` | Report a message |
 | client → server | `{t:"name", name}` | Change display name |
+| client → server | `{t:"typing"}` | "Is typing" (client sends at most every 4 s; server relays at most every 3 s, never stores it) |
 | client → server | `ping` (plain text) | Keep-alive, auto-answered `pong` |
 | server → client | `{t:"init", name, online, muted, msgs}` | Sent on connect |
-| server → client | `{t:"msg", m:{id,n,x,ts}, online}` | New message |
+| server → client | `{t:"msg", m:{id,n,x,ts,s?}, online}` | New message (`s` = station tag) |
+| server → client | `{t:"typing", n}` | Someone else is typing |
 | server → client | `{t:"del", id}` / `{t:"clear"}` | Message removed / room cleared |
 | server → client | `{t:"err", code, msg, until}` | `slow`, `busy`, `blocked`, `dupe`, `muted`, `name` |
 | server → client | `{t:"reported", id}` / `{t:"name", name}` | Acknowledgements |
@@ -218,6 +226,7 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 | Message length | 200 characters (frames over 1000 bytes close the socket) |
 | Name length | 2 to 20 letters/numbers |
 | Per person | 1 message every 4 s, 8 per minute, no exact repeats |
+| Typing signal | relayed at most once every 3 s per person; muted people are never shown |
 | Whole room | 40 messages per 10 s |
 | Any frames (junk included) | 20 per 10 s, else socket dropped + strike |
 | Connections | 2 tabs per person (oldest is closed), 400 in the room |
