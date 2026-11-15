@@ -1,6 +1,8 @@
 name = "filradio-chat"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
+workers_dev = false     # only reachable at chat.filradio.xyz
+preview_urls = false
 
 # Served at wss://chat.filradio.xyz/ws (filradio.xyz is already on Cloudflare).
 routes = [{ pattern = "chat.filradio.xyz", custom_domain = true }]
