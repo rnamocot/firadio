@@ -142,7 +142,7 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
   - `?v=N` on every asset in `index.html`, `stats.html`, `privacy.html` and in the `SHELL` list in `sw.js`
   - `VERSION = "filradio-vN"` in `sw.js`
 
-  Current version: **66**.
+  Current version: **67**.
 
 ### Station data
 
@@ -159,6 +159,12 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
 ## Global chat
 
 Source: `chat-worker/` (server) and `js/chat.js` (client). One global room.
+
+### Look and usage
+
+- A yellow **Chat** pill at the bottom right (bounces twice a few seconds after load so people notice it) opens the chat panel. The panel is dark in both themes, like the radio display: plain header with the online count, a one-line rules note, messages with coloured names and small monospace times, and a yellow edge on your own messages. Open, the pill becomes a round close button.
+- **Changing your name**: tap your name or the **Change name** button under the messages, type a new name, then **Save** (Enter) or **Cancel** (Esc). First-time chatters get a one-time tip explaining this, and the SYS rules line mentions it too. Names are 2 to 20 letters or numbers and go through the word filter. The name is remembered on the device (`localStorage` keys `filradio-chat-name` and `filradio-chat-name-set`).
+- Report: hover a message (always visible on touch screens) and tap the flag.
 
 ### Why this design
 

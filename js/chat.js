@@ -14,7 +14,7 @@
   const btn = $("chatBtn"), panel = $("chatPanel");
   if (!btn || !panel) return;
   const list = $("chatList"), form = $("chatForm"), input = $("chatInput"), send = $("chatSend");
-  const note = $("chatNote"), online = $("chatOnline"), nameBtn = $("chatName"), nameForm = $("chatNameForm"), nameInput = $("chatNameInput");
+  const note = $("chatNote"), online = $("chatOnline"), nameBtn = $("chatName"), nameForm = $("chatNameForm"), nameInput = $("chatNameInput"), renameBtn = $("chatRename");
 
   let ws = null, open = false, retry = 0, retryT = 0, idleT = 0, pingT = 0, noteT = 0, cooldownT = 0;
   let myName = "", lastSent = "", mutedUntil = 0, nextSend = 0;
@@ -23,6 +23,8 @@
   const store = {
     get: () => { try { return localStorage.getItem(NAME_KEY) || ""; } catch { return ""; } },
     set: (v) => { try { localStorage.setItem(NAME_KEY, v); } catch {} },
+    named: () => { try { return localStorage.getItem(NAME_KEY + "-set") === "1"; } catch { return true; } },
+    setNamed: () => { try { localStorage.setItem(NAME_KEY + "-set", "1"); } catch {} },
   };
 
   // ---------- connection ----------
@@ -39,6 +41,7 @@
     ws.onclose = (e) => {
       clearInterval(pingT);
       ws = null;
+      panel.classList.remove("live");
       setSendable();
       if (!open || document.hidden) return;
       if (e.code === 4000) return setNote("Chat is open in another tab.", 0, true);
@@ -64,6 +67,8 @@
         if (!d.msgs.length) list.append(emptyRow());
         setOnline(d.online);
         setNote("");
+        // First-timers get a hint on how to pick their own name.
+        if (!store.named()) setNote(`You're ${myName}. Tap "Change name" below to pick your own.`, 10000);
         setSendable();
         scrollEnd(true);
         break;
@@ -87,8 +92,8 @@
         markReported(d.id);
         break;
       case "name":
-        myName = d.name; store.set(myName); nameBtn.textContent = myName;
-        setNote("Name saved.", 2500);
+        myName = d.name; store.set(myName); store.setNamed(); nameBtn.textContent = myName;
+        setNote(`Name changed to ${myName}.`, 3000);
         break;
       case "err":
         if (d.code === "muted") { mutedUntil = d.until; setSendable(); }
@@ -101,7 +106,7 @@
   }
 
   // ---------- rendering ----------
-  const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 
   function row(m) {
     const li = document.createElement("li");
@@ -115,7 +120,8 @@
     who.style.setProperty("--hue", hue(m.n));
     const when = document.createElement("time");
     when.textContent = fmtTime(m.ts);
-    head.append(who, when);
+    if (mine.has(m.id)) { const you = document.createElement("span"); you.className = "chat-tag"; you.textContent = "you"; head.append(when, who, you); }
+    else head.append(when, who);
     if (!mine.has(m.id) && m.n !== myName) {
       const flag = document.createElement("button");
       flag.type = "button";
@@ -150,7 +156,7 @@
 
   function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
   function scrollEnd(force) { if (force) list.scrollTop = list.scrollHeight; }
-  function setOnline(n) { if (n) online.textContent = `${n} online`; }
+  function setOnline(n) { if (n) online.textContent = `${n} online`; panel.classList.add("live"); }
 
   function setNote(text, ms = 0, retryable = false, warn = false) {
     clearTimeout(noteT);
@@ -166,7 +172,7 @@
     const muted = mutedUntil > now;
     const connected = ws?.readyState === 1;
     input.disabled = muted || !connected;
-    input.placeholder = muted ? `Muted until ${fmtTime(mutedUntil)}` : connected ? "Say something nice…" : "Not connected";
+    input.placeholder = muted ? `Muted until ${fmtTime(mutedUntil)}` : connected ? "Type a message…" : "Offline";
     send.disabled = input.disabled || now < nextSend || !input.value.trim();
     clearTimeout(cooldownT);
     const wake = Math.max(muted ? mutedUntil : 0, nextSend);
@@ -207,18 +213,29 @@
     setSendable();
   });
 
-  // Change display name
-  nameBtn.addEventListener("click", () => {
-    nameForm.hidden = false; nameBtn.hidden = true;
-    nameInput.value = myName; nameInput.focus(); nameInput.select();
-  });
-  const closeName = () => { nameForm.hidden = true; nameBtn.hidden = false; };
+  // Change display name: tap your name or "Change name", type, Save (Enter) or Cancel (Esc).
+  const you = panel.querySelector(".chat-you");
+  function openName() {
+    you.classList.add("editing");
+    nameForm.hidden = false;
+    nameInput.value = myName;
+    nameInput.focus(); nameInput.select();
+  }
+  function closeName() {
+    you.classList.remove("editing");
+    nameForm.hidden = true;
+    renameBtn.focus({ preventScroll: true });
+  }
+  nameBtn.addEventListener("click", openName);
+  renameBtn.addEventListener("click", openName);
+  $("chatNameCancel").addEventListener("click", closeName);
   nameForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const n = nameInput.value.trim();
-    if (n && n !== myName && ws?.readyState === 1) ws.send(JSON.stringify({ t: "name", name: n }));
+    const n = nameInput.value.replace(/\s+/g, " ").trim();
+    if (n.length < 2) return setNote("Name must be 2 to 20 letters or numbers.", 4000, false, true);
+    if (ws?.readyState !== 1) return setNote("Not connected. Try again in a moment.", 4000, false, true);
+    if (n !== myName) ws.send(JSON.stringify({ t: "name", name: n }));
     closeName();
   });
   nameInput.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeName(); } });
-  nameInput.addEventListener("blur", () => setTimeout(closeName, 150));
 })();
