@@ -235,7 +235,8 @@
         st.streams = [...st.streams.filter((x) => x.url.startsWith("https:")), ...upgraded];
       }
       if (!st.exact) {
-        const place = findPlace(st.state, st.name, st.tags);
+        const place = findPlace(st.state, st.name, st.tags)
+          || (window.PH_STATION_HOMES || []).find(([rx]) => rx.test(st.name))?.[1] || null;
         if (place) {
           const [la, lo] = window.PH_PLACES[place];
           const [dy, dx] = jitter(st.id, 0.03);
@@ -734,7 +735,7 @@
     // Favorites shows every saved station regardless of the other filters.
     const base = favOnly
       ? stations.filter((st) => favs.has(st.key))
-      : stations.filter((st) => (!directOnly || !st.external) && (showUnk || !st.unknown) && (!onAirOnly || st.onAir !== false));
+      : stations.filter((st) => (!directOnly || !st.external) && (showUnk || !st.unknown || (query && st.hay.includes(query))) && (!onAirOnly || st.onAir !== false));
     const area = currentArea();
     if (area) {
       for (const st of base) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);

@@ -102,3 +102,16 @@ window.PH_PLACES = {
   "Bongao": [5.0300, 119.7500], "Cotabato City": [7.2236, 124.2464], "Kabacan": [7.1067, 124.8297],
   "South Cotabato": [6.3358, 124.7741], "Polomolok": [6.2214, 125.0644], "Mindanao": [7.5, 124.8]
 };
+
+// Well-known stations whose directory entry has no city. Used only when no place is found in the
+// name, state or tags (so "Love Radio Cebu" still goes to Cebu). Patterns are case-insensitive.
+window.PH_STATION_HOMES = [
+  // Mega Manila AM (call signs)
+  [/\bdz(mm|rh|bb|as|rb|rj|ec|xl|rv|ar|me|rm)\b/i, "Metro Manila"],
+  // Mega Manila FM (call signs)
+  [/\bdw(iz|ad|ww|tm|ls|rk|ys|rr|nu|qz|jm|rx|la|et|fm|bc|ra)\b/i, "Metro Manila"],
+  // Mega Manila brands, usually listed without a city
+  [/\bmagic\s*89\.?9\b|\blove radio\s*90\.?7\b|\bbarangay ls\b|\beasy rock\s*96\.?3\b|\byes(\s*the best)?\s*101\.?1\b|\bwin radio\s*91\.?9\b|\bwish\s*107\.?5\b|\bhome radio\s*97\.?9\b|\bjam\s*88\.?3\b|\bmonster\s*(rx)?\s*93\.?1\b|\bmellow\s*94\.?7\b|\benergy fm\s*106\.?7\b|\bradyo patrol\b|\bradyo veritas\b|\bradyo5\b|\b92\.?3 true fm\b|\bsuper radyo dzbb\b/i, "Metro Manila"],
+  // ABS-CBN's MOR (Quezon City) when no city is given
+  [/\bmor\b(?!\s*\d)/i, "Quezon City"],
+];
