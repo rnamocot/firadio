@@ -1854,3 +1854,33 @@ html.dark .wp-go { background: var(--sun); color: var(--sun-ink); }
 .credit .widget-promo { flex: 1 1 100%; order: 1; }
 /* Grid view keeps the footer on one row; the "Add to your site" link is still there */
 .sidebar.grid .credit .widget-promo { display: none; }
+
+/* =========================================================
+   Today's Sponsor (above the station list)
+   ========================================================= */
+.sponsor-bar {
+  display: flex; align-items: center; gap: 10px; margin: 6px 10px 8px; padding: 8px 10px; border-radius: 14px;
+  background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+}
+.sponsor-bar[hidden] { display: none; }
+.sponsor-bar img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; background: #fff; border: 1px solid var(--line); flex: none; }
+.sb-text { flex: 1; min-width: 0; display: grid; }
+.sb-text small { font: 600 9.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sb-text b { font-size: 14px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-text span { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-text span[hidden] { display: none; }
+.sb-go {
+  flex: none; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: var(--paper);
+  font-weight: 700; font-size: 13px; text-decoration: none; transition: transform .12s var(--ease);
+}
+.sb-go:active { transform: scale(.95); }
+html.dark .sb-go { background: var(--sun); color: var(--sun-ink); }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .sponsor-bar { margin: 8px 12px; }
+}
+/* Grid view: keep it to the width of the cards area */
+.sidebar.grid .sponsor-bar { margin: 8px 14px; }
+/* Short landscape phones: no room for it */
+@media (min-width: 481px) and (max-height: 500px) { .sponsor-bar { display: none !important; } }
+/* Shorter desktop screens: give the station list the room; the footer link and share sheet still offer the widget */
+@media (min-width: 761px) and (max-height: 920px) { .credit .widget-promo { display: none; } }

@@ -1514,6 +1514,33 @@
   })();
 
   // ======================================================
+  // Today's Sponsor above the station list. Same sponsor.json as the embedded player ("on": false hides it);
+  // several items rotate daily at midnight Philippine time. The hour in the URL picks up edits within an hour.
+  // ======================================================
+  (async () => {
+    try {
+      const res = await fetch(`sponsor.json?h=${Math.floor(Date.now() / 3600e3)}`);
+      if (!res.ok) return;
+      const sp = await res.json();
+      const items = (Array.isArray(sp.items) ? sp.items : []).filter((x) => x && /^https:\/\//i.test(x.url || "") && clean(x.name));
+      if (!sp.on || !items.length) return;
+      const it = items[Math.floor((Date.now() + 8 * 3600e3) / 864e5) % items.length];
+      const name = clean(it.name).slice(0, 60), text = clean(it.text).slice(0, 120), btn = clean(it.button || "Visit").slice(0, 16);
+      $("spLabel").textContent = clean(sp.label || "Today's Sponsor").slice(0, 40);
+      $("spName").textContent = name;
+      $("spText").textContent = text;
+      $("spText").hidden = !text;
+      $("spGo").textContent = btn;
+      $("spGo").href = it.url;
+      $("spGo").setAttribute("aria-label", `${btn} ${name} (sponsor, opens in a new tab)`);
+      const img = $("spImg");
+      if (/^https:\/\//i.test(it.image || "")) { img.onerror = () => img.remove(); img.src = it.image; } else img.remove();
+      $("spGo").addEventListener("click", () => window.dataLayer?.push({ event: "sponsor_click", sponsor_name: name }));
+      $("sponsor").hidden = false;
+    } catch {}
+  })();
+
+  // ======================================================
   // Clock: Philippine time by default; visitors abroad can tap to switch to their local time.
   // ======================================================
   (() => {
