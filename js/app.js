@@ -1457,7 +1457,7 @@
   // ======================================================
   // Visitor counter, on our own Cloudflare Worker (chat-worker/src/stats.js). Never counts localhost.
   // A device sends ONE request a day to be counted (with its traffic-report keys); other visits
-  // reuse the saved number and re-check it at most once an hour.
+  // show the saved number and re-check it when it is over 10 minutes old.
   // ======================================================
   (async () => {
     const el = $("visits");
@@ -1472,7 +1472,10 @@
     // Read before tidyUrl() strips the tracking parameters.
     const keys = count ? [`src-${T.classify()}`, `loc-${T.place()}`, `cc-${T.country()}`, `dev-${T.device()}`, `os-${T.system()}`] : null;
     T.tidyUrl();
-    if (!count && saved && Date.now() - saved.t < 60 * 60 * 1000) return show(saved.n);
+    // Show the saved number at once, then refresh it if it's more than 10 minutes old
+    // (the server caches /count for 60 s, so this stays cheap).
+    if (saved) show(saved.n);
+    if (!count && saved && Date.now() - saved.t < 10 * 60 * 1000) return;
     try {
       // Plain-text body keeps this a "simple" request (no extra CORS preflight request).
       const res = count
