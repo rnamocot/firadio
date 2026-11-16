@@ -1845,3 +1845,12 @@ html.dark .wp-go { background: var(--sun); color: var(--sun-ink); }
 /* Desktop header: while the Install button shows, Share is icon-only so the station count still fits */
 .ibtn.install:not([hidden]) + .share-app { width: 40px; padding: 0; justify-content: center; }
 .ibtn.install:not([hidden]) + .share-app span { display: none; }
+/* Footer links wrap onto a second line instead of running past the sidebar edge
+   (visits count + OpenStreetMap + How to install + Add to your site + Privacy don't fit in one row). */
+.foot-row, .credit .foot-row { flex-wrap: wrap; row-gap: 6px; }
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
+  .sidebar:not(.grid) .credit .foot-row { justify-content: flex-start; column-gap: 14px; }
+}
+.credit .widget-promo { flex: 1 1 100%; order: 1; }
+/* Grid view keeps the footer on one row; the "Add to your site" link is still there */
+.sidebar.grid .credit .widget-promo { display: none; }
