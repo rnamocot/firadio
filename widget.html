@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FilRadio Widget | Add Philippine Radio to Your Website</title>
+  <meta name="description" content="Free FilRadio widget: let your visitors listen to their favorite Philippine FM, AM and online radio stations on your website or app. One line of code." />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src * data:; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <link rel="canonical" href="https://filradio.xyz/widget.html" />
+  <meta property="og:title" content="FilRadio Widget: Philippine Radio on Your Website" />
+  <meta property="og:description" content="Let your visitors listen to their favorite Philippine radio stations while they shop, sell or chat. Free, one line of code." />
+  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=77" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    :root { --paper: #f4f1ea; --panel: #fffdf8; --panel-2: #f0ebe0; --ink: #10182b; --text: #10182b; --muted: #6b6f7b; --line: #e6e0d2; --sun: #ffc93c; --mono: "Share Tech Mono", ui-monospace, monospace; color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      :root { --paper: #0b1020; --panel: #141b2e; --panel-2: #1b2440; --text: #eef0f5; --muted: #8f97ab; --line: #232c44; color-scheme: dark; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--text); font: 15px/1.5 "Archivo", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 16px 120px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; font-size: 20px; letter-spacing: -.03em; }
+    .logo b span { font-weight: 400; }
+    h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.1; letter-spacing: -.03em; margin: 0 0 10px; }
+    .lead { color: var(--muted); max-width: 640px; margin: 0 0 24px; font-size: 16px; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
+    .card h2 { font-size: 16px; margin: 0 0 12px; }
+    fieldset { border: 0; margin: 0 0 14px; padding: 0; }
+    legend, .lbl { font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; padding: 0; }
+    .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+    .seg label { position: relative; }
+    .seg input { position: absolute; opacity: 0; inset: 0; }
+    .seg span { display: block; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-weight: 600; font-size: 13px; cursor: pointer; }
+    .seg input:checked + span { background: var(--ink); color: var(--paper); border-color: transparent; }
+    @media (prefers-color-scheme: dark) { .seg input:checked + span { background: var(--sun); color: var(--ink); } }
+    .seg input:focus-visible + span { outline: 3px solid var(--sun); outline-offset: 2px; }
+    .seg small { display: block; font-weight: 400; font-size: 11px; opacity: .75; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field { margin-bottom: 12px; }
+    .field input { width: 100%; height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); color: var(--text); font: inherit; }
+    pre { margin: 0; padding: 14px; border-radius: 14px; background: #10182b; color: #ffc93c; font: 12.5px/1.55 var(--mono); white-space: pre-wrap; word-break: break-all; }
+    .copy { margin-top: 10px; height: 40px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--sun); color: #10182b; font-weight: 700; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+    .stage { min-height: 120px; border: 2px dashed var(--line); border-radius: 16px; padding: 12px; display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; }
+    .stage.has-inline { place-items: stretch; }
+    .api pre { margin-top: 8px; }
+    footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="logo" href="./"><img src="icon.svg" alt="" width="30" height="30" /><b>Fil<span>Radio</span></b></a>
+      <a href="./">Open FilRadio</a>
+    </header>
+
+    <h1>Put Philippine radio on your website</h1>
+    <p class="lead">Let your visitors listen to their favorite FM, AM and online stations while they shop, sell or chat. Free, no account, one line of code. Their favorites, Popular stations, search and a Share button are all built in.</p>
+
+    <div class="grid">
+      <form class="card" id="opts" autocomplete="off">
+        <h2>1. Choose how it looks</h2>
+        <fieldset>
+          <legend>Style</legend>
+          <div class="seg">
+            <label><input type="radio" name="mode" value="popover" checked><span>Pop-up <small>beside the button</small></span></label>
+            <label><input type="radio" name="mode" value="modal"><span>Modal <small>middle of the screen</small></span></label>
+            <label><input type="radio" name="mode" value="inline"><span>Inside my page <small>in a box you choose</small></span></label>
+          </div>
+        </fieldset>
+        <fieldset id="launcherSet">
+          <legend>Button</legend>
+          <div class="seg">
+            <label><input type="radio" name="launcher" value="pill" checked><span>📻 Radio</span></label>
+            <label><input type="radio" name="launcher" value="icon"><span>Round radio icon</span></label>
+            <label><input type="radio" name="launcher" value="none"><span>My own button</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Layout</legend>
+          <div class="seg">
+            <label><input type="radio" name="layout" value="full" checked><span>Full <small>favorites, popular, search</small></span></label>
+            <label><input type="radio" name="layout" value="compact"><span>Compact <small>station strip</small></span></label>
+            <label><input type="radio" name="layout" value="bar"><span>Bar <small>one row</small></span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Size</legend>
+          <div class="seg">
+            <label><input type="radio" name="size" value="sm"><span>Small</span></label>
+            <label><input type="radio" name="size" value="md" checked><span>Medium</span></label>
+            <label><input type="radio" name="size" value="lg"><span>Large</span></label>
+          </div>
+        </fieldset>
+        <div class="row2">
+          <fieldset id="positionSet">
+            <legend>Corner</legend>
+            <div class="seg">
+              <label><input type="radio" name="position" value="right" checked><span>Right</span></label>
+              <label><input type="radio" name="position" value="left"><span>Left</span></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Theme</legend>
+            <div class="seg">
+              <label><input type="radio" name="theme" value="auto" checked><span>Auto</span></label>
+              <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+              <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+            </div>
+          </fieldset>
+        </div>
+        <div class="field"><label class="lbl" for="tagline">Tagline</label><input id="tagline" name="tagline" maxlength="60" placeholder="Your favorite stations while you sell" /></div>
+        <div class="row2">
+          <div class="field" id="labelField"><label class="lbl" for="label">Button text</label><input id="label" name="label" maxlength="24" placeholder="Radio" /></div>
+          <div class="field"><label class="lbl" for="ref">Your site name</label><input id="ref" name="ref" maxlength="30" placeholder="mysite" /></div>
+        </div>
+      </form>
+
+      <div>
+        <section class="card">
+          <h2>2. Try it</h2>
+          <div class="stage" id="stage">The radio button is in the corner of this page. Tap it.</div>
+        </section>
+        <section class="card" style="margin-top:20px">
+          <h2>3. Copy this code into your site</h2>
+          <pre id="code"></pre>
+          <button type="button" class="copy" id="copy">Copy code</button>
+          <p class="hint" id="where">Paste it just before <code>&lt;/body&gt;</code>.</p>
+          <div class="api" id="apiBox" hidden>
+            <p class="hint">Then open the player from any button of yours, for example in your chat header:</p>
+            <pre>&lt;button onclick="FilRadio.toggle()"&gt;📻 Radio&lt;/button&gt;</pre>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <footer>
+      Closing the player keeps the radio playing. Want to show what's on in your own app? Listen for the
+      <code>filradio:state</code> event: <code>{ playing, station }</code>.
+      Questions? Visit <a href="./">filradio.xyz</a>.
+    </footer>
+  </div>
+  <script src="js/widget-builder.js?v=1"></script>
+</body>
+</html>

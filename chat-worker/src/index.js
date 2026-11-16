@@ -1,7 +1,9 @@
 // FilRadio global chat: one Cloudflare Durable Object holds the room.
 // Runs on Cloudflare (not Hostinger). WebSocket Hibernation means idle listeners cost nothing.
 import { DurableObject } from "cloudflare:workers";
-import { check, tidy } from "./filter.js";
+import { check, tidy, reserved } from "./filter.js";
+import { Stats } from "./stats.js";
+export { Stats };
 
 const ORIGINS = ["https://filradio.xyz", "https://www.filradio.xyz", "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5500", "http://127.0.0.1:5500"];
 
@@ -53,7 +55,7 @@ function cleanName(raw) {
 const guestName = () => `Listener${Math.floor(1000 + Math.random() * 9000)}`;
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const ip = req.headers.get("CF-Connecting-IP") || "0.0.0.0";
     // Everything below is answered at the edge without waking the chat room.
@@ -61,6 +63,7 @@ export default {
       if (!(await allowed(env.ADMIN_LIMIT, ip))) return deny(429);
       return adminProxy(req, env);
     }
+    if (url.pathname === "/hit" || url.pathname === "/count" || url.pathname === "/stats") return statsRoute(req, env, ctx, url, ip);
     if (url.pathname !== "/ws" || req.method !== "GET") return deny(404);
     const origin = req.headers.get("Origin") || "";
     if (!ORIGINS.includes(origin)) return deny(403);
@@ -94,8 +97,51 @@ async function adminProxy(req, env) {
   const token = env.ADMIN_TOKEN || "";
   const ok = token.length >= 24 && (await sameSecret(req.headers.get("Authorization") || "", `Bearer ${token}`));
   if (!ok || req.method !== "POST") return deny(403);
-  if (Number(req.headers.get("Content-Length") || 0) > 2000) return deny(413);
-  return env.ROOM.get(env.ROOM.idFromName("global")).fetch(new Request("https://room/admin", { method: "POST", body: await req.text() }));
+  if (Number(req.headers.get("Content-Length") || 0) > 10000) return deny(413);
+  const body = await req.text();
+  if (body.length > 10000) return deny(413);
+  // "stats…" actions go to the visitor counter, everything else to the chat room.
+  const isStats = /"action"\s*:\s*"stats/.test(body);
+  const stub = isStats ? env.STATS.get(env.STATS.idFromName("filradio")) : env.ROOM.get(env.ROOM.idFromName("global"));
+  return stub.fetch(new Request(isStats ? "https://stats/admin" : "https://room/admin", { method: "POST", body }));
+}
+
+// ----- visitor counter + traffic report (see stats.js) -----
+async function statsRoute(req, env, ctx, url, ip) {
+  const origin = req.headers.get("Origin") || "";
+  const okOrigin = ORIGINS.includes(origin);
+  const cors = okOrigin ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {};
+  const stub = env.STATS.get(env.STATS.idFromName("filradio"));
+  const out = (r, extra = {}) => {
+    const res = new Response(r.body, r);
+    for (const [k, v] of Object.entries({ ...cors, "X-Content-Type-Options": "nosniff", ...extra })) res.headers.set(k, v);
+    return res;
+  };
+
+  if (url.pathname === "/hit") {
+    // Counting: only from the site, small body, max 6 a minute per IP (one per device per day is normal).
+    if (req.method !== "POST" || !okOrigin) return deny(403);
+    if (Number(req.headers.get("Content-Length") || 0) > 300) return deny(413);
+    if (!(await allowed(env.HIT_LIMIT, ip))) return deny(429);
+    const body = await req.text();
+    if (body.length > 300) return deny(413);
+    const who = await hashIp(ip, env.IP_SALT || "filradio");
+    return out(await stub.fetch(new Request("https://stats/hit", { method: "POST", body, headers: { "X-Who": who } })), { "Cache-Control": "no-store" });
+  }
+
+  if (req.method !== "GET") return deny(405);
+  if (!(await allowed(env.READ_LIMIT, ip))) return deny(429);
+  // Reads are cached at the edge for 60 s: repeat views and refreshes never wake the counter.
+  const cache = caches.default;
+  const key = new Request(`${url.origin}/__cache${url.pathname}`);
+  let r = await cache.match(key);
+  if (!r) {
+    const fresh = await stub.fetch(new Request(`https://stats${url.pathname}`));
+    r = new Response(fresh.body, fresh);
+    r.headers.set("Cache-Control", "public, max-age=60");
+    if (fresh.ok) ctx.waitUntil(cache.put(key, r.clone()));
+  }
+  return out(r);
 }
 
 export class ChatRoom extends DurableObject {
@@ -130,7 +176,7 @@ export class ChatRoom extends DurableObject {
     this.ctx.acceptWebSocket(server, [h]);
 
     let name = cleanName(url.searchParams.get("name"));
-    if (!name || check(name)) name = guestName();
+    if (!name || check(name) || reserved(name)) name = guestName();
     // Someone else is using this name right now: add digits so nobody can pose as them.
     for (let i = 0; i < 5 && this.nameTaken(name, h); i++) name = `${name.slice(0, 16)}${Math.floor(10 + Math.random() * 990)}`;
     if (this.nameTaken(name, h)) name = guestName();
@@ -177,6 +223,7 @@ export class ChatRoom extends DurableObject {
       if (!n) return err(ws, "name", "Name must be 2 to 20 letters or numbers.");
       const why = check(n);
       if (why) { await this.strike(ws, a.h); return err(ws, "name", "That name isn't allowed."); }
+      if (reserved(n)) return err(ws, "name", "That name is reserved for the FilRadio team. Pick another.");
       if (this.nameTaken(n, a.h)) return err(ws, "name", "Someone else is using that name right now. Try another.");
       a.name = n; ws.serializeAttachment(a);
       ws.send(JSON.stringify({ t: "name", name: n }));

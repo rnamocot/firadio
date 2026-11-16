@@ -130,6 +130,26 @@ export function check(text, extra = []) {
   return "";
 }
 
+// Names that could pass as the owner or staff. Checked on names only (not messages), after the same
+// normalisation as the word filter, so "4dm1n", "a d m i n", "Ad.min" and "FilRadio_Official" are caught.
+const RESERVED_SUB = ["admin", "moderator", "moderat", "filradio", "filradyo", "official", "owner", "staff", "customerservice", "customersupport",
+  "tester", "developer", "sysop", "superuser", "helpdesk", "founder", "creator", "management", "verified", "webmaster",
+  "anthropic", "claude"];
+const RESERVED_EXACT = new Set(["mod", "mods", "dev", "devs", "sys", "system", "root", "team", "bot", "host", "ceo",
+  "cs", "server", "support", "supports", "helper"]);
+
+/** True if a display name pretends to be the owner, staff or the system. */
+export function reserved(name) {
+  const toks = tokens(normalize(String(name)));
+  const joined = toks.join("");
+  const joinedC = collapse(joined);
+  if (RESERVED_SUB.some((w) => joined.includes(w) || joinedC.includes(w))) return true;
+  // Split camelCase too ("FilRadioMod", "TeamFil"), then check whole words.
+  const words = String(name).replace(/([a-z])([A-Z])/g, "$1 $2");
+  const wt = tokens(normalize(words)).map(collapse);
+  return wt.some((t) => RESERVED_EXACT.has(t)) || RESERVED_EXACT.has(joined);
+}
+
 /** Tidies a message that passed the filter: trims, limits repeated characters, tames ALL CAPS. */
 export function tidy(text) {
   let s = String(text).normalize("NFKC")

@@ -4,15 +4,11 @@
   const T = window.FilTraffic;
   const $ = (id) => document.getElementById(id);
 
-  async function get(key) {
-    try {
-      const res = await fetch(`${T.COUNTER}/get/${T.NS}/${key}`, { cache: "no-store" });
-      if (!res.ok) return 0; // counter not created yet = 0
-      const { value } = await res.json();
-      return typeof value === "number" ? value : 0;
-    } catch {
-      return 0;
-    }
+  // One request for the whole report (cached for a minute at Cloudflare).
+  async function fetchAll() {
+    const res = await fetch(`${T.STATS}/stats`);
+    if (!res.ok) throw new Error(String(res.status));
+    return (await res.json()).counts || {};
   }
 
   function bars(el, rows, { hideZero = false } = {}) {
@@ -35,14 +31,18 @@
 
   async function load() {
     $("refresh").disabled = true;
-    const [total, src, plc, dev, os, cc] = await Promise.all([
-      get("visits"),
-      Promise.all(T.SOURCES.map(async ([k, label]) => ({ label, n: await get(`src-${k}`) }))),
-      Promise.all(T.PLACES.map(async ([k, label]) => ({ label, n: await get(`loc-${k}`) }))),
-      Promise.all(T.DEVICES.map(async ([k, label]) => ({ label, n: await get(`dev-${k}`) }))),
-      Promise.all(T.SYSTEMS.map(async ([k, label]) => ({ label, n: await get(`os-${k}`) }))),
-      Promise.all(T.COUNTRIES.map(async ([k, label]) => ({ label, n: await get(`cc-${k}`) }))),
-    ]);
+    let c;
+    try {
+      c = await fetchAll();
+    } catch {
+      $("sources").innerHTML = `<li class="muted">Couldn't load the stats right now. Tap Refresh to try again.</li>`;
+      $("refresh").disabled = false;
+      return;
+    }
+    const rows = (list, p) => list.map(([k, label]) => ({ label, n: c[`${p}-${k}`] || 0 }));
+    const total = c.visits || 0;
+    const src = rows(T.SOURCES, "src"), plc = rows(T.PLACES, "loc"), dev = rows(T.DEVICES, "dev");
+    const os = rows(T.SYSTEMS, "os"), cc = rows(T.COUNTRIES, "cc");
     $("total").textContent = total.toLocaleString();
     const tracked = bars($("sources"), src, { hideZero: true });
     $("tracked").textContent = tracked.toLocaleString();

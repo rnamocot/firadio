@@ -29,9 +29,16 @@ The page connects to `ws://localhost:8787` automatically when opened from localh
 | Connection | Max 2 tabs per person, 400 people in the room. Chat connects only while the panel is open and disconnects 1 minute after closing it. Keep-alive pings are answered by Cloudflare for free. |
 | Messages | 200 characters max. 1 message every 4 s, 8 per minute. No repeats. Words over 30 letters and more than 15 emojis refused; `hahaha…` / `lol lol…` / emoji runs shortened. Room-wide cap of 40 messages per 10 s. |
 | Bots | More than 20 frames in 10 s, malformed data or oversized frames: socket dropped and a strike given. |
+| Names | Names that look like staff are refused: admin, moderator, mod, FilRadio, official, owner, tester, dev, system, bot, support and similar (also `4dm1n`, `a d m i n`). |
 | Filter | English, Tagalog and Bisaya swearing, sexual words, slurs and threats. Catches `f.u.c.k`, `fuuuck`, `sh1t`, `p u t a`, look-alike letters. Blocks links, emails, phone numbers and @handles. Bad names become `Listener1234`. |
 | Auto-removal | Each blocked message is a warning. 3 warnings in an hour: muted 30 min, then 24 h, then 7 days, and all their messages are removed. 3 reports from different people remove a message and give its sender a warning. Messages auto-delete after 6 hours. |
 | Privacy | Only a salted hash of the IP is stored, never the IP. Records are forgotten 30 days after the last warning. |
+
+## Visitor counter
+
+The same Worker also serves the site's visitor counter and `/stats.html` report (`src/stats.js`, its own Durable Object).
+One request per device per day to count, one request per stats page load, reads cached 60 s at the edge.
+See the main README, "Visitor counter".
 
 ## Moderation
 

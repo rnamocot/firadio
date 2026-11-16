@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FilRadio Player</title>
+  <meta name="description" content="Compact FilRadio player for other websites: your favorite Philippine radio stations, live." />
+  <!-- Mini player meant to run inside an iframe on partner sites (see widget.js). No map, no chat.
+       Layouts: ?layout=full (default) | compact | bar -->
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src * data: blob:; media-src * blob:; connect-src 'self' https: http: ws://localhost:8787; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/embed.css?v=2" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect fill="currentColor" x="6" y="5" width="4.2" height="14" rx="1.2"/><rect fill="currentColor" x="13.8" y="5" width="4.2" height="14" rx="1.2"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path fill="currentColor" d="M6 5h2.2v14H6zM19 6.2v11.6a.8.8 0 0 1-1.2.7L9.6 12.7a.8.8 0 0 1 0-1.4l8.2-5.8a.8.8 0 0 1 1.2.7z"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path fill="currentColor" d="M15.8 5H18v14h-2.2zM5 6.2v11.6a.8.8 0 0 0 1.2.7l8.2-5.8a.8.8 0 0 0 0-1.4L6.2 5.5a.8.8 0 0 0-1.2.7z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 20s-7.5-4.6-9.2-9.3C1.6 7.3 3.9 4 7.3 4c2 0 3.4 1.1 4.7 2.8C13.3 5.1 14.7 4 16.7 4c3.4 0 5.7 3.3 4.5 6.7C19.5 15.4 12 20 12 20z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></g></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-vol" viewBox="0 0 24 24"><path fill="currentColor" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  </svg>
+
+  <header class="top">
+    <div class="brand">
+      <img src="icon.svg" alt="" width="26" height="26" />
+      <div>
+        <b>Fil<span>Radio</span></b>
+        <small id="tagline">Your favorite stations, live</small>
+      </div>
+    </div>
+    <a class="full" id="fullLink" href="https://filradio.xyz/" target="_blank" rel="noopener">Full site <svg class="i"><use href="#i-ext"/></svg></a>
+  </header>
+
+  <aside class="sponsor" id="sponsor" hidden>
+    <small class="sp-label" id="spLabel">Today's Sponsor</small>
+    <div class="sp-body">
+      <img id="spImg" alt="" referrerpolicy="no-referrer" />
+      <div class="sp-text"><b id="spName"></b><small id="spText"></small></div>
+      <a class="sp-go" id="spGo" target="_blank" rel="noopener sponsored">Visit</a>
+    </div>
+  </aside>
+
+  <section class="now" id="now" aria-live="polite">
+    <div class="art" id="art"><img src="icons/radio-128.webp" alt="" /></div>
+    <div class="now-info">
+      <b id="nowName">Pick a station</b>
+      <small id="nowStatus">Tap play or choose a station</small>
+    </div>
+    <div class="ctrls">
+      <button type="button" class="ic" id="share" aria-label="Share"><svg class="i"><use href="#i-share"/></svg></button>
+      <button type="button" class="ic fav" id="nowFav" aria-pressed="false" aria-label="Save to favorites" hidden><svg class="i"><use href="#i-heart"/></svg></button>
+      <button type="button" class="ic bar-only" id="prev" aria-label="Previous station"><svg class="i"><use href="#i-prev"/></svg></button>
+      <button type="button" class="toggle" id="toggle" aria-label="Play" disabled><svg class="i"><use href="#i-play"/></svg></button>
+      <button type="button" class="ic bar-only" id="next" aria-label="Next station"><svg class="i"><use href="#i-next"/></svg></button>
+      <button type="button" class="ic" id="closeBtn" aria-label="Hide player (the radio keeps playing)" hidden><svg class="i"><use href="#i-close"/></svg></button>
+    </div>
+  </section>
+  <div class="vol"><svg class="i"><use href="#i-vol"/></svg><input type="range" id="volume" min="0" max="1" step="0.05" value="0.8" aria-label="Volume" /></div>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="favs" aria-selected="false">♥ Favorites <span id="favCount"></span></button>
+    <button type="button" role="tab" data-tab="popular" aria-selected="false">Popular</button>
+    <button type="button" role="tab" data-tab="all" aria-selected="false">All</button>
+  </nav>
+  <label class="search" id="searchBox" hidden>
+    <svg class="i"><use href="#i-search"/></svg>
+    <input type="search" id="q" placeholder="Search station, city, genre" autocomplete="off" />
+  </label>
+
+  <ul class="list" id="list" aria-label="Stations"></ul>
+  <div class="empty" id="empty" hidden>
+    <p><b>No favorites yet.</b> Tap ♡ on any station to keep it here.</p>
+    <button type="button" class="btn" id="importBtn">Bring my favorites from FilRadio</button>
+    <p class="note">Already saved stations on filradio.xyz? This copies them here.</p>
+  </div>
+
+  <div class="sheet" id="shareSheet" hidden role="dialog" aria-label="Share">
+    <div class="sheet-card">
+      <div class="sheet-head"><b id="shareTitle">Share</b><button type="button" class="ic" id="shareClose" aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button></div>
+      <div class="share-grid">
+        <a id="shFb" target="_blank" rel="noopener">Facebook</a>
+        <a id="shMsg" target="_blank" rel="noopener">Messenger</a>
+        <a id="shViber" target="_blank" rel="noopener">Viber</a>
+        <a id="shWa" target="_blank" rel="noopener">WhatsApp</a>
+        <a id="shX" target="_blank" rel="noopener">X</a>
+        <button type="button" id="shCopy">Copy link</button>
+      </div>
+      <button type="button" class="share-more" id="shMore" hidden>More apps…</button>
+      <a class="get-widget" id="getWidget" href="https://filradio.xyz/widget.html" target="_blank" rel="noopener">📻 Get this radio player for your own site</a>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <audio id="audio" preload="none"></audio>
+  <script src="js/traffic.js?v=77"></script>
+  <script src="js/embed.js?v=2"></script>
+</body>
+</html>

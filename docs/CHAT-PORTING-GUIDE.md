@@ -87,6 +87,7 @@ Durable Object "ChatRoom" (one instance, idFromName("global"))
   to change it. Name saved in `localStorage` (`filradio-chat-name`, `filradio-chat-name-set`).
 - **Change name**: tap your name or "Change name"; inline form with Save (Enter) / Cancel (Esc).
   2 to 20 letters/numbers, filtered, must be unique.
+- **Reserved names**: names that could pass as the owner or staff (admin, moderator, mod, official, owner, tester, dev, system, bot, support, the app name...) are refused without a strike. `reserved()` in `filter.js` uses the same normalisation as the word filter, so `4dm1n`, `a d m i n` and `FilRadioMod` are caught, while Radio Lover, Supporter, Modesto, Devon, Hostess still pass. For MyTindahan, replace `filradio`/`filradyo` with your app name and add words like `tindera`/`seller` only if sellers get a verified badge instead.
 - **Unique names**: a name used by another person right now (or seen in visible history) can't be
   taken. On connect, digits are appended (`maria117`); on rename, an error is shown.
 - **Messages**: oldest top, newest bottom, server timestamps, 24 h `HH:MM` time, coloured names
@@ -316,6 +317,20 @@ npx wrangler deploy                   # creates the custom domain automatically
 - Health check: `curl https://chat.<domain>/` returns 404 = Worker alive.
 
 ---
+
+## 10b. Bonus: visitor counter on the same Worker
+
+FilRadio first used a free third-party counter (Abacus). Its stats page sent 80 requests at once and
+the service blocked them, so counts were moved onto the chat Worker (`chat-worker/src/stats.js`):
+
+- Separate Durable Object `Stats` (migration `v2`), so visitor traffic never wakes the chat room.
+- `POST /hit` once per device per day with up to 5 keys (one per group); `GET /count` at most hourly
+  per device (saved in `localStorage`); `GET /stats` once per report load.
+- `/count` and `/stats` are cached at the edge for 60 s with `caches.default`.
+- Rate limits `HIT_LIMIT` (6/min/IP) and `READ_LIMIT` (30/min/IP), Origin allowlist, key format
+  check, max 200 keys, max 30 counted visits per network per day.
+- POST with a plain-text JSON body is a CORS "simple request", so there is no extra preflight.
+- Old totals imported once into `base` with the admin action `statsbase` (safe to repeat).
 
 ## 11. Gotchas we hit
 

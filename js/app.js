@@ -1455,29 +1455,61 @@
   } catch {}
 
   // ======================================================
-  // Visitor counter (Abacus, free & keyless). One "hit" per device per day; never counts localhost.
+  // Visitor counter, on our own Cloudflare Worker (chat-worker/src/stats.js). Never counts localhost.
+  // A device sends ONE request a day to be counted (with its traffic-report keys); other visits
+  // reuse the saved number and re-check it at most once an hour.
   // ======================================================
   (async () => {
     const el = $("visits");
     const T = window.FilTraffic;
+    if (!T) return;
+    const show = (n) => { if (typeof n === "number") { el.querySelector("b").textContent = n.toLocaleString(); el.hidden = false; } };
+    const SAVE = "filradio.visits";
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(SAVE) || "null"); } catch {}
     const dev = /^(localhost|127\.|\[::1\])/.test(location.hostname) || location.protocol === "file:";
-    const action = !dev && guard.allow("visit", 24 * 60 * 60 * 1000) ? "hit" : "get";
-    // Traffic source report (see stats.html): +1 on "where from", "PH or abroad" and "device" counters,
-    // only when this visit is counted. Read before tidyUrl() strips the tracking parameters.
-    if (T && action === "hit") {
-      for (const k of [`src-${T.classify()}`, `loc-${T.place()}`, `cc-${T.country()}`, `dev-${T.device()}`, `os-${T.system()}`]) {
-        fetch(`${T.COUNTER}/hit/${T.NS}/${k}`).catch(() => {});
-      }
-    }
-    T?.tidyUrl();
+    const count = !dev && guard.allow("visit", 24 * 60 * 60 * 1000);
+    // Read before tidyUrl() strips the tracking parameters.
+    const keys = count ? [`src-${T.classify()}`, `loc-${T.place()}`, `cc-${T.country()}`, `dev-${T.device()}`, `os-${T.system()}`] : null;
+    T.tidyUrl();
+    if (!count && saved && Date.now() - saved.t < 60 * 60 * 1000) return show(saved.n);
     try {
-      const res = await fetch(`https://abacus.jasoncameron.dev/${action}/webtarsier-filradio/visits`);
+      // Plain-text body keeps this a "simple" request (no extra CORS preflight request).
+      const res = count
+        ? await fetch(`${T.STATS}/hit`, { method: "POST", body: JSON.stringify({ k: keys }), keepalive: true })
+        : await fetch(`${T.STATS}/count`);
+      if (!res.ok) throw new Error(String(res.status));
+      const { visits } = await res.json();
+      show(visits);
+      try { localStorage.setItem(SAVE, JSON.stringify({ n: visits, t: Date.now() })); } catch {}
+    } catch { if (saved) show(saved.n); }
+  })();
+
+  // ======================================================
+  // Shopee affiliate card (footer). Change the product by editing promo.json ("on": false hides it).
+  // The hour in the URL lets a new promo.json show within an hour without purging Cloudflare.
+  // ======================================================
+  (async () => {
+    const card = $("promo");
+    if (!card) return;
+    try {
+      const res = await fetch(`promo.json?h=${Math.floor(Date.now() / 3600e3)}`);
       if (!res.ok) return;
-      const { value } = await res.json();
-      if (typeof value === "number") {
-        el.querySelector("b").textContent = value.toLocaleString();
-        el.hidden = false;
-      }
+      const p = await res.json();
+      // Only real Shopee links (affiliate short links included).
+      if (!p.on || !/^https:\/\/([a-z0-9-]+\.)*(shopee\.[a-z.]+|shope\.ee)\//i.test(p.url || "")) return;
+      const title = String(p.title || "").trim().slice(0, 90);
+      const price = String(p.price || "").trim().slice(0, 30);
+      card.href = p.url;
+      $("promoTitle").textContent = title;
+      $("promoPrice").textContent = price;
+      $("promoPrice").hidden = !price;
+      const img = $("promoImg");
+      if (/^https:\/\//i.test(p.image || "")) { img.onerror = () => img.remove(); img.src = p.image; }
+      else img.remove();
+      card.title = `${title} (opens Shopee)`;
+      card.setAttribute("aria-label", `Ad: ${title}${price ? `, ${price}` : ""}, opens Shopee`);
+      card.hidden = false;
     } catch {}
   })();
 
@@ -1612,13 +1644,26 @@
   const LAST_KEY = "filradio.last";
   audio.addEventListener("playing", () => { try { if (current) localStorage.setItem(LAST_KEY, current.key); } catch {} });
 
+  // A shared link (filradio.xyz/?station=<key>, made by the Share button) offers that station instead.
+  // Browsers block sound until a tap, so it waits on the same "play" card as Continue listening.
+  const sharedKey = (() => {
+    try {
+      const url = new URL(location.href);
+      const k = norm(url.searchParams.get("station") || "");
+      if (url.searchParams.has("station")) { url.searchParams.delete("station"); history.replaceState(history.state, "", url.pathname + url.search + url.hash); }
+      return k;
+    } catch { return ""; }
+  })();
   function offerResume() {
     if (QUIET || current) return;
     let key = "";
     try { key = localStorage.getItem(LAST_KEY) || ""; } catch {}
-    const st = key && stations.find((s) => s.key === key);
+    const shared = sharedKey && stations.find((s) => s.key === sharedKey);
+    const st = shared || (key && stations.find((s) => s.key === key));
     const box = $("resume");
     if (!st || !box) return;
+    box.querySelector(".resume-text small").textContent = shared ? "Shared with you" : "Continue listening";
+    if (shared && mapReady && !isMobile()) focus(st, { popup: false });
     $("resumeName").textContent = st.name;
     box.hidden = false;
     const hide = () => { box.hidden = true; clearTimeout(t); };
@@ -1627,6 +1672,55 @@
     $("resumeX").onclick = hide;
     audio.addEventListener("play", hide, { once: true });
   }
+
+  // ======================================================
+  // Share: the app (top bar) or the station that's on (player / Now Playing).
+  // Our own sheet first, so people also see "Put FilRadio on your site"; "More apps…" opens the phone's share menu.
+  // ======================================================
+  function shareData(st) {
+    const url = new URL("https://filradio.xyz/");
+    if (st) url.searchParams.set("station", st.key);
+    url.searchParams.set("utm_source", "share");
+    return st
+      ? { title: `${st.name} on FilRadio`, text: `Listening to ${st.name} live on FilRadio 📻`, url: url.href }
+      : { title: "FilRadio", text: "Listen to Philippine FM, AM and online radio live and free, anywhere 📻", url: url.href };
+  }
+  function openShare(st) {
+    const d = shareData(st);
+    const u = encodeURIComponent(d.url), t = encodeURIComponent(`${d.text} ${d.url}`);
+    $("shareTitle").textContent = st ? `Share ${st.name}` : "Share FilRadio";
+    $("shareText").textContent = st ? [freqFull(st) || st.band, st.where].filter(Boolean).join(" · ") : "Philippine radio, live and free, anywhere.";
+    $("shFb").href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
+    $("shMsg").href = `fb-messenger://share/?link=${u}`;
+    $("shMsg").hidden = !matchMedia("(pointer: coarse)").matches; // the Messenger app link only works on phones
+    $("shViber").href = `viber://forward?text=${t}`;
+    $("shWa").href = `https://wa.me/?text=${t}`;
+    $("shX").href = `https://x.com/intent/post?text=${encodeURIComponent(d.text)}&url=${u}`;
+    $("shCopy").onclick = async () => {
+      try { await navigator.clipboard.writeText(`${d.text} ${d.url}`); toast("Link copied. Paste it anywhere 📋"); }
+      catch { window.prompt("Copy this link:", d.url); }
+      $("shareDlg").close();
+    };
+    $("shMore").hidden = !navigator.share;
+    $("shMore").onclick = () => { $("shareDlg").close(); navigator.share(d).catch(() => {}); };
+    $("shareDlg").showModal();
+    window.dataLayer?.push({ event: "share_open", share_what: st ? "station" : "app" });
+  }
+  for (const id of ["shareApp", "shareTop"]) $(id).addEventListener("click", () => openShare(null));
+  for (const id of ["pShare", "nShare"]) $(id).addEventListener("click", () => openShare(current));
+  $("shareClose").addEventListener("click", () => $("shareDlg").close());
+
+  // Listener chat tip: "Add FilRadio to your app or site". Hidden for two weeks after someone closes it.
+  const PROMO_KEY = "filradio.chatPromo";
+  try { if (Date.now() - (+localStorage.getItem(PROMO_KEY) || 0) < 14 * 864e5) $("chatPromo").hidden = true; } catch {}
+  $("chatShare").addEventListener("click", () => openShare(null));
+  $("chatPromoX").addEventListener("click", () => {
+    $("chatPromo").hidden = true;
+    try { localStorage.setItem(PROMO_KEY, String(Date.now())); } catch {}
+  });
+  $("shareDlg").addEventListener("click", (e) => {
+    if (e.target === $("shareDlg") || e.target.closest(".share-grid a")) $("shareDlg").close();
+  });
 
   // ======================================================
   // Boot

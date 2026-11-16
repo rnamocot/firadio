@@ -76,6 +76,9 @@ button { font: inherit; color: inherit; }
 .ibtn.install[hidden] { display: none; }
 .ibtn.install svg { width: 18px; height: 18px; }
 html.dark .ibtn.install { background: var(--sun); color: var(--sun-ink); } 
+.ibtn.share-app { width: auto; padding: 0 12px 0 10px; gap: 6px; display: flex; align-items: center; font-weight: 600; font-size: 13px; border-radius: 999px; color: var(--text); }
+.ibtn.share-app svg { width: 17px; height: 17px; }
+.ibtn.share-app:hover { background: var(--panel-2); }
 .sheet-toggle svg { width: 20px; height: 20px; }
 a.ibtn.off { visibility: hidden; }
 .pill-btn {
@@ -1546,7 +1549,9 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
 /* Panel */
 .chat {
   position: fixed; z-index: 29; display: flex; flex-direction: column; overflow: hidden;
-  right: 16px; bottom: 102px; width: 360px; height: min(540px, calc(100% - 140px));
+  right: 16px; bottom: 102px; width: 360px;
+  /* Grows with the screen: 78% of the height, between 560 and 760px, and never past the top edge. */
+  height: min(clamp(560px, 78vh, 760px), calc(100% - 130px));
   background: var(--c-bg); color: var(--c-text); border: 1px solid var(--c-line); border-radius: 18px;
   box-shadow: 0 20px 50px -16px rgba(5, 9, 20, .7);
   transform-origin: bottom right; animation: chat-in .22s var(--ease);
@@ -1565,6 +1570,26 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
 .chat-x svg { width: 16px; height: 16px; }
 
 .chat-rules { margin: 10px 16px 2px; font-size: 11.5px; line-height: 1.45; color: var(--c-dim); }
+/* "Add FilRadio to your app or site" tip under the rules */
+.chat-promo { position: relative; display: flex; gap: 10px; margin: 8px 12px 4px; padding: 10px 34px 10px 10px; border-radius: 12px;
+  background: color-mix(in srgb, var(--c-sun) 12%, var(--c-bg2)); border: 1px solid color-mix(in srgb, var(--c-sun) 35%, var(--c-line)); }
+.chat-promo[hidden] { display: none; }
+.cpm-ico { width: 32px; height: 32px; border-radius: 9px; background: var(--c-sun); color: #10182b; display: grid; place-items: center; flex: none; }
+.cpm-ico svg.i { width: 18px; height: 18px; }
+.cpm-text { min-width: 0; display: grid; gap: 2px; }
+.cpm-text b { font-size: 12.5px; color: var(--c-text); }
+.cpm-text small { font-size: 11.5px; line-height: 1.4; color: var(--c-dim); }
+.cpm-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cpm-actions a, .cpm-actions button {
+  display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; border-radius: 999px; border: 0; cursor: pointer;
+  font: 700 12px var(--display); text-decoration: none; background: var(--c-sun); color: #10182b;
+}
+.cpm-actions button { background: transparent; color: var(--c-text); border: 1px solid var(--c-line); }
+.cpm-actions button:hover { background: var(--c-bg); }
+.cpm-actions svg.i { width: 14px; height: 14px; }
+.cpm-x { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 8px; border: 0; padding: 0; background: transparent; color: var(--c-dim); display: grid; place-items: center; cursor: pointer; }
+.cpm-x:hover { color: var(--c-text); background: var(--c-bg); }
+.cpm-x svg.i { width: 13px; height: 13px; }
 
 /* Messages */
 .chat-list { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 2px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--c-line) transparent; }
@@ -1653,7 +1678,8 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
   html.chat-open .chat-fab { display: none; } /* the panel has its own close button */
   .chat {
     left: 8px; right: 8px; width: auto; bottom: calc(var(--tab-h) + 8px);
-    height: min(560px, calc(100dvh - var(--tab-h) - var(--safe-top) - 24px)); border-radius: 20px;
+    /* Phones: nearly the whole screen above the tab bar (taller phones get more room), up to 720px */
+    height: min(720px, calc(100dvh - var(--tab-h) - var(--safe-top) - 16px)); border-radius: 20px;
   }
 }
 @media (min-width: 481px) and (max-height: 500px) {
@@ -1663,7 +1689,19 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
 /* Narrow desktops: the centred player reaches the corner, so the bubble sits above it. */
 @media (min-width: 761px) and (max-width: 1020px) {
   .app:has(.player:not([hidden])) .chat-fab { bottom: 100px; }
-  .app:has(.player:not([hidden])) .chat { bottom: 168px; height: min(540px, calc(100% - 200px)); }
+  .app:has(.player:not([hidden])) .chat { bottom: 168px; height: min(clamp(520px, 74vh, 700px), calc(100% - 190px)); }
+}
+/* Big screens: a little wider too */
+@media (min-width: 1280px) and (min-height: 760px) { .chat { width: 390px; } }
+@media (min-width: 1600px) and (min-height: 900px) { .chat { width: 420px; } }
+/* Tablets in portrait (wide enough for the side layout but tall): use the extra height */
+@media (min-width: 761px) and (max-width: 1100px) and (min-height: 900px) { .chat { width: 400px; } }
+/* Short screens: keep the message area usable by shrinking the tip under the rules */
+@media (max-height: 700px) {
+  .chat-rules { margin-top: 8px; font-size: 11px; }
+  .chat-promo { margin-top: 6px; padding-top: 8px; padding-bottom: 8px; }
+  .chat-promo .cpm-text small { display: none; }
+  .chat-promo .cpm-actions { margin-top: 4px; }
 }
 @media (prefers-reduced-motion: reduce) { .chat, .chat-fab { animation: none; } }
 
@@ -1756,3 +1794,54 @@ html.dark .chat-hint { background: var(--panel); color: var(--text); border: 1px
 .chat-pick button:hover, .chat-pick button:focus-visible { transform: scale(1.25) translateY(-2px); outline: none; background: rgba(255, 255, 255, .06); }
 .chat-pick button[aria-pressed="true"] { background: rgba(255, 201, 60, .2); }
 @media (prefers-reduced-motion: reduce) { .chat-pick { animation: none; } .chat-pick button { transition: none; } }
+
+/* ---------- Shopee affiliate card (footer, set in promo.json) ---------- */
+.credit .promo { --shp: #ee4d2d; display: flex; align-items: center; gap: 10px; flex: 1 1 100%; max-width: 380px; margin: 6px 0 8px; padding: 8px 12px 8px 8px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--text); text-decoration: none; transition: border-color .15s, transform .15s var(--ease); }
+.credit .promo[hidden] { display: none; }
+.credit .promo:hover { border-color: var(--shp); transform: translateY(-1px); }
+html.dark .credit .promo { --shp: #ff7a5c; }
+.promo-img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--line); }
+.promo-text { display: grid; gap: 2px; min-width: 0; text-align: left; }
+.promo-tag { font: 700 9.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--shp); }
+.promo-title { font-size: 12.5px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.promo-price { font: 700 12.5px var(--mono); color: var(--shp); }
+.promo-price[hidden] { display: none; }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .credit .promo { margin-left: auto; margin-right: auto; } }
+@media (prefers-reduced-motion: reduce) { .credit .promo { transition: none; } }
+
+/* =========================================================
+   Share sheet + "Put FilRadio on your site" card
+   ========================================================= */
+.share-ico { background: color-mix(in srgb, var(--sun) 35%, var(--panel)); }
+.share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.share-grid a, .share-grid button, .share-more {
+  height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--text);
+  font: 700 13px var(--display); text-decoration: none; display: grid; place-items: center; cursor: pointer;
+}
+.share-grid a:hover, .share-grid button:hover, .share-more:hover { background: var(--panel-2); }
+.share-grid [hidden], .share-more[hidden] { display: none; }
+.share-more { width: 100%; margin-top: 8px; }
+.widget-promo {
+  display: flex; align-items: center; gap: 12px; margin: 12px 0 4px; padding: 10px 12px; border-radius: 16px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text); text-decoration: none; transition: background .15s;
+}
+.widget-promo:hover { background: var(--panel-2); }
+.widget-promo.in-dlg { margin: 14px 0 0; background: var(--paper); }
+.wp-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--sun); color: var(--sun-ink); flex: none; }
+.wp-ico svg.i { width: 22px; height: 22px; }
+.wp-text { flex: 1; min-width: 0; display: grid; }
+.wp-text b { font-size: 13.5px; line-height: 1.25; }
+.wp-text small { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.wp-go { flex: none; padding: 7px 12px; border-radius: 999px; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 12.5px; }
+html.dark .wp-go { background: var(--sun); color: var(--sun-ink); }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  #pShare { display: none; } /* phones share from the Now Playing screen */
+}
+@media (min-width: 481px) and (max-height: 500px) { #pShare { display: none; } }
+/* The card sits inside the footer: undo the footer's link styles and keep it inside the sidebar. */
+.credit .widget-promo, .widget-promo { width: 100%; text-decoration: none; text-align: left; font-weight: 400; white-space: normal; }
+.wp-text { grid-template-columns: minmax(0, 1fr); }
+.wp-text b, .wp-text small { white-space: normal; overflow-wrap: anywhere; }
+/* Desktop header: while the Install button shows, Share is icon-only so the station count still fits */
+.ibtn.install:not([hidden]) + .share-app { width: 40px; padding: 0; justify-content: center; }
+.ibtn.install:not([hidden]) + .share-app span { display: none; }

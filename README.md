@@ -38,7 +38,7 @@ flowchart LR
     H[Hostinger shared hosting<br/>public_html = dist/]
     S[Radio station streams]
     M[Map tiles: OpenFreeMap, EOX, AWS terrain]
-    A[Google Tag Manager / AdSense<br/>Abacus visit counter]
+    A[Google Tag Manager / AdSense]
 
     V -- HTTPS pages, JS, CSS, stations.json --> CACHE
     CACHE -- cache miss only --> H
@@ -127,7 +127,7 @@ Check it works: `curl -sI https://filradio.xyz/ | grep -i cf-cache-status` shoul
 - **Global listener chat** (floating bubble, bottom right). See [Global chat](#global-chat)
 - **SEO**: meta tags, Open Graph / Twitter cards, JSON-LD, image sitemap, robots.txt
 - **Ads and analytics**: Google AdSense (Auto ads) and GTM, both skipped on localhost; `ads.txt`; `privacy.html`
-- **Visitor counter** and anonymous traffic-source report at `/stats.html` (Abacus counters, one count per device per day)
+- **Visitor counter** and anonymous traffic-source report at `/stats.html`, served by our own Cloudflare Worker (`chat-worker/src/stats.js`), one count per device per day. See [Visitor counter](#visitor-counter)
 
 ### How the page is put together
 
@@ -271,6 +271,7 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 - Also blocked: **links** (any `http`, `www.`, `something.com/.ph/.xyz…`, "dot com"), **emails**, **phone numbers** (7+ digits, `09xx`, `+63`), **@handles**.
 - ALL-CAPS messages are toned down, and long repeated characters are shortened.
 - Names go through the same filter; a bad name becomes `Listener1234` (and a strike when changed to one).
+- **Reserved names** (`reserved()` in `filter.js`): names that could pass as the owner or staff are refused, with no strike: anything containing admin, moderator, FilRadio, official, owner, staff, tester, developer, founder, creator, verified, customer support, and the whole words mod, dev, sys, system, root, team, bot, host, ceo, support, server. Leetspeak, spacing and camelCase are caught (`4dm1n`, `a d m i n`, `FilRadioMod`). Joining with one gives a `Listener1234` name; renaming to one shows "That name is reserved for the FilRadio team".
 - Also covers spelling variants of sexual words (`belat`, `eyot`, `eut`, `iyut`, `s*x`, `seggs`, `8080` read as "bobo"), sexual requests ("sex video", "eut tayo") and threats in Tagalog, Bisaya and English ("papatayin kita", "papatyon tika", "i will kill").
 - Known innocent words that pass: petition, therapist, leche flan, ilagay, bilateral, appetite, competitive, Sussex, grapes, analysis, "mata ng ina", belated, peyote, "nood tayo", "hayop sa galing", "papatayin ko ang ilaw".
 
@@ -298,6 +299,40 @@ Other users only ever receive `id`, `n` (name), `x` (text) and `ts`. The IP hash
 | `ADMIN_TOKEN` | Moderation password (24+ characters) |
 
 A local copy lives in `chat-worker/.dev.vars` (git-ignored, also used by `wrangler dev`). Upload with `npx wrangler secret bulk .dev.vars`.
+
+---
+
+## Shopee affiliate card
+
+One product card in the footer (under the visits row), labelled "Ad · Shopee", link marked `rel="sponsored"`.
+Set it in `promo.json` at the site root, then upload only that file (it shows within an hour, or right away after a Cloudflare purge):
+
+```json
+{ "on": true, "url": "https://s.shopee.ph/xxxx", "image": "https://down-ph.img.susercontent.com/file/xxxx", "title": "Product name", "price": "₱199" }
+```
+
+- `url`: your Shopee affiliate link (only Shopee / shope.ee links are accepted).
+- `image`: on the Shopee product page, right-click (long-press on phone) the main picture, "Copy image address".
+- `"on": false` hides the card. Title is cut at 90 characters.
+
+## Visitor counter
+
+Source: `chat-worker/src/stats.js` (its own Durable Object `Stats`, so counting never wakes the chat room), `js/traffic.js` (classifies the visit), `js/app.js` (counts), `js/stats.js` + `stats.html` (report). Replaced the free Abacus counters, which failed when the stats page sent 80 requests at once.
+
+| Endpoint | Used by | Requests |
+| --- | --- | --- |
+| `POST /hit` body `{"k":["src-…","loc-…","cc-…","dev-…","os-…"]}` | each device, once per day | 1 per device per day, returns `{visits}` |
+| `GET /count` | footer number on other visits | at most 1 per device per hour (saved in `localStorage` `filradio.visits`) |
+| `GET /stats` | `stats.html` | 1 per page load, returns `{counts}` |
+
+Protection: only the site's origins may count; body max 300 bytes; keys must match `(src|loc|cc|dev|os)-name`, max one per group, max 200 different keys ever; `HIT_LIMIT` 6 per minute per IP; at most 30 counted visits per network per day (mobile carriers share IPs, so it is generous); `READ_LIMIT` 30 reads per minute per IP; `/count` and `/stats` are cached at the Cloudflare edge for 60 s, so refreshes never reach the Durable Object. One storage write per counted visit.
+
+Storage: `counts` (counted here) and `base` (the totals imported from Abacus once). Shown numbers are `base + counts`.
+
+```sh
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"stats"}'                                  # raw counts and base
+curl -X POST $A -H "Authorization: Bearer $T" -d '{"action":"statsbase","counts":{"visits":1234}}'     # replace the imported base
+```
 
 ---
 

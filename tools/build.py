@@ -18,7 +18,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DIST = os.path.join(ROOT, "dist")
 ZIP = os.path.join(os.path.dirname(ROOT), "filradio-xyz-upload.zip")
 FILES = ["index.html", "stats.html", "manifest.webmanifest", "sw.js", "icon.svg", "og-image.png",
-         "robots.txt", "sitemap.xml", "ads.txt", "privacy.html"]
+         "robots.txt", "sitemap.xml", "ads.txt", "privacy.html", "promo.json",
+         "embed.html", "widget.js", "widget.html", "sponsor.json"]
 DIRS = ["css", "js", "icons", "screenshots", "data"]
 TERSER = ["npx", "--yes", "terser@5.31.6"]
 

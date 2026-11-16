@@ -1,11 +1,12 @@
 // FilRadio traffic sources: classifies where a visit came from, using only aggregate counters.
-// Nothing personal is stored or sent: just "+1" on a named counter, once per device per day.
+// Nothing personal is stored or sent: just "+1" on a few named counters, once per device per day.
+// Counters live on our own Cloudflare Worker (chat-worker/src/stats.js).
 // Shared by the app (counting) and stats.html (reporting).
 (() => {
   "use strict";
 
-  const COUNTER = "https://abacus.jasoncameron.dev";
-  const NS = "webtarsier-filradio"; // counter namespace; renaming it would reset all counts
+  const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const STATS = LOCAL ? "http://localhost:8787" : "https://chat.filradio.xyz";
 
   // Order = order shown on the stats page.
   const SOURCES = [
@@ -25,6 +26,7 @@
     ["search-other", "Other search engines"],
     ["ads", "Ads (Google / Meta)"],
     ["other-sites", "Other websites"],
+    ["widget", "FilRadio widget on other sites"],
     ["app", "Installed app"],
     ["direct", "Direct / typed / bookmark"],
   ];
@@ -160,5 +162,5 @@
     } catch {}
   }
 
-  window.FilTraffic = { COUNTER, NS, SOURCES, PLACES, DEVICES, SYSTEMS, COUNTRIES, classify, place, device, system, country, tidyUrl };
+  window.FilTraffic = { STATS, SOURCES, PLACES, DEVICES, SYSTEMS, COUNTRIES, classify, place, device, system, country, tidyUrl };
 })();

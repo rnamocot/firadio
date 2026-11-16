@@ -1,0 +1,13 @@
+{
+  "on": true,
+  "label": "Today's Sponsor",
+  "items": [
+    {
+      "name": "MyTindahan",
+      "text": "Store app for sari-sari stores: benta, utang, stock",
+      "image": "https://www.mytindahan.store/apple-icon.png",
+      "url": "https://mytindahan.store/?utm_source=filradio&utm_medium=sponsor",
+      "button": "Visit"
+    }
+  ]
+}
