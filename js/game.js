@@ -22,11 +22,18 @@ window.FilGame = (() => {
     return top;
   }
   const qualifies = (sc) => sc > 0 && (top.length < 10 || sc > top[top.length - 1].s);
-  function renderTop(mine) {
-    const ol = $("goTop");
-    ol.innerHTML = top.length
-      ? top.map((e, i) => `<li class="${mine && e.n.toLowerCase() === mine.toLowerCase() ? "me" : ""}"><span>${i + 1}</span><b>${esc(e.n)}</b><em>${e.s}</em></li>`).join("")
-      : `<li class="empty">No scores yet. Be the first!</li>`;
+  const listHtml = (rows, mine) => rows.length
+    ? rows.map((e, i) => `<li class="${mine && e.n.toLowerCase() === mine.toLowerCase() ? "me" : ""}"><span>${i + 1}</span><b>${esc(e.n)}</b><em>${e.s}</em></li>`).join("")
+    : `<li class="empty">No scores yet. Be the first!</li>`;
+  function renderTop(mine) { $("goTop").innerHTML = listHtml(top, mine); renderStart(); }
+  // Start screen: the top scorer up front, then #2 to #5.
+  function renderStart() {
+    const champ = top[0];
+    $("gsChampName").textContent = champ ? champ.n : "No one yet";
+    $("gsChampScore").textContent = champ ? `${champ.s} points` : "Be the first top scorer!";
+    $("gsTop").innerHTML = top.length > 1 ? listHtml(top.slice(1, 5)).replace(/<span>(\d+)<\/span>/g, (m, n) => `<span>${+n + 1}</span>`) : "";
+    $("gsTop").hidden = top.length < 2;
+    $("gsMine").textContent = best ? `Your best: ${best}` : "";
   }
   function savedName() {
     try { return localStorage.getItem(NAME_KEY) || localStorage.getItem("filradio-chat-name") || ""; } catch { return ""; }
@@ -71,7 +78,8 @@ window.FilGame = (() => {
   // ---------- state ----------
   const G = 2400;            // gravity, px/s²
   const CHARGE_S = 0.95;     // seconds to full power
-  let state = "ready";       // ready | charge | jump | sink | over
+  let state = "intro";       // intro (start screen) | ready | charge | jump | sink | over
+  const startEl = $("gameStart");
   let pads = [], flies = [], parts = [], pops = [];
   let frog, cam, score, combo, charge, chargeT, jumpT, jump, onPad, standT, t, last, raf = 0, shake = 0;
 
@@ -91,6 +99,21 @@ window.FilGame = (() => {
     over.hidden = true;
     run = { jumps: 0, t0: 0, ms: 0 };
   }
+  function showIntro() {
+    reset();
+    state = "intro";
+    renderStart();
+    startEl.hidden = false;
+    $("gsGo").focus({ preventScroll: true });
+  }
+  function begin() {
+    if (state !== "intro") return;
+    startEl.hidden = true;
+    state = "ready";
+    canvas.focus({ preventScroll: true });
+    window.dataLayer?.push({ event: "game_start" });
+  }
+  $("gsGo").addEventListener("click", begin);
 
   // Difficulty grows with the score: smaller pads, wider gaps, then drifting and sinking pads.
   function addPad() {
@@ -109,6 +132,7 @@ window.FilGame = (() => {
 
   // ---------- input: hold to charge, release to jump ----------
   function press() {
+    if (state === "intro") { begin(); return; }
     if (state === "over") return;
     if (state === "ready" || state === "stand") { state = "charge"; chargeT = 0; }
   }
@@ -394,6 +418,7 @@ window.FilGame = (() => {
     ctx.globalAlpha = 1;
   }
   function drawHud() {
+    if (state === "intro") return;
     ctx.textAlign = "center";
     ctx.font = "800 44px 'Share Tech Mono', ui-monospace, monospace";
     ctx.lineWidth = 6; ctx.strokeStyle = "rgba(16,24,43,.55)";
@@ -434,8 +459,8 @@ window.FilGame = (() => {
   function frame(now) {
     const dt = Math.min(0.033, (now - last) / 1000 || 0);
     last = now;
-    step(dt); draw();
-    raf = requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame); // scheduled first, so one bad frame can't stop the game
+    try { step(dt); draw(); } catch (e) { console.error(e); }
   }
   function start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
   function stop() { cancelAnimationFrame(raf); raf = 0; }
@@ -450,11 +475,11 @@ window.FilGame = (() => {
     open() {
       if (!dlg.open) dlg.showModal();
       resize();
-      loadTop();
-      if (!frog || state === "over") reset();
+      if (!frog || state === "over" || state === "intro" || state === "ready") showIntro();
       else frog.y = WATER;
+      draw(); // paint right away (resizing clears the canvas)
+      loadTop(true).then(() => renderStart());
       start();
-      canvas.focus({ preventScroll: true });
     },
   };
 })();
