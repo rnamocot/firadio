@@ -2278,7 +2278,7 @@ html.dark .add-cta-btn { background: var(--sun); color: var(--sun-ink); }
   body.has-page-foot .sheet .credit { padding: 8px 14px; }
   body.has-page-foot .sheet .credit .widget-promo { display: none; }
 }
-@media (min-width: 761px) and (max-width: 1060px), (min-width: 481px) and (max-width: 1060px) and (max-height: 500px) {
+@media (min-width: 761px) and (max-width: 1180px), (min-width: 481px) and (max-width: 1180px) and (max-height: 500px) {
   .page-foot > p { display: none; } /* "Created by" is also in the credits pop-over */
 }
 

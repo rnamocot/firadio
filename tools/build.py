@@ -53,9 +53,14 @@ def strip_html_comments(path):
 
 
 def popular_stations(limit=40):
-    """Top stations by listener votes, as crawlable text for search engines."""
+    """Top stations by listener votes, as crawlable links to their pages (plain text when a station has none)."""
     with open(os.path.join(ROOT, "data", "stations.json"), encoding="utf-8") as f:
         rows = json.load(f)["d"]
+    try:
+        with open(os.path.join(ROOT, "data", "page-slugs.json"), encoding="utf-8") as f:
+            slugs = json.load(f)
+    except (OSError, ValueError):
+        slugs = {}
     seen, names = set(), []
     for r in sorted(rows, key=lambda r: -(r.get("v") or 0)):
         name = re.sub(r"\s+", " ", (r.get("n") or "")).strip()
@@ -63,7 +68,7 @@ def popular_stations(limit=40):
         if not name or len(name) > 40 or key in seen or not r.get("ok"):
             continue
         seen.add(key)
-        names.append(html.escape(name))
+        names.append(f'<a href="/station/{slugs[key]}/">{html.escape(name)}</a>' if key in slugs else html.escape(name))
         if len(names) >= limit:
             break
     return names
@@ -75,7 +80,8 @@ def seo_pass():
     with open(idx, encoding="utf-8") as f:
         page = f.read()
     names = popular_stations()
-    text = ("<b>Popular stations on FilRadio:</b> " + ", ".join(names) + ".") if names else ""
+    text = (("<b>Popular stations on FilRadio:</b> " + ", ".join(names) + ". ") if names else "") \
+        + '<a href="/stations/">Browse all stations by city</a>.'
     page = page.replace('<p class="about popular" id="popularStations"></p>',
                         f'<p class="about popular" id="popularStations">{text}</p>', 1)
     with open(idx, "w", encoding="utf-8", newline="\n") as f:
@@ -133,6 +139,11 @@ def main():
     for d in DIRS:
         shutil.copytree(os.path.join(ROOT, d), os.path.join(DIST, d))
     print(f"Station data version: {stamp_data_version()}")
+    # Station, city and hub pages + sitemap entries (before seo_pass, which links to them)
+    out = subprocess.run(["node", os.path.join(ROOT, "tools", "build_pages.mjs"), DIST], capture_output=True, text=True, encoding="utf-8")
+    if out.returncode != 0:
+        sys.exit(f"build_pages failed:\n{out.stderr}")
+    print(out.stdout.strip())
     n = seo_pass()
     print(f"SEO: {n} popular stations added, sitemap dated today")
     for dirpath, _, files in os.walk(DIST):

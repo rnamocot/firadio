@@ -1,0 +1,262 @@
+// Static SEO pages, written into dist/ by tools/build.py (node tools/build_pages.mjs <dist>):
+//   /station/<slug>/   one page per station that plays on FilRadio
+//   /city/<slug>/      one page per place with 2+ stations
+//   /stations/         hub: every city and every station, A to Z
+// and the matching sitemap entries.
+//
+// Cheap to serve by design: plain HTML with inline CSS, no scripts, no web fonts, no calls to the chat or
+// stats server. Cloudflare caches them like the rest of the site. Station logos load from the stations' own
+// hosts. The "Listen live" button opens the app on that station (/?station=<key>).
+//
+// Page addresses never change once given: data/page-slugs.json keeps station key -> slug (commit it).
+import fs from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const DIST = path.resolve(process.argv[2] || path.join(ROOT, "dist"));
+const SITE = "https://filradio.xyz";
+const SLUGS_FILE = path.join(ROOT, "data", "page-slugs.json");
+const TODAY = new Date().toISOString().slice(0, 10);
+
+// ----- Shared station rules (same code the app runs) -----
+const sandbox = { RegExp, Object, Math, String, Number, Array };
+sandbox.window = sandbox;
+vm.createContext(sandbox);
+for (const f of ["js/places.js", "js/station-core.js"]) vm.runInContext(fs.readFileSync(path.join(ROOT, f), "utf8"), sandbox, { filename: f });
+const { clean, norm, tidyName, classify, freqFull, findPlace, stationHome } = sandbox.FilCore;
+const PLACES = sandbox.PH_PLACES;
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const safeUrl = (u) => (/^https?:\/\//i.test(u || "") ? u : "");
+const slugify = (s) => clean(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+  .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70).replace(/-+$/, "") || "station";
+const titleCase = (s) => s.replace(/\b([a-z])/g, (m) => m.toUpperCase());
+
+// ----- Stations, merged the same way the app merges them -----
+const raw = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "stations.json"), "utf8")).d;
+const byKey = new Map();
+for (const s of raw) {
+  if (!s.url) continue;
+  const key = norm(s.n);
+  if (!key || key.length > 60) continue;
+  let st = byKey.get(key);
+  if (!st) {
+    const full = clean(s.n);
+    const cls = classify(full, s.t || "");
+    st = { key, name: tidyName(full), band: cls.band, num: cls.num, tags: [], state: clean(s.st), logo: safeUrl(s.f),
+           site: safeUrl(s.hp), votes: 0, playable: false, on: false };
+    byKey.set(key, st);
+  }
+  st.votes += s.v || 0;
+  for (const t of String(s.t || "").split(",")) { const x = clean(t).toLowerCase(); if (x && x.length <= 30 && !st.tags.includes(x)) st.tags.push(x); }
+  if (!st.logo) st.logo = safeUrl(s.f);
+  if (!st.site) st.site = safeUrl(s.hp);
+  if (!st.state && s.st) st.state = clean(s.st);
+  // Plays inside FilRadio: an https stream, or an http one on a named host the app upgrades to https.
+  if (/^https:/i.test(s.url) || /^http:\/\/(?!(\d+\.\d+\.\d+\.\d+|\[))/i.test(s.url)) st.playable = true;
+  if (s.on === 1 || s.ok) st.on = true;
+}
+
+// Stable addresses: once a station has a page it keeps it (while it's in the data), even if it was off air
+// at the last check, so Google never finds a page gone missing.
+let slugs = {};
+try { slugs = JSON.parse(fs.readFileSync(SLUGS_FILE, "utf8")); } catch {}
+const stations = [...byKey.values()].filter((st) => st.playable && (st.on || slugs[st.key]));
+for (const st of stations) {
+  st.place = findPlace(st.state, st.name, st.tags.join(", ")) || stationHome(st.name);
+  st.freq = freqFull(st);
+}
+
+// Places that share coordinates (Manila / Metro Manila / NCR, Paranaque / Parañaque) are one city page,
+// named after the spelling most of its stations use.
+const groups = new Map();
+for (const st of stations) {
+  if (!st.place) continue;
+  const g = PLACES[st.place].join(",");
+  if (!groups.has(g)) groups.set(g, { names: new Map(), list: [] });
+  const grp = groups.get(g);
+  grp.names.set(st.place, (grp.names.get(st.place) || 0) + 1);
+  grp.list.push(st);
+}
+const cities = [];
+for (const grp of groups.values()) {
+  const name = [...grp.names.entries()].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0][0];
+  const city = { name, slug: slugify(name), list: grp.list.sort((a, b) => b.votes - a.votes) };
+  for (const st of grp.list) st.city = city;
+  if (grp.list.length >= 2) cities.push(city);
+}
+cities.sort((a, b) => b.list.length - a.list.length || a.name.localeCompare(b.name));
+const cityPage = new Set(cities);
+
+// ----- Page addresses (new stations get one; existing ones never change) -----
+const taken = new Set(Object.values(slugs));
+for (const st of [...stations].sort((a, b) => b.votes - a.votes)) {
+  if (!slugs[st.key]) {
+    let base = slugify(st.name), s = base, i = 2;
+    while (taken.has(s)) s = `${base}-${i++}`;
+    slugs[st.key] = s; taken.add(s);
+  }
+  st.slug = slugs[st.key];
+}
+fs.writeFileSync(SLUGS_FILE, JSON.stringify(Object.fromEntries(Object.entries(slugs).sort()), null, 1) + "\n");
+
+// ----- Page parts -----
+const CSS = `:root{--paper:#f4f1ea;--panel:#fffdf8;--ink:#10182b;--text:#10182b;--muted:#5d6270;--line:#e6e0d2;--sun:#ffc93c;--fm:#2347d6;--am:#e4572e;--on:#14a37f;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--paper:#0b1020;--panel:#141b2e;--text:#eef0f5;--muted:#9aa2b5;--line:#232c44}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}main{max-width:760px;margin:0 auto;padding:16px 16px 48px}
+.top{display:flex;align-items:center;gap:10px;padding:14px 16px;max-width:760px;margin:0 auto}
+.top a{display:flex;align-items:center;gap:8px;text-decoration:none;font-weight:800;font-size:18px}.top img{border-radius:8px}
+.crumbs{font-size:13px;color:var(--muted);margin:0 0 14px}.crumbs a{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px}
+.head{display:flex;gap:16px;align-items:center}.logo{width:88px;height:88px;border-radius:16px;object-fit:cover;background:var(--line);flex:none}
+h1{font-size:clamp(22px,5vw,30px);line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}h2{font-size:18px;margin:28px 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.chips li{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line)}
+.chips .FM{background:var(--fm);color:#fff;border:0}.chips .AM{background:var(--am);color:#fff;border:0}.chips .Online{background:var(--on);color:#fff;border:0}
+.play{display:inline-flex;align-items:center;gap:10px;margin:18px 0 4px;padding:14px 22px;border-radius:999px;background:var(--sun);color:#10182b;font-weight:800;font-size:17px;text-decoration:none}
+.play:hover{filter:brightness(1.05)}.play svg{width:20px;height:20px}
+p.lead{margin:14px 0 0}.muted{color:var(--muted);font-size:14px}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.list a{display:flex;flex-direction:column;padding:10px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line);text-decoration:none}
+.list a b{font-size:15px}.list a span{font-size:13px;color:var(--muted)}.list a:hover{border-color:var(--sun)}
+.cities{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}.cities a{display:block;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);text-decoration:none;font-size:14px}
+footer{max-width:760px;margin:0 auto;padding:20px 16px 40px;font-size:13px;color:var(--muted)}footer a{color:var(--muted)}`;
+
+const PLAY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>`;
+
+function page({ url, title, desc, body, jsonld, image }) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}" />
+<link rel="canonical" href="${SITE}${url}" />
+<meta name="theme-color" content="#10182B" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="FilRadio" />
+<meta property="og:title" content="${esc(title)}" />
+<meta property="og:description" content="${esc(desc)}" />
+<meta property="og:url" content="${SITE}${url}" />
+<meta property="og:image" content="${esc(image || `${SITE}/og-image.png`)}" />
+<meta name="twitter:card" content="summary_large_image" />
+<style>${CSS}</style>
+<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>
+</head>
+<body>
+<header class="top"><a href="/"><img src="/icon.svg" alt="" width="32" height="32" />FilRadio</a></header>
+<main>
+${body}
+</main>
+<footer>FilRadio: free Philippine FM, AM and online radio on a map, for Pinoys at home and OFWs abroad.
+<a href="/">Open the radio map</a> · <a href="/stations/">All stations</a> · <a href="/add-station.html">Add your station</a> · <a href="/privacy.html">Privacy</a></footer>
+</body>
+</html>
+`;
+}
+
+const crumbs = (items) => ({
+  "@type": "BreadcrumbList",
+  itemListElement: items.map(([name, url], i) => ({ "@type": "ListItem", position: i + 1, name, item: SITE + url })),
+});
+const crumbHtml = (items) => `<nav class="crumbs" aria-label="Breadcrumb">${items.map(([n, u], i) => (i < items.length - 1 ? `<a href="${u}">${esc(n)}</a>` : esc(n))).join(" › ")}</nav>`;
+const bandLabel = (st) => (st.band === "Online" ? "Online radio" : `${st.band} radio`);
+const stationLine = (st) => [st.band === "Online" ? "Online" : st.freq ? `${st.band} ${st.freq}` : st.band, st.city?.name].filter(Boolean).join(" · ");
+const card = (st) => `<li><a href="/station/${st.slug}/"><b>${esc(st.name)}</b><span>${esc(stationLine(st))}</span></a></li>`;
+
+function write(rel, html) {
+  const dir = path.join(DIST, rel);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "index.html"), html);
+}
+
+// ----- Station pages -----
+for (const st of stations) {
+  const city = st.city;
+  const where = city ? city.name : "";
+  const genres = st.tags.filter((t) => !/^(fm|am|radio|philippines|pinoy|filipino|ph)$/.test(t)).slice(0, 5);
+  const title = `${st.name}${where && !st.name.toLowerCase().includes(where.toLowerCase()) ? ` ${where}` : ""}, Listen Live Online | FilRadio`;
+  const desc = `Listen to ${st.name} live and free on FilRadio. ${st.band === "Online" ? "Online radio" : `${st.band}${st.freq ? ` ${st.freq}` : ""} radio`}${where ? ` from ${where}` : " from the Philippines"}${genres.length ? `: ${genres.slice(0, 3).join(", ")}` : ""}. Works anywhere, for Pinoys at home and abroad.`;
+  const trail = [["FilRadio", "/"], ["Stations", "/stations/"], ...(cityPage.has(city) ? [[`${where} radio`, `/city/${city.slug}/`]] : []), [st.name, `/station/${st.slug}/`]];
+  const near = cityPage.has(city) ? city.list.filter((x) => x !== st).slice(0, 12) : [];
+  const similar = stations.filter((x) => x !== st && x.band === st.band && !near.includes(x) && (genres[0] ? x.tags.includes(genres[0]) : true))
+    .sort((a, b) => b.votes - a.votes).slice(0, 8);
+  const facts = [
+    `<li class="${st.band}">${esc(st.band === "Online" ? "Online" : st.band)}${st.freq ? ` ${esc(st.freq)}` : ""}</li>`,
+    where ? `<li>${esc(where)}</li>` : "",
+    ...genres.map((g) => `<li>${esc(titleCase(g))}</li>`),
+  ].join("");
+  const body = `${crumbHtml(trail)}
+<article class="card">
+<div class="head">
+${st.logo ? `<img class="logo" src="${esc(st.logo)}" alt="${esc(st.name)} logo" width="88" height="88" referrerpolicy="no-referrer" />` : `<img class="logo" src="/icon.svg" alt="" width="88" height="88" />`}
+<div><h1>${esc(st.name)}</h1><ul class="chips">${facts}</ul></div>
+</div>
+<a class="play" href="/?station=${encodeURIComponent(st.key)}" rel="nofollow">${PLAY_ICON}Listen live on FilRadio</a>
+<p class="lead">${esc(st.name)} is ${st.band === "Online" ? "an online radio station" : `an ${st.band} radio station${st.freq ? ` on ${st.freq}` : ""}`}${where ? ` in ${esc(where)}` : " in the Philippines"}. Tap <b>Listen live</b> to play it free in your browser, on your phone or computer, at home or abroad. No app or sign-up needed.</p>
+${st.site ? `<p class="muted">Station website: <a href="${esc(st.site)}" rel="nofollow noopener" target="_blank">${esc(st.site.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "").slice(0, 60))}</a></p>` : ""}
+</article>
+${near.length ? `<h2>More radio stations in ${esc(where)}</h2><ul class="list">${near.map(card).join("")}</ul>` : ""}
+${similar.length ? `<h2>Similar ${esc(bandLabel(st))} stations</h2><ul class="list">${similar.map(card).join("")}</ul>` : ""}
+<p class="muted" style="margin-top:28px"><a href="/stations/">Browse all Philippine radio stations</a></p>`;
+  const jsonld = {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "RadioStation", "@id": `${SITE}/station/${st.slug}/#station`, name: st.name, url: `${SITE}/station/${st.slug}/`,
+        ...(st.logo ? { logo: st.logo, image: st.logo } : {}), ...(st.site ? { sameAs: [st.site] } : {}),
+        ...(genres.length ? { genre: genres } : {}),
+        address: { "@type": "PostalAddress", addressCountry: "PH", ...(where ? { addressLocality: where } : {}) } },
+      crumbs(trail),
+    ],
+  };
+  write(`station/${st.slug}`, page({ url: `/station/${st.slug}/`, title, desc, body, jsonld }));
+}
+
+// ----- City pages -----
+for (const city of cities) {
+  const fm = city.list.filter((s) => s.band === "FM").length, am = city.list.filter((s) => s.band === "AM").length;
+  const title = `${city.name} Radio Stations, Listen Live FM & AM Online | FilRadio`;
+  const desc = `Listen to ${city.list.length} radio stations from ${city.name} live and free: ${city.list.slice(0, 3).map((s) => s.name).join(", ")} and more. FM, AM and online radio on FilRadio.`;
+  const trail = [["FilRadio", "/"], ["Stations", "/stations/"], [`${city.name} radio`, `/city/${city.slug}/`]];
+  const others = cities.filter((c) => c !== city).slice(0, 24);
+  const body = `${crumbHtml(trail)}
+<h1>${esc(city.name)} radio stations, live</h1>
+<p>${city.list.length} stations from ${esc(city.name)}${fm || am ? ` (${[fm && `${fm} FM`, am && `${am} AM`].filter(Boolean).join(", ")})` : ""} you can play free on FilRadio, anywhere in the world. Tap a station, then <b>Listen live</b>.</p>
+<ul class="list">${city.list.map(card).join("")}</ul>
+<a class="play" href="/" >${PLAY_ICON}Open the radio map</a>
+<h2>Radio in other places</h2><ul class="cities">${others.map((c) => `<li><a href="/city/${c.slug}/">${esc(c.name)}</a></li>`).join("")}</ul>`;
+  const jsonld = { "@context": "https://schema.org", "@graph": [
+    { "@type": "CollectionPage", name: `${city.name} radio stations`, url: `${SITE}/city/${city.slug}/`,
+      mainEntity: { "@type": "ItemList", itemListElement: city.list.map((s, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/station/${s.slug}/`, name: s.name })) } },
+    crumbs(trail)] };
+  write(`city/${city.slug}`, page({ url: `/city/${city.slug}/`, title, desc, body, jsonld }));
+}
+
+// ----- Hub -----
+{
+  const az = [...stations].sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+  const title = "All Philippine Radio Stations, Listen Live FM, AM & Online | FilRadio";
+  const desc = `Browse ${stations.length} Philippine radio stations you can play live and free: FM, AM and online radio from Luzon, Visayas and Mindanao, by city or A to Z.`;
+  const trail = [["FilRadio", "/"], ["Stations", "/stations/"]];
+  const body = `${crumbHtml(trail)}
+<h1>Philippine radio stations</h1>
+<p>${stations.length} FM, AM and online stations that play free on FilRadio. Pick a city or a station, or <a href="/">open the radio map</a>.</p>
+<h2>By city and province</h2><ul class="cities">${[...cities].sort((a, b) => a.name.localeCompare(b.name)).map((c) => `<li><a href="/city/${c.slug}/">${esc(c.name)} (${c.list.length})</a></li>`).join("")}</ul>
+<h2>All stations, A to Z</h2><ul class="list">${az.map(card).join("")}</ul>`;
+  write("stations", page({ url: "/stations/", title, desc, body, jsonld: { "@context": "https://schema.org", "@graph": [
+    { "@type": "CollectionPage", name: "Philippine radio stations", url: `${SITE}/stations/` }, crumbs(trail)] } }));
+}
+
+// ----- Sitemap: keep the site's own pages, add these -----
+const smPath = path.join(DIST, "sitemap.xml");
+let sm = fs.readFileSync(smPath, "utf8").replace(/\s*<url>\s*<loc>https:\/\/filradio\.xyz\/(station|city|stations)\/[\s\S]*?<\/url>/g, "");
+const entry = (u, pri) => `  <url>\n    <loc>${SITE}${u}</loc>\n    <lastmod>${TODAY}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${pri}</priority>\n  </url>\n`;
+const extra = entry("/stations/", "0.8") + cities.map((c) => entry(`/city/${c.slug}/`, "0.7")).join("") + stations.map((s) => entry(`/station/${s.slug}/`, "0.6")).join("");
+sm = sm.replace("</urlset>", extra + "</urlset>");
+fs.writeFileSync(smPath, sm);
+
+console.log(`SEO pages: ${stations.length} stations, ${cities.length} cities, hub; sitemap ${(sm.match(/<loc>/g) || []).length} URLs`);
