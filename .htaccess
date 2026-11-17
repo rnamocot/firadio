@@ -1,0 +1,11 @@
+# FilRadio on Hostinger (copied into dist/ by tools/build.py, uploaded to public_html).
+
+# Our own "off air" page for any missing address (404.html uses absolute paths, so it works at any depth).
+ErrorDocument 404 /404.html
+
+# One address for the whole site: www.filradio.xyz -> filradio.xyz (301), so Google sees one copy of each page.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} ^www\.filradio\.xyz$ [NC]
+  RewriteRule ^(.*)$ https://filradio.xyz/$1 [R=301,L]
+</IfModule>

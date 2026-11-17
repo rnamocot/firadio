@@ -266,6 +266,7 @@ const GAME_ABOUT = {
   tumbang: "The classic Filipino street game: throw your tsinelas to knock down the can. Time the aim and power, and watch the wind.",
   sungka: "A solo take on sungka, the Filipino shell board game. Sow shells pit by pit into your store, chain free moves and clear the board.",
   tuner: "Turn the dial of an old radio and find the hidden station in the static. Follow the signal meter and hold steady to lock it in.",
+  tinikling: "The Philippine bamboo dance as a rhythm game. Two bamboo poles tap open on the beat and clap shut; jump at the right moment so they close under your feet. Clap at the top of your jump for a Perfect, and keep up as the tempo rises.",
   rene: "Street basketball on a barangay court at dusk. Pull back to aim, let go to shoot, and sink as many baskets as you can before the clock runs out. Swishes add time; three in a row puts you on fire for double points.",
 };
 const gameSlug = (g) => slugify(g.title);
