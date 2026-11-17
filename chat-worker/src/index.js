@@ -63,7 +63,7 @@ export default {
       if (!(await allowed(env.ADMIN_LIMIT, ip))) return deny(429);
       return adminProxy(req, env);
     }
-    if (["/hit", "/count", "/stats", "/live"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
+    if (["/hit", "/count", "/stats", "/live", "/game/top", "/game/score"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
     if (url.pathname !== "/ws" || req.method !== "GET") return deny(404);
     const origin = req.headers.get("Origin") || "";
     if (!ORIGINS.includes(origin)) return deny(403);
@@ -140,6 +140,19 @@ async function statsRoute(req, env, ctx, url, ip) {
     return out(await stub.fetch(new Request("https://stats/live", { method: "POST", body, headers: { "X-Who": who } })), { "Cache-Control": "no-store" });
   }
 
+  if (url.pathname === "/game/score") {
+    // Mini game leaderboard save: from the site only, tiny body, max 6 a minute per IP.
+    if (req.method !== "POST" || !okOrigin) return deny(403);
+    if (Number(req.headers.get("Content-Length") || 0) > 200) return deny(413);
+    if (!(await allowed(env.GAME_LIMIT, ip))) return deny(429);
+    const body = await req.text();
+    if (body.length > 200) return deny(413);
+    const who = await hashIp(ip, env.IP_SALT || "filradio");
+    const r = await stub.fetch(new Request("https://stats/game/score", { method: "POST", body, headers: { "X-Who": who } }));
+    if (r.ok) ctx.waitUntil(caches.default.delete(new Request(`${url.origin}/__cache/game/top`))); // new score shows right away
+    return out(r, { "Cache-Control": "no-store" });
+  }
+
   if (req.method !== "GET") return deny(405);
   if (!(await allowed(env.READ_LIMIT, ip))) return deny(429);
   // Reads are cached at the edge (60 s, live count 30 s): repeat views and refreshes never wake the counter.
@@ -149,7 +162,7 @@ async function statsRoute(req, env, ctx, url, ip) {
   if (!r) {
     const fresh = await stub.fetch(new Request(`https://stats${url.pathname}`));
     r = new Response(fresh.body, fresh);
-    r.headers.set("Cache-Control", `public, max-age=${url.pathname === "/live" ? 30 : 60}`);
+    r.headers.set("Cache-Control", `public, max-age=${url.pathname === "/live" || url.pathname === "/game/top" ? 30 : 60}`);
     if (fresh.ok) ctx.waitUntil(cache.put(key, r.clone()));
   }
   return out(r);

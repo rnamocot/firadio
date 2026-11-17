@@ -53,5 +53,11 @@ name = "LIVE_LIMIT"
 namespace_id = "7105"
 simple = { limit = 40, period = 60 }
 
+# Mini game leaderboard saves (one per finished game at most).
+[[ratelimits]]
+name = "GAME_LIMIT"
+namespace_id = "7106"
+simple = { limit = 6, period = 60 }
+
 [observability]
 enabled = false

@@ -5,9 +5,57 @@
 window.FilGame = (() => {
   const $ = (id) => document.getElementById(id);
   const dlg = $("gameDlg"), canvas = $("gameCanvas"), ctx = canvas.getContext("2d");
-  const over = $("gameOver"), BEST_KEY = "filradio.game.best";
+  const over = $("gameOver"), BEST_KEY = "filradio.game.best", NAME_KEY = "filradio.game.name";
   let best = 0;
   try { best = +localStorage.getItem(BEST_KEY) || 0; } catch {}
+
+  // ---------- leaderboard (top 10 on the chat server; reads are edge-cached) ----------
+  const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://localhost:8787" : "https://chat.filradio.xyz";
+  let top = [], topAt = 0;
+  const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  async function loadTop(force) {
+    if (!force && Date.now() - topAt < 30e3) return top;
+    try {
+      const r = await fetch(`${API}/game/top`);
+      if (r.ok) { top = (await r.json()).top || []; topAt = Date.now(); window.dispatchEvent(new CustomEvent("filgame:top", { detail: top })); }
+    } catch {}
+    return top;
+  }
+  const qualifies = (sc) => sc > 0 && (top.length < 10 || sc > top[top.length - 1].s);
+  function renderTop(mine) {
+    const ol = $("goTop");
+    ol.innerHTML = top.length
+      ? top.map((e, i) => `<li class="${mine && e.n.toLowerCase() === mine.toLowerCase() ? "me" : ""}"><span>${i + 1}</span><b>${esc(e.n)}</b><em>${e.s}</em></li>`).join("")
+      : `<li class="empty">No scores yet. Be the first!</li>`;
+  }
+  function savedName() {
+    try { return localStorage.getItem(NAME_KEY) || localStorage.getItem("filradio-chat-name") || ""; } catch { return ""; }
+  }
+  let run = { jumps: 0, t0: 0, ms: 0 };
+  $("goSave").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = $("goName").value.replace(/\s+/g, " ").trim();
+    const msg = $("goMsg");
+    if (name.length < 2) { msg.textContent = "Type a name (at least 2 letters)."; msg.className = "go-msg err"; return; }
+    const btn = $("goSave").querySelector("button");
+    btn.disabled = true; msg.textContent = "Saving…"; msg.className = "go-msg";
+    try {
+      const r = await fetch(`${API}/game/score`, { method: "POST", body: JSON.stringify({ n: name, s: score, j: run.jumps, d: run.ms }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Couldn't save the score. Try again.");
+      try { localStorage.setItem(NAME_KEY, d.name); } catch {}
+      top = d.top || top; topAt = Date.now();
+      window.dispatchEvent(new CustomEvent("filgame:top", { detail: top }));
+      renderTop(d.name);
+      $("goSave").hidden = true;
+      msg.textContent = d.rank === 1 ? `You're the top scorer, ${d.name}!` : d.rank <= 10 ? `You're #${d.rank} on the leaderboard!` : `Saved. Your best: ${d.best}`;
+      msg.className = "go-msg ok";
+      window.dataLayer?.push({ event: "game_score_saved", game_score: score, game_rank: d.rank });
+    } catch (err) {
+      msg.textContent = err.message || "Couldn't save the score. Try again."; msg.className = "go-msg err";
+    }
+    btn.disabled = false;
+  });
 
   // ---------- sizes ----------
   let W = 360, H = 560, DPR = 1, WATER = 380;
@@ -41,6 +89,7 @@ window.FilGame = (() => {
     while (pads.length < 6) addPad();
     state = "ready";
     over.hidden = true;
+    run = { jumps: 0, t0: 0, ms: 0 };
   }
 
   // Difficulty grows with the score: smaller pads, wider gaps, then drifting and sinking pads.
@@ -69,6 +118,8 @@ window.FilGame = (() => {
     const T = 0.42 + charge * 0.3;              // flight time
     const R = 40 + charge * 300;                // distance
     jump = { T, x0: frog.x, vx: R / T, vy0: -G * T / 2, t: 0, from: onPad };
+    if (!run.t0) run.t0 = performance.now();
+    run.jumps++;
     state = "jump";
     onPad = null;
     window.navigator.vibrate?.(8);
@@ -113,9 +164,23 @@ window.FilGame = (() => {
     window.navigator.vibrate?.([30, 40, 30]);
     const isBest = score > best;
     if (isBest) { best = score; try { localStorage.setItem(BEST_KEY, String(best)); } catch {} }
+    run.ms = Math.round(performance.now() - (run.t0 || performance.now()));
     $("goScore").textContent = score;
     $("goBest").textContent = isBest && score > 0 ? "New best score!" : `Best: ${best}`;
     $("goBest").classList.toggle("new", isBest && score > 0);
+    $("goMsg").textContent = ""; $("goMsg").className = "go-msg";
+    $("goSave").hidden = true;
+    renderTop("");
+    const finalScore = score;
+    loadTop(true).then(() => {
+      renderTop("");
+      if (state === "over" && score === finalScore && qualifies(finalScore)) {
+        $("goSave").hidden = false;
+        $("goName").value = savedName();
+        $("goMsg").textContent = top.length && finalScore > top[0].s ? "New top score! Save it with your name:" : "You made the top 10! Save it with your name:";
+        $("goMsg").className = "go-msg ok";
+      }
+    });
     setTimeout(() => { if (state === "over") { over.hidden = false; $("goAgain").focus({ preventScroll: true }); } }, 650);
     window.dataLayer?.push({ event: "game_over", game_score: score });
   }
@@ -335,6 +400,14 @@ window.FilGame = (() => {
     ctx.strokeText(String(score), W / 2, 58); ctx.fillStyle = "#fff"; ctx.fillText(String(score), W / 2, 58);
     ctx.font = "600 12px Archivo, system-ui, sans-serif"; ctx.fillStyle = "rgba(255,255,255,.75)";
     ctx.fillText(`BEST ${best}`, W / 2, 78);
+    if (top[0]) {
+      const label = `TOP ${top[0].s} · ${top[0].n}`;
+      ctx.font = "700 12px Archivo, system-ui, sans-serif";
+      const w = ctx.measureText(label).width + 34;
+      ctx.fillStyle = "rgba(16, 24, 43, .55)"; roundRect(W / 2 - w / 2, 88, w, 22, 11); ctx.fill();
+      ctx.fillStyle = "#ffc93c"; ctx.fillText("\u{1F451}", W / 2 - w / 2 + 13, 103.5);
+      ctx.fillText(label, W / 2 + 8, 103.5);
+    }
     if (state === "ready") {
       const a = 0.6 + Math.sin(t * 4) * 0.4;
       ctx.globalAlpha = a;
@@ -373,9 +446,11 @@ window.FilGame = (() => {
   $("goAgain").addEventListener("click", () => { reset(); canvas.focus({ preventScroll: true }); });
 
   return {
+    loadTop,
     open() {
       if (!dlg.open) dlg.showModal();
       resize();
+      loadTop();
       if (!frog || state === "over") reset();
       else frog.y = WATER;
       start();

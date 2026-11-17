@@ -1,3 +1,4 @@
+import { check, tidy, reserved } from "./filter.js";
 // FilRadio visitor counter + anonymous traffic report (replaces the Abacus counters).
 // Its own Durable Object, so visitor counts never wake the chat room.
 //
@@ -39,6 +40,21 @@ export function cleanKeys(k) {
   return k;
 }
 
+// ----- Mini game leaderboard ("Talon, Palaka!") -----
+// One row per name, keeping that name's best score. Names pass the chat word filter and the
+// staff-name check. A score must fit the jumps and time it took (the game sends both), so typing
+// a big number into the console doesn't work without also faking a believable game.
+const GAME_TOP = 10;
+const GAME_KEEP = 300;          // rows kept; the lowest are pruned
+const GAME_MAX = 5000;          // highest score accepted
+const GAME_PER_HOUR = 20;       // saves per network per hour
+
+function gameName(raw) {
+  const n = tidy(String(raw || "")).replace(/[^\p{L}\p{N} _.-]/gu, "").replace(/\s+/g, " ").slice(0, 20).trim();
+  if (n.length < 2 || check(n) || reserved(n)) return "";
+  return n;
+}
+
 export class Stats extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -48,8 +64,36 @@ export class Stats extends DurableObject {
       this.counts = (await ctx.storage.get("counts")) || {}; // counted here
       this.base = (await ctx.storage.get("base")) || {};     // totals imported from Abacus
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS live (id TEXT PRIMARY KEY, st TEXT NOT NULL, who TEXT NOT NULL, t INTEGER NOT NULL)");
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS scores (name TEXT PRIMARY KEY COLLATE NOCASE, score INTEGER NOT NULL, t INTEGER NOT NULL, who TEXT NOT NULL)");
     });
     this.pruned = 0;
+    this.gameSaves = new Map(); // hashed IP -> [timestamps] (memory only)
+  }
+
+  gameTop() {
+    return this.ctx.storage.sql.exec("SELECT name AS n, score AS s FROM scores ORDER BY score DESC, t ASC LIMIT ?", GAME_TOP).toArray();
+  }
+
+  gameSave(b, who) {
+    const now = Date.now();
+    const recent = (this.gameSaves.get(who) || []).filter((x) => now - x < 3600e3);
+    if (recent.length >= GAME_PER_HOUR) return { error: "Too many scores saved. Try again later.", status: 429 };
+    const name = gameName(b.n);
+    if (!name) return { error: "Please pick another name (2 to 20 letters, no bad words).", status: 400 };
+    const score = b.s, jumps = b.j, ms = b.d;
+    const ok = [score, jumps, ms].every(Number.isInteger) && score >= 1 && score <= GAME_MAX
+      && jumps >= 1 && score <= jumps * 8 && ms >= jumps * 350 && ms <= 6 * 3600e3;
+    if (!ok) return { error: "That score couldn't be checked.", status: 400 };
+    recent.push(now); this.gameSaves.set(who, recent);
+    if (this.gameSaves.size > 5000) this.gameSaves.clear();
+    const sql = this.ctx.storage.sql;
+    const had = sql.exec("SELECT score FROM scores WHERE name = ?", name).toArray()[0];
+    if (!had || score > had.score) sql.exec("INSERT OR REPLACE INTO scores (name, score, t, who) VALUES (?, ?, ?, ?)", name, score, now, who);
+    const count = sql.exec("SELECT count(*) AS c FROM scores").one().c;
+    if (count > GAME_KEEP) sql.exec("DELETE FROM scores WHERE name IN (SELECT name FROM scores ORDER BY score ASC, t DESC LIMIT ?)", count - GAME_KEEP);
+    const best = Math.max(score, had?.score || 0);
+    const rank = sql.exec("SELECT count(*) AS c FROM scores WHERE score > ?", best).one().c + 1;
+    return { name, best, rank, top: this.gameTop() };
   }
 
   total(k) { return (this.counts[k] || 0) + (this.base[k] || 0); }
@@ -113,6 +157,13 @@ export class Stats extends DurableObject {
       return Response.json({ visits: this.total("visits") });
     }
 
+    if (path === "/game/top") return Response.json({ top: this.gameTop() });
+    if (path === "/game/score" && req.method === "POST") {
+      const r = this.gameSave(await req.json().catch(() => ({})), req.headers.get("X-Who") || "");
+      const { status = 200, ...body } = r;
+      return Response.json(body, { status });
+    }
+
     if (path === "/count") return Response.json({ visits: this.total("visits") });
     if (path === "/stats") return Response.json({ counts: this.all() });
 
@@ -129,6 +180,10 @@ export class Stats extends DurableObject {
         this.base = base;
         await this.ctx.storage.put("base", base);
         return Response.json({ ok: true, keys: Object.keys(base).length, visits: this.total("visits") });
+      }
+      if (b.action === "statsgamedel") { // remove a name from the game leaderboard
+        this.ctx.storage.sql.exec("DELETE FROM scores WHERE name = ?", String(b.name || ""));
+        return Response.json({ ok: true, top: this.gameTop() });
       }
       if (b.action === "stats") return Response.json({ ok: true, counts: this.counts, base: this.base });
       return Response.json({ ok: false, error: "unknown action" }, { status: 400 });

@@ -13,12 +13,34 @@
       document.head.append(s);
     }));
   }
-  btn.addEventListener("click", async () => {
-    btn.classList.add("loading");
-    try { await load(); window.FilGame.open(); window.dataLayer?.push({ event: "game_open" }); }
+  async function openGame(from) {
+    from.classList.add("loading");
+    try { await load(); window.FilGame.open(); window.dataLayer?.push({ event: "game_open", game_from: from.id }); }
     catch {}
-    btn.classList.remove("loading");
-  });
+    from.classList.remove("loading");
+  }
+  btn.addEventListener("click", () => openGame(btn));
+
+  // Chat footer: "Bored? Play Talon, Palaka!" with the current top scorer.
+  const chatGame = document.getElementById("chatGame"), chatPanel = document.getElementById("chatPanel");
+  const topLine = document.getElementById("chatGameTop");
+  const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://localhost:8787" : "https://chat.filradio.xyz";
+  const showTop = (top) => { if (top && top[0] && topLine) topLine.textContent = `\u{1F451} Top score: ${top[0].s} by ${top[0].n}. Can you beat it?`; };
+  window.addEventListener("filgame:top", (e) => showTop(e.detail));
+  let fetched = 0;
+  async function refreshTop() {
+    if (window.FilGame) { window.FilGame.loadTop(); return; }
+    if (Date.now() - fetched < 60e3) return;
+    fetched = Date.now();
+    try { const r = await fetch(`${API}/game/top`); if (r.ok) showTop((await r.json()).top); } catch {}
+  }
+  if (chatGame) {
+    chatGame.addEventListener("click", () => openGame(chatGame));
+    if (chatPanel) {
+      new MutationObserver(() => { if (!chatPanel.hidden) refreshTop(); }).observe(chatPanel, { attributes: true, attributeFilter: ["hidden"] });
+      if (!chatPanel.hidden) refreshTop();
+    }
+  }
   // Preload quietly when the pointer heads for the button.
   btn.addEventListener("pointerenter", () => { load().catch(() => {}); }, { once: true });
   document.getElementById("gameClose").addEventListener("click", () => dlg.close());
