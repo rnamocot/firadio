@@ -81,7 +81,7 @@ def seo_pass():
         page = f.read()
     names = popular_stations()
     text = (("<b>Popular stations on FilRadio:</b> " + ", ".join(names) + ". ") if names else "") \
-        + '<a href="/stations/">Browse all stations by city</a>.'
+        + '<a href="/stations/">Browse all stations by city</a> or <a href="/games/">play the free games</a>.'
     page = page.replace('<p class="about popular" id="popularStations"></p>',
                         f'<p class="about popular" id="popularStations">{text}</p>', 1)
     with open(idx, "w", encoding="utf-8", newline="\n") as f:

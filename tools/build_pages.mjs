@@ -111,7 +111,7 @@ a{color:inherit}main{max-width:760px;margin:0 auto;padding:16px 16px 48px}
 .top a{display:flex;align-items:center;gap:8px;text-decoration:none;font-weight:800;font-size:18px}.top img{border-radius:8px}
 .crumbs{font-size:13px;color:var(--muted);margin:0 0 14px}.crumbs a{color:var(--muted)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px}
-.head{display:flex;gap:16px;align-items:center}.logo{width:88px;height:88px;border-radius:16px;object-fit:cover;background:var(--line);flex:none}
+.head{display:flex;gap:16px;align-items:center}span.logo{display:block}span.logo svg{width:100%;height:100%;display:block}.logo{width:88px;height:88px;border-radius:16px;object-fit:cover;background:var(--line);flex:none}
 h1{font-size:clamp(22px,5vw,30px);line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}h2{font-size:18px;margin:28px 0 10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.chips li{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line)}
 .chips .FM{background:var(--fm);color:#fff;border:0}.chips .AM{background:var(--am);color:#fff;border:0}.chips .Online{background:var(--on);color:#fff;border:0}
@@ -153,7 +153,7 @@ function page({ url, title, desc, body, jsonld, image }) {
 ${body}
 </main>
 <footer>FilRadio: free Philippine FM, AM and online radio on a map, for Pinoys at home and OFWs abroad.
-<a href="/">Open the radio map</a> · <a href="/stations/">All stations</a> · <a href="/add-station.html">Add your station</a> · <a href="/privacy.html">Privacy</a></footer>
+<a href="/">Open the radio map</a> · <a href="/stations/">All stations</a> · <a href="/games/">Free games</a> · <a href="/add-station.html">Add your station</a> · <a href="/privacy.html">Privacy</a></footer>
 </body>
 </html>
 `;
@@ -251,12 +251,70 @@ for (const city of cities) {
     { "@type": "CollectionPage", name: "Philippine radio stations", url: `${SITE}/stations/` }, crumbs(trail)] } }));
 }
 
+// ----- Game pages: /games/ and /games/<slug>/ (the Play button opens the app on that game: /?game=<id>) -----
+// Titles, art and how-to come from the GAMES list in js/game.js, so the pages always match the games menu.
+const gameSrc = fs.readFileSync(path.join(ROOT, "js", "game.js"), "utf8");
+const gm = gameSrc.match(/const GAMES = (\[[\s\S]*?\n  \]);/);
+if (!gm) throw new Error("GAMES list not found in js/game.js");
+const GAMES = vm.runInNewContext(gm[1]);
+// A few lines each about what the game is, for people (and search engines) who haven't played it.
+const GAME_ABOUT = {
+  palaka: "Help a little frog hop across the river from lily pad to lily pad. Time each jump, land in the middle for Perfect combos and snap up flies for bonus points.",
+  jeepney: "Drive a Filipino jeepney down the street and stop right beside waving passengers. Every fare buys you more time, so brake at the right moment.",
+  kite: "Fly a saranggola (Filipino kite) over a fiesta town. Rise and drift past birds and electric wires, and collect banderitas along the way.",
+  taho: "Catch falling sago and arnibal in your taho cup while dodging pebbles. A quick, simple game inspired by the morning taho vendor.",
+  tumbang: "The classic Filipino street game: throw your tsinelas to knock down the can. Time the aim and power, and watch the wind.",
+  sungka: "A solo take on sungka, the Filipino shell board game. Sow shells pit by pit into your store, chain free moves and clear the board.",
+  tuner: "Turn the dial of an old radio and find the hidden station in the static. Follow the signal meter and hold steady to lock it in.",
+  rene: "Street basketball on a barangay court at dusk. Pull back to aim, let go to shoot, and sink as many baskets as you can before the clock runs out. Swishes add time; three in a row puts you on fire for double points.",
+};
+const gameSlug = (g) => slugify(g.title);
+const stripTags = (h) => String(h).replace(/<[^>]+>/g, "");
+const gamePages = [];
+for (const g of GAMES) {
+  const slug = gameSlug(g), url = `/games/${slug}/`;
+  gamePages.push(url);
+  const about = GAME_ABOUT[g.id] || g.tag;
+  const title = `${g.title} Free Online Game, Play in Your Browser | FilRadio`;
+  const desc = `Play ${g.title} free online: ${g.tag.toLowerCase()}. ${stripTags(g.how)} No download, works on phone and computer.`.slice(0, 300);
+  const trail = [["FilRadio", "/"], ["Games", "/games/"], [g.title, url]];
+  const others = GAMES.filter((x) => x !== g);
+  const body = `${crumbHtml(trail)}
+<article class="card">
+<div class="head"><span class="logo" style="background:none">${g.art}</span><div><h1>${esc(g.title)}</h1><ul class="chips"><li>Free</li><li>Browser game</li><li>Top 10 leaderboard</li></ul></div></div>
+<a class="play" href="/?game=${encodeURIComponent(g.id)}" rel="nofollow">${PLAY_ICON}Play free now</a>
+<p class="lead">${esc(about)}</p>
+<h2>How to play</h2><p>${g.how}</p>
+<p class="muted">Play it on FilRadio while you listen to Philippine radio live. No download or sign-up. Set a high score and put your name on the leaderboard.</p>
+</article>
+<h2>More free games</h2><ul class="list">${others.map((x) => `<li><a href="/games/${gameSlug(x)}/"><b>${esc(x.title)}</b><span>${esc(x.tag)}</span></a></li>`).join("")}</ul>
+<p class="muted" style="margin-top:28px"><a href="/stations/">Listen to Philippine radio stations</a></p>`;
+  const jsonld = { "@context": "https://schema.org", "@graph": [
+    { "@type": "VideoGame", name: g.title, url: SITE + url, description: about, genre: "Casual", gamePlatform: "Web browser",
+      applicationCategory: "Game", operatingSystem: "Any", inLanguage: "en",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "PHP" }, publisher: { "@type": "Organization", name: "FilRadio", url: SITE } },
+    crumbs(trail)] };
+  write(`games/${slug}`, page({ url, title, desc, body, jsonld }));
+}
+{
+  const trail = [["FilRadio", "/"], ["Games", "/games/"]];
+  const body = `${crumbHtml(trail)}
+<h1>Free Filipino mini games</h1>
+<p>${GAMES.length} free games to play in your browser while the radio plays: Pinoy classics like tumbang preso and sungka, plus quick arcade games. No download, no sign-up, each with a top 10 leaderboard.</p>
+<ul class="list">${GAMES.map((g) => `<li><a href="/games/${gameSlug(g)}/"><b>${esc(g.title)}</b><span>${esc(g.tag)}</span></a></li>`).join("")}</ul>
+<a class="play" href="/">${PLAY_ICON}Open FilRadio</a>`;
+  write("games", page({ url: "/games/", title: "Free Filipino Mini Games Online, Play in Your Browser | FilRadio",
+    desc: `Play ${GAMES.length} free Filipino mini games online: ${GAMES.map((g) => g.title).join(", ")}. No download, works on phone and computer.`.slice(0, 300),
+    body, jsonld: { "@context": "https://schema.org", "@graph": [{ "@type": "CollectionPage", name: "Free Filipino mini games", url: `${SITE}/games/` }, crumbs(trail)] } }));
+  gamePages.unshift("/games/");
+}
+
 // ----- Sitemap: keep the site's own pages, add these -----
 const smPath = path.join(DIST, "sitemap.xml");
-let sm = fs.readFileSync(smPath, "utf8").replace(/\s*<url>\s*<loc>https:\/\/filradio\.xyz\/(station|city|stations)\/[\s\S]*?<\/url>/g, "");
+let sm = fs.readFileSync(smPath, "utf8").replace(/\s*<url>\s*<loc>https:\/\/filradio\.xyz\/(station|city|stations|games)\/[\s\S]*?<\/url>/g, "");
 const entry = (u, pri) => `  <url>\n    <loc>${SITE}${u}</loc>\n    <lastmod>${TODAY}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${pri}</priority>\n  </url>\n`;
-const extra = entry("/stations/", "0.8") + cities.map((c) => entry(`/city/${c.slug}/`, "0.7")).join("") + stations.map((s) => entry(`/station/${s.slug}/`, "0.6")).join("");
+const extra = gamePages.map((u) => entry(u, u === "/games/" ? "0.7" : "0.6")).join("") + entry("/stations/", "0.8") + cities.map((c) => entry(`/city/${c.slug}/`, "0.7")).join("") + stations.map((s) => entry(`/station/${s.slug}/`, "0.6")).join("");
 sm = sm.replace("</urlset>", extra + "</urlset>");
 fs.writeFileSync(smPath, sm);
 
-console.log(`SEO pages: ${stations.length} stations, ${cities.length} cities, hub; sitemap ${(sm.match(/<loc>/g) || []).length} URLs`);
+console.log(`SEO pages: ${stations.length} stations, ${cities.length} cities, ${GAMES.length} games, hubs; sitemap ${(sm.match(/<loc>/g) || []).length} URLs`);

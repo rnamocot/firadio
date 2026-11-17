@@ -5,7 +5,7 @@
   if (!btn || !dlg) return;
   const v = (document.querySelector('script[src*="game-btn.js"]')?.src.match(/\?v=(\d+)/) || [])[1] || "1";
   const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://localhost:8787" : "https://chat.filradio.xyz";
-  const TITLES = { palaka: "Talon, Palaka!", jeepney: "Jeepney Dash", kite: "Saranggola", taho: "Taho Catch", tumbang: "Tumbang Preso", sungka: "Sungka Solo", tuner: "Radio Tuner" };
+  const TITLES = { palaka: "Talon, Palaka!", jeepney: "Jeepney Dash", kite: "Saranggola", taho: "Taho Catch", tumbang: "Tumbang Preso", sungka: "Sungka Solo", tuner: "Radio Tuner", rene: "Rene, Shoot mo Bola!" };
   let loading = null;
   function load() {
     if (window.FilGame) return Promise.resolve();

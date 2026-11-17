@@ -61,6 +61,7 @@ export const GAMES = {
   tumbang: { perAction: 4, msPerAction: 500 },  // 1 + streak bonus per throw
   sungka:  { perAction: 15 },                   // stored shells, +10 for a cleared board
   tuner:   { perSec: 3 },
+  rene:    { perAction: 6, msPerAction: 400 },  // swish 3, x2 on fire, per shot
 };
 const GAME_TOP = 10;
 const GAME_KEEP = 300;          // rows kept per game; the lowest are pruned
