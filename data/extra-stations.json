@@ -12,5 +12,18 @@
     "lat": 10.7202,
     "lng": 122.5621
   },
-  "stations": []
+  "stations": [
+    {
+      "id": "sweet-fm-901-governor-generoso",
+      "name": "Sweet FM 90.1 Governor Generoso",
+      "stream": "https://sapircast.caster.fm:13984/pUCje?token=0986cdacd23a864575781b8d2d439696",
+      "website": "https://sweetfm901govgen.ismyradio.com/",
+      "logo": "https://user-content.cloud.caster.fm/file/casterfm-cloud-usercontent/82426/logo.png?v=1794907946",
+      "tags": "retro,public affairs",
+      "city": "Governor Generoso",
+      "province": "Davao Oriental",
+      "lat": 6.6556,
+      "lng": 126.0728
+    }
+  ]
 }
