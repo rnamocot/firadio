@@ -8,6 +8,27 @@
       "image": "https://www.mytindahan.store/apple-icon.png",
       "url": "https://mytindahan.store/?utm_source=filradio&utm_medium=sponsor",
       "button": "Visit"
+    },
+    {
+      "name": "Tarsiflow",
+      "text": "Client management for freelancers and agencies: leads, projects, proposals, invoices",
+      "image": "https://tarsiflow.com/apple-touch-icon.png",
+      "url": "https://tarsiflow.com/?utm_source=filradio&utm_medium=sponsor",
+      "button": "Visit"
+    },
+    {
+      "name": "Zendz Tools",
+      "text": "Free online tools for developers, SEO, marketing and design. No sign-up",
+      "image": "https://tools.zendz.dev/icons/apple-touch-icon.png",
+      "url": "https://tools.zendz.dev/?utm_source=filradio&utm_medium=sponsor",
+      "button": "Visit"
+    },
+    {
+      "name": "Zendz.dev",
+      "text": "Custom software, SaaS, web and mobile apps, and automation",
+      "image": "https://www.zendz.dev/apple-icon.png",
+      "url": "https://zendz.dev/?utm_source=filradio&utm_medium=sponsor",
+      "button": "Visit"
     }
   ]
 }

@@ -61,3 +61,42 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 2
 .prose a { color: inherit; text-decoration-color: var(--sun); text-decoration-thickness: 2px; text-underline-offset: 2px; }
 .prose .updated { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
 .back { margin-left: auto; color: var(--muted); font-size: 14px; }
+
+/* ---------- Add your station (add-station.html) ---------- */
+.prose .lead { font-size: 16px; margin-top: 16px; }
+.prose code { font: 13.5px var(--mono); background: var(--panel-2); padding: 1px 5px; border-radius: 5px; }
+.needs { padding-left: 22px; }
+.needs li { margin-bottom: 8px; }
+.prose .hint { color: var(--muted); font-size: 13.5px; }
+.add-form { display: grid; gap: 12px; margin-top: 10px; }
+.add-form label { display: grid; gap: 5px; font-size: 13.5px; font-weight: 700; min-width: 0; }
+.add-form label[hidden] { display: none; }
+.add-form em { color: var(--red); font-style: normal; }
+.add-form .opt { font-weight: 400; color: var(--muted); }
+.add-form input:not([type="checkbox"]), .add-form select {
+  width: 100%; min-width: 0; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--paper); color: var(--text); font: 400 15px var(--display);
+}
+.add-form input:focus-visible, .add-form select:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; border-color: transparent; }
+.add-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.add-form .with-btn { display: flex; gap: 8px; }
+.add-form .check { display: flex; align-items: flex-start; gap: 10px; font-weight: 400; font-size: 14px; }
+.add-form .check input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--ink); }
+.add-form .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.main-btn, .ghost-btn { height: 44px; padding: 0 18px; border-radius: 999px; font: 700 14px var(--display); cursor: pointer; white-space: nowrap; }
+.main-btn { border: 0; background: var(--ink); color: var(--paper); }
+.ghost-btn { border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+.ghost-btn:hover { background: var(--panel-2); }
+.status { font-size: 13px; font-weight: 400; color: var(--muted); min-height: 0; margin: 0; }
+.status:empty { display: none; }
+.status.ok { color: #0e9f8e; font-weight: 700; }
+.status.err { color: var(--red); font-weight: 700; }
+@media (prefers-color-scheme: dark) {
+  .main-btn { background: var(--sun); color: #10182b; }
+  .add-form .check input { accent-color: var(--sun); }
+}
+@media (max-width: 560px) {
+  .add-form .row2 { grid-template-columns: 1fr; }
+  .add-form .with-btn { flex-direction: column; }
+  .prose { padding: 4px 16px 16px; }
+}

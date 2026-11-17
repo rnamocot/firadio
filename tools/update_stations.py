@@ -6,6 +6,10 @@ app can show which stations are on air ("On air" filter).
 
     python tools/update_stations.py            # download + check streams
     python tools/update_stations.py --no-check # download only (faster)
+    python tools/update_stations.py --extras-only  # only re-apply data/extra-stations.json
+
+Stations added by hand (from add-station.html requests) live in data/extra-stations.json and are
+merged in on every run, ahead of the directory's stations.
 
 Run it as often as you like (daily keeps on-air status fresh), then upload
 data/stations.json.
@@ -27,6 +31,7 @@ HOSTS = [
 ]
 PATH = "/json/stations/bycountrycodeexact/PH?hidebroken=true&order=votes&reverse=true&limit=5000"
 OUT = os.path.join(os.path.dirname(__file__), "..", "data", "stations.json")
+EXTRA = os.path.join(os.path.dirname(__file__), "..", "data", "extra-stations.json")
 UA = "FilRadio-check/1.0"
 AUDIO = re.compile(r"audio/|application/(ogg|octet-stream|vnd\.apple\.mpegurl|x-mpegurl)|video/mp2t", re.I)
 
@@ -82,7 +87,52 @@ def check_all(rows):
                 print(f"  checked {done}/{len(rows)}")
 
 
+def extras():
+    """Hand-added stations from data/extra-stations.json, in the same slim shape (ids start with "x-")."""
+    if not os.path.exists(EXTRA):
+        return []
+    with open(EXTRA, encoding="utf-8") as f:
+        items = json.load(f).get("stations", [])
+    out, seen = [], set()
+    for i, s in enumerate(items):
+        sid, url, name = str(s.get("id") or "").strip(), str(s.get("stream") or "").strip(), str(s.get("name") or "").strip()
+        problem = ((not re.fullmatch(r"[a-z0-9-]{2,60}", sid) and "id must be lowercase letters, numbers, dashes")
+                   or (sid in seen and "duplicate id") or (not name and "missing name")
+                   or (not url.startswith("https://") and "stream must start with https://"))
+        if problem:
+            print(f"  extra-stations.json item {i + 1} ({sid or name or '?'}) skipped: {problem}")
+            continue
+        seen.add(sid)
+        place = ", ".join(x for x in (str(s.get("city") or "").strip(), str(s.get("province") or "").strip()) if x)
+        out.append({
+            "u": "x-" + sid, "n": name, "url": url, "hp": s.get("website") or "", "f": s.get("logo") or "",
+            "t": s.get("tags") or "", "st": place, "la": s.get("lat"), "lo": s.get("lng"),
+            "b": s.get("bitrate") or 0, "h": 1 if re.search(r"\.m3u8(\?|$)", url, re.I) else 0,
+            "v": s.get("votes", 50), "ok": 1,
+        })
+    return out
+
+
+def save(slim, checked):
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    with open(OUT, "w", encoding="utf-8") as f:
+        json.dump({"t": int(time.time() * 1000), "checked": checked, "d": slim}, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"Saved {len(slim)} stations to {os.path.normpath(OUT)} ({os.path.getsize(OUT) // 1024} KB)")
+
+
 def main():
+    mine = extras()
+    print(f"Hand-added stations: {len(mine)}")
+    if "--extras-only" in sys.argv:
+        with open(OUT, encoding="utf-8") as f:
+            old = json.load(f)
+        rest = [r for r in old["d"] if not str(r.get("u", "")).startswith("x-")]
+        if "--no-check" not in sys.argv and mine:
+            check_all(mine)
+            for r in mine:
+                print(f"  {r['n']}: {'on air' if r.get('on') else 'NOT answering'}")
+        save(mine + rest, old.get("checked"))
+        return
     data = fetch()
     slim = []
     for s in data:
@@ -95,6 +145,7 @@ def main():
             "la": s.get("geo_lat"), "lo": s.get("geo_long"), "b": s.get("bitrate") or 0,
             "h": s.get("hls") or 0, "v": s.get("votes") or 0, "ok": s.get("lastcheckok") or 0,
         })
+    slim = mine + slim
     checked = None
     if "--no-check" not in sys.argv:
         print(f"Checking {len(slim)} streams (about 1-3 minutes)…")
@@ -102,10 +153,7 @@ def main():
         checked = int(time.time() * 1000)
         on = sum(r.get("on", 0) for r in slim)
         print(f"On air: {on} of {len(slim)} streams answered")
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"t": int(time.time() * 1000), "checked": checked, "d": slim}, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"Saved {len(slim)} stations to {os.path.normpath(OUT)} ({os.path.getsize(OUT) // 1024} KB)")
+    save(slim, checked)
 
 
 if __name__ == "__main__":

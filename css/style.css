@@ -436,6 +436,9 @@ html.dark .player { background: var(--panel); color: var(--text); border: 1px so
   }
   .now h2 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
   .n-meta { margin: 6px 0 0; color: rgba(244,241,234,.6); font-size: 14px; }
+  .n-listeners { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 4px 11px 4px 9px; border-radius: 999px; background: rgba(255,201,60,.14); color: var(--sun); font-size: 12.5px; font-weight: 600; }
+  .n-listeners[hidden] { display: none; }
+  .n-listeners svg.i { width: 15px; height: 15px; }
 
   /* tuning dial */
   .dial {
@@ -534,6 +537,9 @@ html.dark .list li.area-banner, html.dark .list li.area-banner:hover { backgroun
 .credit .visits[hidden] { display: none; }
 .credit .visits b { font: 700 12px var(--mono); color: var(--text); }
 .credit .visits svg.i { width: 16px; height: 16px; }
+.credit .listening .live-dot { width: 8px; height: 8px; margin: 0 4px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 0 rgba(230,57,70,.5); animation: live-ping 2s infinite; flex: none; }
+@keyframes live-ping { 0% { box-shadow: 0 0 0 0 rgba(230,57,70,.5); } 70%, 100% { box-shadow: 0 0 0 7px rgba(230,57,70,0); } }
+@media (prefers-reduced-motion: reduce) { .credit .listening .live-dot { animation: none; } }
 @media (max-width: 760px) and (min-height: 501px), (max-width: 480px) { .credit .visits { justify-content: center; } }
 
 /* ---------- Brand byline ---------- */
@@ -1565,6 +1571,9 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
 .chat-online { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; font: 11px var(--mono); color: var(--c-dim); }
 .chat-led { width: 6px; height: 6px; border-radius: 50%; background: var(--c-dim); }
 .chat.live .chat-led { background: var(--c-ok); }
+.chat-sh { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border-radius: 999px; border: 1px solid var(--c-line); background: transparent; color: var(--c-text); font: 600 13px var(--display); cursor: pointer; flex: none; }
+.chat-sh:hover { background: var(--c-bg2); }
+.chat-sh svg { width: 15px; height: 15px; }
 .chat-x { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border-radius: 10px; border: 0; background: transparent; color: var(--c-dim); cursor: pointer; }
 .chat-x:hover { color: var(--c-text); background: var(--c-bg2); }
 .chat-x svg { width: 16px; height: 16px; }
@@ -1743,6 +1752,15 @@ html.dark .resume { background: var(--panel); color: var(--text); border: 1px so
 .chat-msg.pabati { margin: 4px 0; padding: 8px 10px 9px; background: rgba(255, 201, 60, .1); }
 .chat-msg.pabati:hover { background: rgba(255, 201, 60, .13); }
 .chat-msg.pabati p { font-size: 14.5px; font-weight: 600; }
+/* Tada for a new pabati (js/chat.js tada()) */
+.chat-msg.pabati.pb-new { animation: pb-pop .7s cubic-bezier(.3,1.6,.5,1), pb-glow 1.6s ease-out; }
+.chat-msg.pabati.pb-new .chat-pb { animation: pb-wiggle .8s ease-in-out .15s; display: inline-block; }
+@keyframes pb-pop { 0% { transform: scale(.92); } 45% { transform: scale(1.04); } 100% { transform: scale(1); } }
+@keyframes pb-glow { 0% { box-shadow: 0 0 0 0 rgba(255, 201, 60, .7); background: rgba(255, 201, 60, .35); } 100% { box-shadow: 0 0 0 12px rgba(255, 201, 60, 0); } }
+@keyframes pb-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-10deg) scale(1.15); } 40% { transform: rotate(8deg) scale(1.15); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
+.pb-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; overflow: hidden; }
+.pb-confetti i { position: absolute; width: 7px; height: 11px; border-radius: 2px; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .15); }
+@media (prefers-reduced-motion: reduce) { .chat-msg.pabati.pb-new, .chat-msg.pabati.pb-new .chat-pb { animation: none; } }
 .chat-pabati { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--c-dim); cursor: pointer; }
 .chat-pabati svg { width: 20px; height: 20px; --sun: currentColor; }
 .chat-pabati:hover { color: var(--c-text); }
@@ -1894,6 +1912,17 @@ html.dark .wp-go { background: var(--sun); color: var(--sun-ink); }
 .sc-go:hover { filter: brightness(1.15); }
 .sc-go:active { transform: scale(.97); }
 html.dark .sc-go { background: var(--sun); color: var(--sun-ink); }
+.sp-nav { display: flex; align-items: center; justify-content: center; gap: 0; margin: -4px 0 -6px; }
+.sp-nav[hidden] { display: none; }
+.sp-nav button { border: 0; background: none; padding: 0; margin: 0; cursor: pointer; color: var(--muted); display: grid; place-items: center; font: inherit; }
+.sp-nav .sp-arrow { width: 26px; height: 24px; border-radius: 8px; font-size: 20px; line-height: 1; }
+.sp-nav .sp-arrow:hover { color: var(--text); background: var(--panel-2); }
+.sp-nav .sp-dot { height: 24px; padding: 0 3px; }
+.sp-nav .sp-dot::before { content: ""; display: block; width: 6px; height: 6px; border-radius: 99px; background: var(--line); transition: width .25s, background-color .25s; }
+.sp-nav .sp-dot:hover::before { background: var(--muted); }
+.sp-nav .sp-dot[aria-current="true"]::before { width: 16px; background: var(--red); }
+#sponsor { touch-action: pan-y; }
+#sponsor img[hidden] { display: none; }
 .sc-cta { justify-self: center; margin-top: -2px; font-size: 11px; color: var(--muted); text-decoration: none; }
 .sc-cta b { color: var(--red); font-weight: 700; }
 .sc-cta:hover b { text-decoration: underline; text-underline-offset: 2px; }
@@ -1912,6 +1941,9 @@ html.dark .sc-go { background: var(--sun); color: var(--sun-ink); }
   .sc-text span { -webkit-line-clamp: 1; font-size: 11.5px; }
   .sc-go { height: 34px; padding: 0 14px; }
   .sc-cta { grid-column: 1 / -1; margin-top: 0; font-size: 10.5px; }
+  .sp-nav { grid-column: 1 / -1; margin: -4px 0 -6px; }
+  .sp-nav .sp-arrow { height: 20px; font-size: 18px; }
+  .sp-nav .sp-dot { height: 20px; }
 }
 /* Short phones: just the essentials */
 @media (max-width: 760px) and (min-height: 501px) and (max-height: 700px), (max-width: 480px) and (max-height: 700px) {
@@ -1921,3 +1953,94 @@ html.dark .sc-go { background: var(--sun); color: var(--sun-ink); }
 }
 /* Landscape phones: no room on the map */
 @media (min-width: 481px) and (max-height: 500px) { .sponsor-card { display: none !important; } }
+
+/* Laptops (short desktop screens): give the station list the room. The big "Put FilRadio on your site"
+   card and the Shopee card hide (the footer's "Add to your site" link stays), and the footer tightens. */
+@media (min-width: 761px) and (max-height: 900px) {
+  .sidebar:not(.grid) .credit { padding: 10px 16px 12px; }
+  .sidebar:not(.grid) .credit > .widget-promo, .sidebar:not(.grid) .credit .promo { display: none; }
+  .sidebar:not(.grid) .about-box { margin-bottom: 6px; }
+}
+
+/* =========================================================
+   Mini game "Talon, Palaka!": Play button above the chat bubble + game window (js/game-btn.js, js/game.js)
+   ========================================================= */
+.game-fab {
+  position: fixed; right: 16px; bottom: 102px; z-index: 29; height: 48px; padding: 0 16px 0 8px; border-radius: 999px;
+  display: flex; align-items: center; gap: 6px; cursor: pointer; border: 2px solid #2f8f3e;
+  background: #10172a; color: #fff; font: 800 15px var(--display); letter-spacing: -.01em;
+  box-shadow: 0 10px 24px -8px rgba(16, 24, 43, .6);
+  transition: transform .15s var(--ease), opacity .2s;
+  animation: game-fab-in .5s var(--ease) 1.2s both;
+}
+.game-fab .gf-frog { width: 34px; height: 34px; flex: none; animation: frog-hop 3.2s ease-in-out 3s infinite; transform-origin: 50% 90%; }
+.game-fab:hover { transform: translateY(-2px); }
+.game-fab:hover .gf-frog { animation-duration: .9s; animation-delay: 0s; }
+.game-fab:active { transform: scale(.96); }
+.game-fab.loading { opacity: .7; cursor: progress; }
+html.dark .game-fab { border-color: #4cbf5a; }
+html.chat-open .game-fab { display: none; } /* the chat panel sits here */
+@keyframes game-fab-in { from { opacity: 0; transform: translateY(10px) scale(.9); } }
+@keyframes frog-hop { 0%, 70%, 100% { transform: none; } 78% { transform: scale(1.1, .85); } 86% { transform: translateY(-7px) scale(.94, 1.08); } 94% { transform: scale(1.06, .92); } }
+
+/* Phones: above the chat bubble, over the tab bar (and above the mini player when it shows) */
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .game-fab { right: 12px; bottom: calc(var(--tab-h) + 72px); height: 44px; padding: 0 14px 0 6px; font-size: 14px; z-index: 27; }
+  .game-fab .gf-frog { width: 32px; height: 32px; }
+  .app:has(.player:not([hidden])) ~ .game-fab, .app:has(.player:not([hidden])) .game-fab { bottom: calc(var(--tab-h) + 144px); }
+}
+/* Landscape phones */
+@media (min-width: 481px) and (max-height: 500px) {
+  .game-fab { bottom: 80px; height: 42px; }
+}
+/* Narrow desktops: the chat bubble moves up for the player, so does this */
+@media (min-width: 761px) and (max-width: 1020px) {
+  .app:has(.player:not([hidden])) .game-fab { bottom: 166px; }
+}
+
+/* Game window: a card on bigger screens, full screen on phones */
+dialog.game-dlg {
+  padding: 0; border: 0; background: transparent; color: #fff; max-width: none; max-height: none;
+  width: min(440px, calc(100vw - 32px)); height: min(720px, calc(100dvh - 40px));
+}
+dialog.game-dlg::backdrop { background: rgba(8, 12, 24, .6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+dialog.game-dlg[open] { animation: game-in .3s var(--ease); }
+@keyframes game-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.game-card {
+  height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 22px;
+  background: #10172a; border: 1px solid #243051; box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .8);
+}
+.game-head { display: flex; align-items: center; gap: 10px; padding: 12px 10px 10px 16px; }
+.game-title { flex: 1; min-width: 0; }
+.game-title h2 { margin: 0; font: 800 18px/1.2 var(--display); font-stretch: 115%; letter-spacing: -.01em; color: #fff; }
+.game-title small { display: block; font-size: 12px; color: #8a93a9; }
+.game-x { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #8a93a9; cursor: pointer; }
+.game-x:hover { color: #fff; background: #172038; }
+.game-x svg { width: 16px; height: 16px; }
+.game-stage { position: relative; flex: 1; min-height: 0; margin: 0 8px 8px; border-radius: 16px; overflow: hidden; background: #1b2850; }
+.game-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; outline: none; }
+.game-over {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 4px; text-align: center;
+  background: rgba(8, 12, 24, .55); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); animation: game-in .3s var(--ease);
+}
+.game-over[hidden] { display: none; }
+.game-over small { font: 600 13px var(--display); color: rgba(255, 255, 255, .75); letter-spacing: .04em; text-transform: uppercase; }
+.game-over b { font: 72px/1 var(--mono); color: var(--sun); text-shadow: 0 0 22px rgba(255, 201, 60, .45); }
+.go-best { font-size: 14px; color: rgba(255, 255, 255, .8); }
+.go-best.new { color: var(--sun); font-weight: 800; animation: chip-pop .5s cubic-bezier(.34, 1.56, .64, 1) 2; }
+.go-again {
+  margin-top: 14px; height: 48px; padding: 0 26px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--sun); color: var(--sun-ink); font: 800 16px var(--display);
+  box-shadow: 0 10px 24px -8px rgba(255, 201, 60, .6);
+}
+.go-again:hover { transform: translateY(-1px); }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  dialog.game-dlg { width: 100vw; height: 100dvh; margin: 0; }
+  .game-card { border-radius: 0; border: 0; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+}
+@media (min-width: 481px) and (max-height: 500px) {
+  dialog.game-dlg { width: min(720px, calc(100vw - 24px)); height: calc(100dvh - 20px); }
+  .game-head { padding: 6px 8px 4px 14px; }
+  .game-title small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .game-fab, .game-fab .gf-frog, dialog.game-dlg[open] { animation: none; } }

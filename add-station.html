@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Add Your Radio Station · FilRadio</title>
+  <meta name="description" content="Run a Philippine FM, AM or online radio station? Get it on FilRadio for free. See what to send: stream link, logo, city and frequency." />
+  <link rel="canonical" href="https://filradio.xyz/add-station.html" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; media-src https: blob:; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="theme-color" content="#10182B" />
+  <link rel="icon" href="icon.svg?v=87" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/stats.css?v=87" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <a class="brand" href="./"><img src="icon.svg?v=87" alt="" width="44" height="44" /><span>Fil<b>Radio</b></span></a>
+      <h1>Add your station</h1>
+      <a class="back" href="./">Back to the radio</a>
+    </header>
+
+    <article class="prose">
+      <p class="lead">Run an FM, AM or online radio station in the Philippines? FilRadio lists it for free, with its own pin on the map,
+        so listeners at home and Filipinos abroad can play it in one tap. Fill in the form below and send it to us by email.
+        We usually add new stations within a few days.</p>
+
+      <h2>What we need from you</h2>
+      <ol class="needs">
+        <li><b>Station name and frequency</b>, for example "Radyo Bandera 97.3" or "DZRH 666". The frequency decides whether you show under FM or AM. Online-only stations need just the name.</li>
+        <li><b>A direct stream link</b> that starts with <code>https://</code>, such as an Icecast or Shoutcast address, or a link ending in <code>.mp3</code>, <code>.aac</code> or <code>.m3u8</code>.
+          Facebook Live, YouTube and web pages with a player on them won't work. Ask your streaming provider for the "direct stream URL" if you're not sure.
+          Links with only an IP address and <code>http://</code> can't play on secure sites.</li>
+        <li><b>City and province</b>, so your station gets a pin in the right place on the map.</li>
+        <li><b>Logo</b>: a square image, at least 200 by 200 pixels, as a link (from your website or Facebook page) or attached to the email.</li>
+        <li><b>Website or Facebook page</b>, and a few words on what you play (OPM, news, Bisaya, Christian, etc.).</li>
+      </ol>
+      <p class="hint">Use the <b>Test stream</b> button below to check your stream link plays here before you send it.</p>
+
+      <h2>Send your station</h2>
+      <form class="add-form" id="addForm" novalidate>
+        <div class="row2">
+          <label>Station name <em>*</em><input name="name" required maxlength="80" placeholder="Radyo Bandera" autocomplete="off" /></label>
+          <label>Band <em>*</em>
+            <select name="band" required>
+              <option value="FM">FM</option>
+              <option value="AM">AM</option>
+              <option value="Online">Online only</option>
+            </select>
+          </label>
+        </div>
+        <label id="freqWrap">Frequency <em>*</em><input name="freq" maxlength="12" placeholder="97.3 (FM) or 666 (AM)" inputmode="decimal" autocomplete="off" /></label>
+        <label>Stream link <em>*</em>
+          <span class="with-btn">
+            <input name="stream" type="url" required maxlength="400" placeholder="https://stream.example.com/live.mp3" autocomplete="off" />
+            <button type="button" class="ghost-btn" id="testBtn">Test stream</button>
+          </span>
+          <small class="status" id="testStatus" role="status"></small>
+        </label>
+        <div class="row2">
+          <label>City or town <em>*</em><input name="city" required maxlength="60" placeholder="Iloilo City" /></label>
+          <label>Province <em>*</em><input name="province" required maxlength="60" placeholder="Iloilo" /></label>
+        </div>
+        <label>Logo link <span class="opt">(or attach it to the email)</span><input name="logo" type="url" maxlength="400" placeholder="https://example.com/logo.png" autocomplete="off" /></label>
+        <label>Website or Facebook page<input name="site" type="url" maxlength="300" placeholder="https://facebook.com/yourstation" autocomplete="off" /></label>
+        <label>What you play<input name="tags" maxlength="120" placeholder="OPM, news, Hiligaynon" /></label>
+        <div class="row2">
+          <label>Your name <em>*</em><input name="contact" required maxlength="80" autocomplete="name" /></label>
+          <label>Your role<input name="role" maxlength="60" placeholder="Station manager" /></label>
+        </div>
+        <label class="check"><input type="checkbox" name="ok" required /> I work for this station or have its permission to list the stream on FilRadio. <em>*</em></label>
+
+        <p class="status err" id="formErr" role="alert" hidden></p>
+        <div class="actions">
+          <button type="submit" class="main-btn">Send by email</button>
+          <button type="button" class="ghost-btn" id="copyBtn">Copy details</button>
+        </div>
+        <p class="hint">"Send by email" opens your email app with everything filled in, addressed to
+          <a href="mailto:zendzdev@gmail.com?subject=FilRadio%20station%20request">zendzdev@gmail.com</a>. No email app?
+          Tap "Copy details" and paste them into an email from any device.</p>
+      </form>
+
+      <h2>Good to know</h2>
+      <ul>
+        <li>Listing is free. Your stream plays straight from your own server; FilRadio never re-hosts or records it.</li>
+        <li>We check every stream regularly. Stations that stay off air for a long time are marked off air.</li>
+        <li>Need a change or want your station removed? Email us and we'll update it.</li>
+      </ul>
+    </article>
+  </main>
+  <script src="js/add-station.js?v=87"></script>
+</body>
+</html>

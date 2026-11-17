@@ -47,5 +47,11 @@ name = "READ_LIMIT"
 namespace_id = "7104"
 simple = { limit = 30, period = 60 }
 
+# Live-listener pings (one per playing tab every 2 minutes; carriers put many phones on one IP).
+[[ratelimits]]
+name = "LIVE_LIMIT"
+namespace_id = "7105"
+simple = { limit = 40, period = 60 }
+
 [observability]
 enabled = false

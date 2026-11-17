@@ -10,11 +10,21 @@
 // Abuse limits: Origin allowlist, edge rate limits, key format checks, at most 5 keys per hit
 // (one per group), a cap on how many different keys can ever exist, and at most PER_IP_DAY
 // counted visits per network per day (mobile carriers share IPs, so this is generous).
+// It also counts live listeners (POST /live, GET /live), see below.
 import { DurableObject } from "cloudflare:workers";
 
 const KEY_RE = /^(src|loc|cc|dev|os)-[a-z]{1,12}(-[a-z]{1,12})?$/;
 const MAX_KEYS = 200;
 const PER_IP_DAY = 30;
+
+// Live listeners: a playing tab pings POST /live every 2 minutes with a random tab id and the
+// station key. Anyone seen in the last LIVE_WINDOW counts as "listening now". Rows are deleted
+// once stale, so the table only ever holds the current listeners (nothing kept long term).
+const LIVE_WINDOW = 200e3;
+const LIVE_PER_NET = 60;   // max listeners counted from one network (mobile carriers share IPs)
+const LIVE_MAX = 20000;    // hard cap on rows
+const ID_RE = /^[a-f0-9]{16}$/;
+const ST_RE = /^[a-z0-9]{1,60}$/;
 
 /** Validates the keys a visitor sends: at most one per group, known format only. */
 export function cleanKeys(k) {
@@ -37,7 +47,9 @@ export class Stats extends DurableObject {
     ctx.blockConcurrencyWhile(async () => {
       this.counts = (await ctx.storage.get("counts")) || {}; // counted here
       this.base = (await ctx.storage.get("base")) || {};     // totals imported from Abacus
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS live (id TEXT PRIMARY KEY, st TEXT NOT NULL, who TEXT NOT NULL, t INTEGER NOT NULL)");
     });
+    this.pruned = 0;
   }
 
   total(k) { return (this.counts[k] || 0) + (this.base[k] || 0); }
@@ -48,8 +60,39 @@ export class Stats extends DurableObject {
     return o;
   }
 
+  /** Listeners right now, and how many others are on station `st` (excluding tab `id`). */
+  liveCount(st = "", id = "") {
+    const row = this.ctx.storage.sql.exec(
+      "SELECT count(*) AS n, coalesce(sum(st = ? AND id != ?), 0) AS here FROM live WHERE t >= ?",
+      st, id, Date.now() - LIVE_WINDOW).one();
+    return { n: row.n, here: row.here };
+  }
+
+  live(b, who) {
+    const sql = this.ctx.storage.sql;
+    const now = Date.now();
+    if (now - this.pruned > 60e3) { this.pruned = now; sql.exec("DELETE FROM live WHERE t < ?", now - LIVE_WINDOW); }
+    if (!ID_RE.test(b.id || "")) return null;
+    if (b.end) { sql.exec("DELETE FROM live WHERE id = ?", b.id); return this.liveCount(); }
+    if (!ST_RE.test(b.s || "")) return null;
+    const known = sql.exec("SELECT 1 FROM live WHERE id = ?", b.id).toArray().length > 0;
+    if (!known) {
+      const mine = sql.exec("SELECT count(*) AS c FROM live WHERE who = ? AND t >= ?", who, now - LIVE_WINDOW).one().c;
+      const all = sql.exec("SELECT count(*) AS c FROM live").one().c;
+      if (mine >= LIVE_PER_NET || all >= LIVE_MAX) return this.liveCount(b.s, b.id); // not counted, still answered
+    }
+    sql.exec("INSERT OR REPLACE INTO live (id, st, who, t) VALUES (?, ?, ?, ?)", b.id, b.s, who, now);
+    return this.liveCount(b.s, b.id);
+  }
+
   async fetch(req) {
     const path = new URL(req.url).pathname;
+
+    if (path === "/live") {
+      if (req.method === "GET") return Response.json({ n: this.liveCount().n });
+      const out = this.live(await req.json().catch(() => ({})), req.headers.get("X-Who") || "");
+      return out ? Response.json(out) : Response.json({ error: "bad ping" }, { status: 400 });
+    }
 
     if (path === "/hit") {
       const keys = cleanKeys((await req.json().catch(() => ({}))).k);

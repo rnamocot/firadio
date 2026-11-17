@@ -333,6 +333,10 @@
   audio.addEventListener("playing", () => { clearTimeout(stallTimer); setStatus("Live"); updateUI(); });
   audio.addEventListener("waiting", () => setStatus("Loading…"));
   audio.addEventListener("pause", updateUI);
+  // Counted in FilRadio's "listening now" total (random tab id + station key, every 2 minutes).
+  const live = window.FilTraffic?.liveTracker?.();
+  audio.addEventListener("playing", () => { if (current) live?.playing(current.key); });
+  audio.addEventListener("pause", () => live?.stopped());
   $("toggle").addEventListener("click", togglePlay);
   $("volume").addEventListener("input", (e) => (audio.volume = +e.target.value));
   audio.volume = +$("volume").value;
@@ -408,29 +412,10 @@
   $("shareSheet").addEventListener("click", (e) => { if (e.target === $("shareSheet") || e.target.closest(".share-grid a")) closeShare(); });
   addEventListener("keydown", (e) => { if (e.key === "Escape") closeShare(); });
 
-  // ---------- Today's Sponsor (edit sponsor.json; "on": false hides it) ----------
-  // Several items rotate by day. The hour in the URL lets a new sponsor.json show within an hour.
-  async function loadSponsor() {
+  // ---------- Sponsor card: auto-slides, can be slid by hand (js/sponsor.js, sponsor.json) ----------
+  function loadSponsor() {
     if (layout === "bar") return;
-    try {
-      const res = await fetch(`sponsor.json?h=${Math.floor(Date.now() / 3600e3)}`);
-      if (!res.ok) return;
-      const sp = await res.json();
-      const items = (Array.isArray(sp.items) ? sp.items : []).filter((x) => x && /^https:\/\//i.test(x.url || "") && clean(x.name));
-      if (!sp.on || !items.length) return;
-      const day = Math.floor((Date.now() + 8 * 3600e3) / 86400e3); // changes at midnight Philippine time
-      const it = items[day % items.length];
-      $("spLabel").textContent = clean(sp.label || "Today's Sponsor").slice(0, 40);
-      $("spName").textContent = clean(it.name).slice(0, 60);
-      $("spText").textContent = clean(it.text).slice(0, 120);
-      $("spText").hidden = !clean(it.text);
-      $("spGo").textContent = clean(it.button || "Visit").slice(0, 16);
-      $("spGo").href = it.url;
-      $("spGo").setAttribute("aria-label", `${clean(it.button || "Visit")} ${clean(it.name)} (sponsor, opens in a new tab)`);
-      const img = $("spImg");
-      if (/^https:\/\//i.test(it.image || "")) { img.onerror = () => img.remove(); img.src = it.image; } else img.remove();
-      $("sponsor").hidden = false;
-    } catch {}
+    window.FilSponsor?.();
   }
 
   // ---------- Import favorites ----------

@@ -1489,6 +1489,43 @@
   })();
 
   // ======================================================
+  // Live listeners: footer "N listening now" and Now Playing "You and N others are listening".
+  // A playing tab pings every 2 minutes (see FilTraffic.liveTracker); others read the
+  // edge-cached total on load and every 3 minutes while the page is visible.
+  // ======================================================
+  (() => {
+    const T = window.FilTraffic;
+    if (!T?.liveTracker) return;
+    const foot = $("listening"), here = $("nListeners");
+    const showTotal = (n) => { foot.querySelector("b").textContent = n.toLocaleString(); foot.hidden = n < 1; };
+    let hereKey = "";
+    const showHere = (h, key) => {
+      if (!key || !current || current.key !== key || h < 1) { here.hidden = true; return; }
+      hereKey = key;
+      here.querySelector("span").textContent = `You and ${h.toLocaleString()} other${h === 1 ? "" : "s"} are listening`;
+      here.hidden = false;
+    };
+    const live = T.liveTracker((d, key) => { showTotal(d.n); showHere(d.here | 0, key); });
+    audio.addEventListener("playing", () => {
+      if (!current) return;
+      if (current.key !== hereKey) here.hidden = true;
+      live.playing(current.key);
+    });
+    audio.addEventListener("pause", () => live.stopped());
+
+    let lastRead = 0;
+    const read = () => {
+      if (document.hidden || live.active || Date.now() - lastRead < 60e3) return;
+      lastRead = Date.now();
+      fetch(`${T.STATS}/live`).then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && typeof d.n === "number") showTotal(d.n); }).catch(() => {});
+    };
+    read();
+    setInterval(read, 180e3);
+    document.addEventListener("visibilitychange", read);
+  })();
+
+  // ======================================================
   // Shopee affiliate card (footer). Change the product by editing promo.json ("on": false hides it).
   // The hour in the URL lets a new promo.json show within an hour without purging Cloudflare.
   // ======================================================
@@ -1517,31 +1554,9 @@
   })();
 
   // ======================================================
-  // Today's Sponsor above the station list. Same sponsor.json as the embedded player ("on": false hides it);
-  // several items rotate daily at midnight Philippine time. The hour in the URL picks up edits within an hour.
+  // Sponsor card under the clock: auto-slides and can be slid by hand (js/sponsor.js, sponsor.json).
   // ======================================================
-  (async () => {
-    try {
-      const res = await fetch(`sponsor.json?h=${Math.floor(Date.now() / 3600e3)}`);
-      if (!res.ok) return;
-      const sp = await res.json();
-      const items = (Array.isArray(sp.items) ? sp.items : []).filter((x) => x && /^https:\/\//i.test(x.url || "") && clean(x.name));
-      if (!sp.on || !items.length) return;
-      const it = items[Math.floor((Date.now() + 8 * 3600e3) / 864e5) % items.length];
-      const name = clean(it.name).slice(0, 60), text = clean(it.text).slice(0, 120), btn = clean(it.button || "Visit").slice(0, 16);
-      $("spLabel").textContent = clean(sp.label || "Today's Sponsor").slice(0, 40);
-      $("spName").textContent = name;
-      $("spText").textContent = text;
-      $("spText").hidden = !text;
-      $("spGo").textContent = btn;
-      $("spGo").href = it.url;
-      $("spGo").setAttribute("aria-label", `${btn} ${name} (sponsor, opens in a new tab)`);
-      const img = $("spImg");
-      if (/^https:\/\//i.test(it.image || "")) { img.onerror = () => img.remove(); img.src = it.image; } else img.remove();
-      $("spGo").addEventListener("click", () => window.dataLayer?.push({ event: "sponsor_click", sponsor_name: name }));
-      $("sponsor").hidden = false;
-    } catch {}
-  })();
+  window.FilSponsor?.({ onClick: (name) => window.dataLayer?.push({ event: "sponsor_click", sponsor_name: name }) });
 
   // ======================================================
   // Clock: Philippine time by default; visitors abroad can tap to switch to their local time.
@@ -1744,6 +1759,7 @@
   const PROMO_KEY = "filradio.chatPromo";
   try { if (Date.now() - (+localStorage.getItem(PROMO_KEY) || 0) < 14 * 864e5) $("chatPromo").hidden = true; } catch {}
   $("chatShare").addEventListener("click", () => openShare(null));
+  $("chatHeadShare").addEventListener("click", () => openShare(null));
   $("chatPromoX").addEventListener("click", () => {
     $("chatPromo").hidden = true;
     try { localStorage.setItem(PROMO_KEY, String(Date.now())); } catch {}

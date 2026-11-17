@@ -1,0 +1,16 @@
+{
+  "_help": "Stations you add by hand (from add-station.html requests). Copy _example into stations, fill it in, then run: python tools/update_stations.py --extras-only  (or a full update). id must be unique, lowercase letters/numbers/dashes. lat/lng are optional: without them the city/province places the pin when the app knows the place. name should include the frequency (e.g. 97.3 or 666) so the app files it under FM or AM.",
+  "_example": {
+    "id": "radyo-bandera-iloilo",
+    "name": "Radyo Bandera 97.3 Iloilo",
+    "stream": "https://stream.example.com/live.mp3",
+    "website": "https://facebook.com/yourstation",
+    "logo": "https://example.com/logo.png",
+    "tags": "opm,news,hiligaynon",
+    "city": "Iloilo City",
+    "province": "Iloilo",
+    "lat": 10.7202,
+    "lng": 122.5621
+  },
+  "stations": []
+}

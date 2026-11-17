@@ -110,6 +110,7 @@
         setOnline(d.online);
         if (atEnd || mine.has(d.m.id)) scrollEnd();
         else jump.hidden = false;
+        if (d.m.g) tada(li);
         break;
       }
       case "online":
@@ -351,6 +352,38 @@
 
   function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
   const isAtEnd = () => list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+  // Tada for a new pabati: the row pops and confetti in the flag's colours bursts from it.
+  // Only for live messages (not the history on open), only when the row is on screen.
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  function tada(li) {
+    li.classList.add("pb-new");
+    setTimeout(() => li.classList.remove("pb-new"), 1600);
+    if (reduceMotion.matches || panel.hidden || document.hidden || !li.animate) return;
+    const r = li.getBoundingClientRect(), box = list.getBoundingClientRect();
+    if (!r.width || r.bottom < box.top || r.top > box.bottom) return;
+    const layer = document.createElement("div");
+    layer.className = "pb-confetti";
+    layer.setAttribute("aria-hidden", "true");
+    document.body.append(layer);
+    const colors = ["#fcd116", "#ce1126", "#0038a8", "#ffffff", "#fcd116"];
+    const x0 = r.left + r.width / 2, y0 = r.top + Math.min(r.height / 2, 24);
+    for (let i = 0; i < 36; i++) {
+      const c = document.createElement("i");
+      c.style.background = colors[i % colors.length];
+      c.style.left = `${x0}px`; c.style.top = `${y0}px`;
+      if (i % 3 === 0) c.style.borderRadius = "50%";
+      layer.append(c);
+      const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 110;
+      const dx = Math.cos(a) * v, dy = Math.sin(a) * v - 50;
+      c.animate([
+        { transform: "translate(-50%, -50%) rotate(0deg) scale(1)", opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${Math.random() * 540 - 270}deg) scale(1)`, opacity: 1, offset: 0.55 },
+        { transform: `translate(calc(-50% + ${dx * 1.15}px), calc(-50% + ${dy + 120}px)) rotate(${Math.random() * 720 - 360}deg) scale(.6)`, opacity: 0 },
+      ], { duration: 1100 + Math.random() * 500, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" });
+    }
+    setTimeout(() => layer.remove(), 1800);
+  }
+
   function scrollEnd() { list.scrollTop = list.scrollHeight; jump.hidden = true; }
   function setOnline(n) { if (n) online.textContent = `${n} online`; panel.classList.add("live"); }
 

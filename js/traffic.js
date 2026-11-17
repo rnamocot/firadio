@@ -162,5 +162,34 @@
     } catch {}
   }
 
-  window.FilTraffic = { STATS, SOURCES, PLACES, DEVICES, SYSTEMS, COUNTRIES, classify, place, device, system, country, tidyUrl };
+  // Live listeners: while a station plays, this tab pings every 2 minutes with a random id
+  // (new on every page load, never stored) and the station key. Nothing else is sent.
+  // onData({ n, here }, key): n = listening now on FilRadio, here = others on the same station.
+  function liveTracker(onData) {
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, "0")).join("");
+    let key = "", timer = 0, stopT = 0;
+    const send = (end) => {
+      const k = key;
+      return fetch(`${STATS}/live`, { method: "POST", body: JSON.stringify(end ? { id, end: 1 } : { id, s: k }), keepalive: true })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && typeof d.n === "number" && onData) onData(d, end ? "" : k); })
+        .catch(() => {});
+    };
+    const end = () => { clearTimeout(stopT); if (!timer) return; clearInterval(timer); timer = 0; send(true); key = ""; };
+    addEventListener("pagehide", end);
+    return {
+      playing(k) {
+        clearTimeout(stopT);
+        if (!/^[a-z0-9]{1,60}$/.test(k || "") || (k === key && timer)) return;
+        key = k; clearInterval(timer);
+        send(false);
+        timer = setInterval(() => send(false), 120e3);
+      },
+      // Short grace period: switching stations pauses for a moment, which shouldn't count as leaving.
+      stopped() { clearTimeout(stopT); if (timer) stopT = setTimeout(end, 8000); },
+      get active() { return !!timer; },
+    };
+  }
+
+  window.FilTraffic = { liveTracker, STATS, SOURCES, PLACES, DEVICES, SYSTEMS, COUNTRIES, classify, place, device, system, country, tidyUrl };
 })();
