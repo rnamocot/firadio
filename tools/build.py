@@ -111,12 +111,28 @@ def clean_dist():
             os.remove(p)
 
 
+def stamp_data_version():
+    """Put the stations.json time into dist/js/app.js so browsers drop their saved list when it changes."""
+    with open(os.path.join(ROOT, "data", "stations.json"), encoding="utf-8") as f:
+        ver = str(json.load(f).get("t") or "")
+    app = os.path.join(DIST, "js", "app.js")
+    with open(app, encoding="utf-8") as f:
+        js = f.read()
+    if 'const DATA_VER = "dev";' not in js:
+        sys.exit("build: DATA_VER line not found in js/app.js")
+    js = js.replace('const DATA_VER = "dev";', f'const DATA_VER = "{ver}";', 1)
+    with open(app, "w", encoding="utf-8", newline="\n") as f:
+        f.write(js)
+    return ver
+
+
 def main():
     clean_dist()
     for f in FILES:
         shutil.copy2(os.path.join(ROOT, f), os.path.join(DIST, f))
     for d in DIRS:
         shutil.copytree(os.path.join(ROOT, d), os.path.join(DIST, d))
+    print(f"Station data version: {stamp_data_version()}")
     n = seo_pass()
     print(f"SEO: {n} popular stations added, sitemap dated today")
     for dirpath, _, files in os.walk(DIST):

@@ -27,6 +27,14 @@ const LIVE_MAX = 20000;    // hard cap on rows
 const ID_RE = /^[a-f0-9]{16}$/;
 const ST_RE = /^[a-z0-9]{1,60}$/;
 
+// Most played: each counted live ping adds one "listen" (about 2 minutes of play) to that station's total
+// for the day. Only station totals per day are kept (no ids, no networks), for TOP_DAYS days.
+// A tab scores at most once per TOP_GAP, so pinging faster than the app does earns nothing extra.
+const TOP_DAYS = 30;
+const TOP_N = 30;
+const TOP_GAP = 100e3;
+const TOP_KEEP_ROWS = 50000;   // hard cap on stored (station, day) rows
+
 /** Validates the keys a visitor sends: at most one per group, known format only. */
 export function cleanKeys(k) {
   if (!Array.isArray(k) || k.length > 5) return null;
@@ -77,6 +85,7 @@ export class Stats extends DurableObject {
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS scores (name TEXT PRIMARY KEY COLLATE NOCASE, score INTEGER NOT NULL, t INTEGER NOT NULL, who TEXT NOT NULL)");
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS gscores (g TEXT NOT NULL, name TEXT NOT NULL COLLATE NOCASE, score INTEGER NOT NULL, t INTEGER NOT NULL, who TEXT NOT NULL, PRIMARY KEY (g, name))");
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS gplays (g TEXT PRIMARY KEY, n INTEGER NOT NULL)");
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS splays (st TEXT NOT NULL, d TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (st, d))");
       // One-time move of the first (Palaka-only) leaderboard into the per-game table.
       if (!(await ctx.storage.get("gscoresMoved"))) {
         ctx.storage.sql.exec("INSERT OR IGNORE INTO gscores (g, name, score, t, who) SELECT 'palaka', name, score, t, who FROM scores");
@@ -156,18 +165,42 @@ export class Stats extends DurableObject {
     if (!ID_RE.test(b.id || "")) return null;
     if (b.end) { sql.exec("DELETE FROM live WHERE id = ?", b.id); return this.liveCount(); }
     if (!ST_RE.test(b.s || "")) return null;
-    const known = sql.exec("SELECT 1 FROM live WHERE id = ?", b.id).toArray().length > 0;
-    if (!known) {
+    const prev = sql.exec("SELECT st, t FROM live WHERE id = ?", b.id).toArray()[0];
+    if (!prev) {
       const mine = sql.exec("SELECT count(*) AS c FROM live WHERE who = ? AND t >= ?", who, now - LIVE_WINDOW).one().c;
       const all = sql.exec("SELECT count(*) AS c FROM live").one().c;
       if (mine >= LIVE_PER_NET || all >= LIVE_MAX) return this.liveCount(b.s, b.id); // not counted, still answered
     }
+    // A new tab, or the regular 2-minute ping: one listen for this station. A station switch scores at the
+    // next regular ping, so flipping between stations quickly doesn't add anything.
+    if (!prev || now - prev.t >= TOP_GAP) this.addListen(b.s, now);
     sql.exec("INSERT OR REPLACE INTO live (id, st, who, t) VALUES (?, ?, ?, ?)", b.id, b.s, who, now);
     return this.liveCount(b.s, b.id);
   }
 
+  addListen(st, now) {
+    const sql = this.ctx.storage.sql;
+    const d = new Date(now).toISOString().slice(0, 10);
+    if (d !== this.topDay) { // once a day: drop days that no longer count
+      this.topDay = d;
+      sql.exec("DELETE FROM splays WHERE d < ?", new Date(now - TOP_DAYS * 864e5).toISOString().slice(0, 10));
+    }
+    const exists = sql.exec("SELECT 1 FROM splays WHERE st = ? AND d = ?", st, d).toArray().length > 0;
+    if (!exists && sql.exec("SELECT count(*) AS c FROM splays").one().c >= TOP_KEEP_ROWS) return;
+    sql.exec("INSERT INTO splays (st, d, n) VALUES (?, ?, 1) ON CONFLICT(st, d) DO UPDATE SET n = n + 1", st, d);
+  }
+
+  /** Most played stations over the last TOP_DAYS days: [{ s: station key, n: listens }]. */
+  topStations() {
+    const from = new Date(Date.now() - TOP_DAYS * 864e5).toISOString().slice(0, 10);
+    return this.ctx.storage.sql.exec(
+      "SELECT st AS s, sum(n) AS n FROM splays WHERE d >= ? GROUP BY st ORDER BY n DESC LIMIT ?", from, TOP_N).toArray();
+  }
+
   async fetch(req) {
     const url = new URL(req.url), path = url.pathname;
+
+    if (path === "/top") return Response.json({ days: TOP_DAYS, top: this.topStations() });
 
     if (path === "/live") {
       if (req.method === "GET") return Response.json({ n: this.liveCount().n });

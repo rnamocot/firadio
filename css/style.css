@@ -159,7 +159,7 @@ html.dark .band.active { background: var(--sun); color: var(--sun-ink); }html.da
 .list li:hover { background: var(--panel-2); }
 .list li.playing { background: color-mix(in srgb, var(--sun) 22%, transparent); }
 .list .info { min-width: 0; flex: 1; }
-.list .name { font-weight: 700; font-size: 14.5px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list .name { font-weight: 700; font-size: 14.5px; letter-spacing: -.01em; line-height: 1.25; overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 .list .meta { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; display: flex; align-items: center; gap: 5px; }
 .list .meta svg { width: 12px; height: 12px; }
 .list .bars { display: none; }
@@ -754,7 +754,7 @@ html.dark .view-toggle[aria-pressed="true"] { background: var(--sun); color: var
 .sidebar.grid .list .meta { white-space: normal; flex-wrap: wrap; row-gap: 3px; }
 .sidebar.grid .list .meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .sidebar.grid .list .bars { position: absolute; top: 14px; right: 14px; }
-.sidebar.grid .list li.area-banner, .sidebar.grid .list li.empty { grid-column: 1 / -1; }
+.sidebar.grid .list li.area-banner, .sidebar.grid .list li.empty, .sidebar.grid .list li.add-cta { grid-column: 1 / -1; }
 
 @media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
   /* Panel widens over the map */
@@ -1093,7 +1093,7 @@ html.dark .fchip:has(input:checked) { background: var(--sun); color: var(--sun-i
 .clock-text { display: grid; line-height: 1.15; }
 .clock-text b { font: 22px var(--mono); letter-spacing: .02em; }
 .clock-text span { font-size: 12px; font-weight: 700; }
-.clock-text small { font: 10px var(--mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin-top: 1px; }
+.clock-text small { font: 600 11px var(--mono); color: var(--text); opacity: .75; letter-spacing: .03em; text-transform: uppercase; margin-top: 2px; }
 html.dark .c-dial { fill: #1b2440; }
 html.dark .t-major, html.dark .c-hour, html.dark .c-min { stroke: #eef0f5; }
 html.dark .c-num text { fill: #eef0f5; }
@@ -2225,3 +2225,92 @@ dialog.game-dlg[open] { animation: game-in .3s var(--ease); }
 .gsh-grid a:hover, .gsh-grid button:hover, .gsh-more:hover { border-color: var(--sun); }
 .gsh-grid [hidden], .gsh-more[hidden] { display: none; }
 .gsh-more { width: 100%; margin-top: 8px; }
+
+/* Recently added stations + "Add your station" call to action */
+.list .meta .new-chip { font: 700 10.5px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--red); padding: 1px 6px; border-radius: 6px; margin-right: 2px; white-space: nowrap; }
+.list li.add-cta {
+  cursor: default; margin: 8px 0 6px; padding: 12px 10px; border-radius: 14px; gap: 12px;
+  background: color-mix(in srgb, var(--sun) 18%, var(--panel)); border: 1px dashed color-mix(in srgb, var(--sun) 70%, var(--line));
+}
+.list li.add-cta:hover { background: color-mix(in srgb, var(--sun) 18%, var(--panel)); }
+.list li.add-cta .area-ico { background: var(--sun); color: var(--sun-ink); }
+.list li.add-cta .meta { white-space: normal; display: block; line-height: 1.35; }
+.add-cta-btn {
+  flex-shrink: 0; text-decoration: none; font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: 999px;
+  background: var(--ink); color: var(--paper); white-space: nowrap; transition: transform .2s var(--ease);
+}
+.add-cta-btn:active { transform: scale(.95); }
+html.dark .add-cta-btn { background: var(--sun); color: var(--sun-ink); }
+@media (max-width: 380px) {
+  .list li.add-cta { flex-wrap: wrap; }
+  .add-cta-btn { margin-left: 52px; }
+}
+
+/* Desktop page footer: visits, links, coffee, credit and the map legend in one bar along the bottom
+   (js/app.js moves them here), so the station panel gives that height to the list. */
+.page-foot[hidden] { display: none !important; }
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) {
+  .page-foot {
+    position: absolute; left: 14px; right: 164px; bottom: 12px; z-index: 6;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 6px 8px 6px 14px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-sm);
+  }
+  .page-foot .foot-row { flex: 0 1 auto; order: 0; margin: 0; gap: 6px 10px; flex-wrap: wrap; justify-content: flex-start; }
+  /* "|" between the links (inline-block so the link underline doesn't run under it) */
+  .page-foot .foot-row > a + a::before {
+    content: "|"; display: inline-block; margin-right: 10px; color: var(--muted); opacity: .6; font-weight: 400; text-decoration: none;
+  }
+  /* Coffee and "Created by" sit together at the right end */
+  .page-foot .bmc { order: 1; margin-left: auto; }
+  .page-foot > p { order: 2; flex: 0 0 auto; margin: 0; white-space: nowrap; }
+  /* The map legend stays a small key on the map, just above the bar */
+  body.has-page-foot .legend { bottom: calc(22px + var(--foot-h, 44px)); right: 164px; }
+  body.has-page-foot .app:has(.player:not([hidden])) .legend { bottom: calc(92px + var(--foot-h, 44px)); }
+  /* The panel is now taller, and the docked player sits above the bar */
+  /* --foot-h is the bar's measured height (it wraps to two rows on narrower screens) */
+  body.has-page-foot .sidebar, body.has-page-foot .sidebar.grid { max-height: calc(100% - 38px - var(--foot-h, 44px)); }
+  body.has-page-foot .player { bottom: calc(24px + var(--foot-h, 44px)); }
+  /* "Continue listening" docks beside the panel (like the player), above the bar and clear of Games/Chat */
+  body.has-page-foot .resume {
+    bottom: calc(24px + var(--foot-h, 44px)); left: calc(14px + 372px + 14px); transform: none;
+    max-width: calc(100% - 14px - 372px - 14px - 164px); animation: rise-d .35s var(--ease);
+  }
+  body.has-page-foot .sheet .credit { padding: 8px 14px; }
+  body.has-page-foot .sheet .credit .widget-promo { display: none; }
+}
+@media (min-width: 761px) and (max-width: 1060px), (min-width: 481px) and (max-width: 1060px) and (max-height: 500px) {
+  .page-foot > p { display: none; } /* "Created by" is also in the credits pop-over */
+}
+
+/* Short desktop screens (laptops ~600-760px tall): keep the station list at a usable height and let the
+   whole panel scroll instead of squeezing the list to a row or two. */
+@media (min-width: 761px) and (max-height: 760px), (min-width: 481px) and (max-height: 500px) {
+  .sidebar { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .sidebar .sheet { flex: 1 0 auto; }
+  .sidebar .sheet .list { flex: 1 1 260px; min-height: min(260px, 55vh); }
+}
+
+/* Phones: "Continue listening" sits over the bottom-right corner, so lift Chat and Games above it
+   (same spots they take when the mini player shows) */
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  body:has(#resume:not([hidden])) .chat-fab { bottom: calc(var(--tab-h) + 84px); }
+  body:has(#resume:not([hidden])) .game-fab { bottom: calc(var(--tab-h) + 144px); }
+}
+
+/* Footer bar on tablets / small laptops (761-1023px): tighter type and spacing so it stays on one row */
+@media (min-width: 761px) and (max-width: 1023px) and (min-height: 501px) {
+  .page-foot { gap: 4px 10px; padding: 5px 6px 5px 12px; font-size: 11px; }
+  .page-foot .foot-row { gap: 4px 6px; }
+  .page-foot .foot-row a, .page-foot .osm-credit, .page-foot #howInstall { font-size: 11px; }
+  .page-foot .foot-row > a + a::before { margin-right: 6px; }
+  .page-foot .bmc { padding: 5px 10px; font-size: 11px; }
+  .page-foot .bmc svg.i { width: 14px; height: 14px; }
+}
+/* Narrow tablets (761-880px): the map credit shortens to "© OSM" */
+@media (min-width: 761px) and (max-width: 880px) and (min-height: 501px) {
+  .page-foot .foot-row a.osm-credit { font-size: 0; }
+  .page-foot .osm-credit::after { content: "© OSM"; font-size: 11px; }
+}
+
+/* Top filter: rank on each row */
+.list .meta .rank-chip { font: 700 11px var(--mono); color: var(--sun-ink); background: var(--sun); padding: 1px 6px; border-radius: 6px; margin-right: 2px; white-space: nowrap; }

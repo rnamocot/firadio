@@ -63,7 +63,7 @@ export default {
       if (!(await allowed(env.ADMIN_LIMIT, ip))) return deny(429);
       return adminProxy(req, env);
     }
-    if (["/hit", "/count", "/stats", "/live", "/game/top", "/game/tops", "/game/score", "/game/play"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
+    if (["/hit", "/count", "/stats", "/live", "/top", "/game/top", "/game/tops", "/game/score", "/game/play"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
     if (url.pathname !== "/ws" || req.method !== "GET") return deny(404);
     const origin = req.headers.get("Origin") || "";
     if (!ORIGINS.includes(origin)) return deny(403);
@@ -178,7 +178,8 @@ async function statsRoute(req, env, ctx, url, ip) {
   if (!r) {
     const fresh = await stub.fetch(new Request(`https://stats${url.pathname}${gq}`));
     r = new Response(fresh.body, fresh);
-    r.headers.set("Cache-Control", `public, max-age=${["/live", "/game/top", "/game/tops"].includes(url.pathname) ? 30 : 60}`);
+    // Most played changes slowly: 10 minutes at the edge, so it costs almost nothing.
+    r.headers.set("Cache-Control", `public, max-age=${url.pathname === "/top" ? 600 : ["/live", "/game/top", "/game/tops"].includes(url.pathname) ? 30 : 60}`);
     if (fresh.ok) ctx.waitUntil(cache.put(key, r.clone()));
   }
   return out(r);

@@ -1,5 +1,5 @@
 {
-  "_help": "Stations you add by hand (from add-station.html requests). Copy _example into stations, fill it in, then run: python tools/update_stations.py --extras-only  (or a full update). id must be unique, lowercase letters/numbers/dashes. lat/lng are optional: without them the city/province places the pin when the app knows the place. name should include the frequency (e.g. 97.3 or 666) so the app files it under FM or AM.",
+  "_help": "Stations you add by hand (from add-station.html requests). Copy _example into stations, fill it in, then run: python tools/update_stations.py --extras-only  (or a full update). id must be unique, lowercase letters/numbers/dashes. lat/lng are optional: without them the city/province places the pin when the app knows the place. added is the date you list it (YYYY-MM-DD); it puts the station under the New filter for 60 days. name should include the frequency (e.g. 97.3 or 666) so the app files it under FM or AM.",
   "_example": {
     "id": "radyo-bandera-iloilo",
     "name": "Radyo Bandera 97.3 Iloilo",
@@ -10,12 +10,13 @@
     "city": "Iloilo City",
     "province": "Iloilo",
     "lat": 10.7202,
-    "lng": 122.5621
+    "lng": 122.5621,
+    "added": "2026-11-17"
   },
   "stations": [
     {
       "id": "sweet-fm-901-governor-generoso",
-      "name": "Sweet FM 90.1 Governor Generoso",
+      "name": "Sweet FM 90.1",
       "stream": "https://sapircast.caster.fm:13984/pUCje?token=0986cdacd23a864575781b8d2d439696",
       "website": "https://sweetfm901govgen.ismyradio.com/",
       "logo": "https://user-content.cloud.caster.fm/file/casterfm-cloud-usercontent/82426/logo.png?v=1794907946",
@@ -23,7 +24,8 @@
       "city": "Governor Generoso",
       "province": "Davao Oriental",
       "lat": 6.6556,
-      "lng": 126.0728
+      "lng": 126.0728,
+      "added": "2026-11-17"
     }
   ]
 }

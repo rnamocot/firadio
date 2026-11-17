@@ -108,7 +108,7 @@ def extras():
             "u": "x-" + sid, "n": name, "url": url, "hp": s.get("website") or "", "f": s.get("logo") or "",
             "t": s.get("tags") or "", "st": place, "la": s.get("lat"), "lo": s.get("lng"),
             "b": s.get("bitrate") or 0, "h": 1 if re.search(r"\.m3u8(\?|$)", url, re.I) else 0,
-            "v": s.get("votes", 50), "ok": 1,
+            "v": s.get("votes", 50), "ok": 1, "a": str(s.get("added") or ""),
         })
     return out
 

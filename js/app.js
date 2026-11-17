@@ -8,6 +8,9 @@
   const DATA_URL = "data/stations.json";
   const CACHE_KEY = "filradio.stations.v3";
   const CACHE_TTL = 6 * 60 * 60 * 1000;
+  // tools/build.py stamps this with the stations.json time, so a new list replaces the saved one at once.
+  const DATA_VER = "dev";
+  const NEW_DAYS = 60; // hand-added stations show under the New filter for this long
   const MANILA = [14.5995, 120.9842];
   // ?secure=1 lets you test the https behaviour on localhost.
   const SECURE = location.protocol === "https:" || /[?&]secure=1(&|$)/.test(location.search);
@@ -40,6 +43,37 @@
   // Phones in landscape (short screens) use the side-panel layout.
   const mq = matchMedia("(max-width: 760px) and (min-height: 501px), (max-width: 480px)");
   const isMobile = () => mq.matches;
+
+  // Desktop: the panel footer (visits, links, coffee, credit) sits in one bar along the
+  // bottom of the page, so the station list keeps that height. Phones, and short landscape screens where a
+  // bar would eat the map, keep them in the station panel.
+  const footMq = matchMedia("(min-width: 761px) and (min-height: 501px)");
+  function placeFooter() {
+    const foot = $("pageFoot"), credit = document.querySelector(".sheet .credit");
+    const parts = [$("footRow"), $("footBmc"), $("footBy")];
+    if (!foot || !credit || parts.some((p) => !p)) return;
+    if (!footMq.matches) {
+      credit.insertBefore(parts[0], $("promo"));
+      credit.append(parts[1], parts[2]);
+      foot.hidden = true;
+    } else {
+      foot.append(...parts);
+      foot.hidden = false;
+    }
+    document.body.classList.toggle("has-page-foot", !foot.hidden);
+  }
+  placeFooter();
+  // Email links are built here so the address isn't sitting in the HTML for scrapers.
+  document.querySelectorAll("a[data-mail]").forEach((a) => {
+    const [u, d] = a.dataset.mail.split("|");
+    const q = [a.dataset.subject && "subject=" + encodeURIComponent(a.dataset.subject),
+               a.dataset.body && "body=" + encodeURIComponent(a.dataset.body.replace(/\n/g, "\r\n"))].filter(Boolean).join("&");
+    a.href = `mailto:${u}@${d}${q ? "?" + q : ""}`;
+  });
+  footMq.addEventListener("change", placeFooter);
+  if ("ResizeObserver" in window && $("pageFoot")) {
+    new ResizeObserver(([e]) => document.body.style.setProperty("--foot-h", Math.ceil(e.target.offsetHeight) + "px")).observe($("pageFoot"));
+  }
   // Theme is chosen by the user (light by default) and set on <html> by js/theme.js before paint.
   let dark = document.documentElement.classList.contains("dark");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -50,6 +84,16 @@
   const esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const clean = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  // Display name: drop a " | tagline" tail, and turn ALL-CAPS names into Title Case while keeping short
+  // call signs and abbreviations (DWIZ, RMN, FM) as they are.
+  const tidyName = (n) => {
+    const head = n.split(/\s+\|\s+/)[0].trim();
+    if (head.length >= 3) n = head;
+    if (/[A-Z]/.test(n) && n === n.toUpperCase()) {
+      n = n.replace(/[A-Z][A-Z']+/g, (w) => (w.length <= 4 ? w : w[0] + w.slice(1).toLowerCase()));
+    }
+    return n;
+  };
   const norm = (s) => clean(s).toLowerCase().replace(/[^a-z0-9]+/g, "");
   const safeUrl = (u) => (/^https?:\/\//i.test(u || "") ? u : "");
 
@@ -183,14 +227,14 @@
     let cached = null;
     try {
       cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      if (cached && (Date.now() - cached.t < CACHE_TTL || !navigator.onLine)) { dataChecked = cached.c || null; return cached.d; }
+      if (cached && ((cached.v === DATA_VER && Date.now() - cached.t < CACHE_TTL) || !navigator.onLine)) { dataChecked = cached.c || null; return cached.d; }
     } catch {}
     try {
       const res = await fetch(DATA_URL, { cache: "no-cache" });
       if (!res.ok) throw new Error(res.status);
       const { d, checked } = await res.json();
       dataChecked = checked || null;
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d, c: dataChecked })); } catch {}
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), v: DATA_VER, d, c: dataChecked })); } catch {}
       return d;
     } catch (e) {
       if (cached) { dataChecked = cached.c || null; return cached.d; } // offline: use the last list we saved
@@ -206,13 +250,16 @@
       if (!key) continue;
       let st = byName.get(key);
       if (!st) {
-        const name = clean(s.n);
-        const cls = classify(name, s.t || "");
+        const full = clean(s.n);
+        const cls = classify(full, s.t || ""); // the full name, so a frequency after "|" still counts
+        const name = tidyName(full);
         st = { id: s.u, key, onAir: null, name, tags: clean(s.t).replace(/,/g, ", "), band: cls.band, num: cls.num, state: clean(s.st),
                favicon: safeUrl(s.f), homepage: safeUrl(s.hp), votes: 0, streams: [], lat: null, lng: null, exact: false };
         byName.set(key, st);
       }
       st.votes += s.v || 0;
+      const added = s.a ? Date.parse(s.a) : NaN;
+      if (added && (!st.added || added > st.added)) st.added = added;
       // On air if any of its links answered at the last check (only meaningful on https).
       if (SECURE && s.on === 1) st.onAir = true;
       else if (SECURE && s.on === 0 && st.onAir !== true) st.onAir = false;
@@ -463,6 +510,7 @@
   });
   // Restore 3D only after the first full load (terrain must not be added mid-load).
   map.once("load", () => { if (is3D) set3D(true, false); });
+  map.getCanvas().setAttribute("aria-label", "Map of Philippine radio stations. Use the station list to browse and play with a keyboard.");
 
   // First view on phones: tighter framing so the islands fill the space between search bar and list.
   function startPadding() {
@@ -734,10 +782,15 @@
     // near Manila). The "Unknown city" filter narrows the list to only those city-less stations.
     const onlyUnk = $("showUnknown").checked;
     const favOnly = $("favOnly").checked, onAirOnly = $("onAirOnly").checked, directOnly = $("directOnly").checked;
+    const newOnly = $("newOnly").checked, topOnly = $("topOnly").checked;
     // Favorites shows every saved station regardless of the other filters.
-    const base = favOnly
+    let base = favOnly
       ? stations.filter((st) => favs.has(st.key))
       : stations.filter((st) => (!directOnly || !st.external) && (!onlyUnk || st.unknown) && (!onAirOnly || st.onAir !== false));
+    // New: recently listed stations, newest first.
+    if (newOnly) base = base.filter(isNew).sort((a, b) => b.added - a.added);
+    // Top: most played by FilRadio listeners, by rank.
+    if (topOnly) base = base.filter((st) => topRank.has(st.key)).sort((a, b) => topRank.get(a.key) - topRank.get(b.key));
     const area = currentArea();
     if (area) {
       for (const st of base) st.dist = st.unknown ? Infinity : km(area.lat, area.lng, st.lat, st.lng);
@@ -787,12 +840,18 @@
         <button class="area-clear" data-area-clear aria-label="Clear location">${use("i-x")}</button>`;
       frag.appendChild(banner);
     }
+    if (newOnly) frag.appendChild(addStationCta(true));
     if (!visible.length) {
       const li = document.createElement("li");
       li.className = "empty";
       li.textContent = favOnly && !favs.size ? "No favorites yet. Tap ♡ on any station to save it here."
+        : newOnly ? `No new stations in the last ${NEW_DAYS} days yet.`
+        : topOnly ? (topState === "error" ? "Couldn't load the most played stations. Try again in a moment."
+          : topState === "loading" ? "Loading the most played stations…"
+          : "Not enough listening yet. The most played stations will show here soon.")
         : area ? `No stations found within ${AREA_KM} km.` : query ? `No stations match “${query}”.` : "No stations match these filters.";
       frag.appendChild(li);
+      if (!newOnly) frag.appendChild(addStationCta(false));
       list.appendChild(frag);
       return;
     }
@@ -805,14 +864,54 @@
       li.innerHTML = `${readoutHtml(st)}
         <div class="info">
           <div class="name">${esc(st.name)}</div>
-          <div class="meta">${dist}${st.onAir === false ? `<b class="off-chip">Off air</b>` : ""}${st.external ? `<b class="ext-chip" title="Opens in your browser's own player">↗ Browser</b>` : ""}${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span></div>
+          <div class="meta">${dist}${topOnly ? `<b class="rank-chip">#${topRank.get(st.key)}</b>` : ""}${isNew(st) ? `<b class="new-chip">New</b>` : ""}${st.onAir === false ? `<b class="off-chip">Off air</b>` : ""}${st.external ? `<b class="ext-chip" title="Opens in your browser's own player">↗ Browser</b>` : ""}${metaHtml(st)}</div>
         </div>
         <span class="bars"><i></i><i></i><i></i></span>
         ${favBtn(st, "row-fav")}
         <span class="row-play" aria-hidden="true">${ICON.play}</span>`;
       frag.appendChild(li);
     });
+    if (!newOnly) frag.appendChild(addStationCta(false));
     list.appendChild(frag);
+  }
+
+  // Row subtitle: city and genre, or band and frequency when neither is known (not a bare "Location unknown").
+  function metaHtml(st) {
+    if (st.unknown && !st.genre) {
+      const what = st.num != null ? `${st.band} · ${freqFull(st)}` : st.band === "Online" ? "Online radio" : st.band;
+      return `<span>${esc(what)}</span>`;
+    }
+    return `${ICON.pin}<span>${esc(st.where)}${st.genre ? " · " + esc(st.genre) : ""}</span>`;
+  }
+
+  // Most played (Top filter): station key -> rank, loaded on demand from the stats server.
+  const topRank = new Map();
+  let topState = ""; // "", "loading", "ok", "error"
+  async function loadTop() {
+    if (topState === "ok" || topState === "loading" || !window.FilTraffic) return;
+    topState = "loading";
+    try {
+      const res = await fetch(`${window.FilTraffic.STATS}/top`);
+      if (!res.ok) throw new Error(String(res.status));
+      const { top } = await res.json();
+      topRank.clear();
+      (Array.isArray(top) ? top : []).forEach((r, i) => { if (r && typeof r.s === "string") topRank.set(r.s, i + 1); });
+      topState = "ok";
+    } catch { topState = "error"; }
+    if ($("topOnly").checked) render();
+  }
+
+  function isNew(st) { return !!st.added && Date.now() - st.added < NEW_DAYS * 864e5; }
+
+  // "Run a station?" call to action: top of the New list, end of every other list.
+  function addStationCta(top) {
+    const li = document.createElement("li");
+    li.className = "add-cta" + (top ? " anim" : "");
+    li.innerHTML = `<span class="area-ico">${use("i-radio")}</span>
+      <div class="info"><div class="name">Run a radio station?</div>
+      <div class="meta">Get it on FilRadio for free. Listeners in the Philippines and abroad can find it here.</div></div>
+      <a class="add-cta-btn" href="add-station.html">Add your station</a>`;
+    return li;
   }
 
   // Every tap on a station goes through here. Stations that only have an old http stream are opened in the
@@ -1350,6 +1449,12 @@
   $("onAirOnly").checked = SECURE; // on-air data is about the https links the live site uses
   $("onAirOnly").addEventListener("change", render);
   $("favOnly").addEventListener("change", render);
+  // New and Top each sort the list their own way, so only one is on at a time.
+  $("newOnly").addEventListener("change", () => { if ($("newOnly").checked) $("topOnly").checked = false; render(); });
+  $("topOnly").addEventListener("change", () => {
+    if ($("topOnly").checked) { $("newOnly").checked = false; if (topState !== "ok") { if (topState === "error") topState = ""; loadTop(); } }
+    render();
+  });
   updateFavCount();
 
   // Re-run the entrance animation of the visible rows/cards (after a view switch).
@@ -1463,7 +1568,8 @@
     const el = $("visits");
     const T = window.FilTraffic;
     if (!T) return;
-    const show = (n) => { if (typeof n === "number") { el.querySelector("b").textContent = n.toLocaleString(); el.hidden = false; } };
+    const VISITS_MIN = 10000; // below this the count hurts more than it helps; "listening now" still shows
+    const show = (n) => { if (typeof n === "number" && n >= VISITS_MIN) { el.querySelector("b").textContent = n.toLocaleString(); el.hidden = false; } };
     const SAVE = "filradio.visits";
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(SAVE) || "null"); } catch {}
@@ -1779,7 +1885,7 @@
       stations.forEach((s) => byId.set(s.id, s));
       const c = (b) => stations.filter((s) => s.band === b).length;
       const placed = stations.filter((s) => !s.unknown).length;
-      $("summary").textContent = `${stations.length} stations · Luzon to Mindanao`;
+      $("summary").textContent = `${stations.length} radio stations`;
       if (dataChecked) {
         $("checkedAt").textContent = new Date(dataChecked).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       }

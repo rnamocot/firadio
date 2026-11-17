@@ -29,7 +29,7 @@ window.FilSponsor = function (opts = {}) {
       const img = $("spImg"), go = $("spGo"), nav = $("spNav");
       const body = box.querySelector(".sc-body, .sp-body");
       const still = matchMedia("(prefers-reduced-motion: reduce)");
-      $("spLabel").textContent = clean(sp.label || "Today's Sponsor").slice(0, 40);
+      $("spLabel").textContent = clean(sp.label || "Featured").slice(0, 40);
       img.addEventListener("error", () => { img.hidden = true; });
       let cur = Math.floor((Date.now() + 8 * 3600e3) / 864e5) % items.length;
       let dots = [];

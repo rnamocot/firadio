@@ -1,6 +1,6 @@
 {
   "on": true,
-  "label": "Today's Sponsor",
+  "label": "Featured",
   "items": [
     {
       "name": "MyTindahan",
@@ -11,7 +11,7 @@
     },
     {
       "name": "Tarsiflow",
-      "text": "Client management for freelancers and agencies: leads, projects, proposals, invoices",
+      "text": "Client management for freelancers and agencies",
       "image": "https://tarsiflow.com/apple-touch-icon.png",
       "url": "https://tarsiflow.com/?utm_source=filradio&utm_medium=sponsor",
       "button": "Visit"
