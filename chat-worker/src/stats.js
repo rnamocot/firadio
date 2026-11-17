@@ -40,12 +40,22 @@ export function cleanKeys(k) {
   return k;
 }
 
-// ----- Mini game leaderboard ("Talon, Palaka!") -----
-// One row per name, keeping that name's best score. Names pass the chat word filter and the
-// staff-name check. A score must fit the jumps and time it took (the game sends both), so typing
-// a big number into the console doesn't work without also faking a believable game.
+// ----- Mini games: leaderboards and play counts -----
+// One row per game and name, keeping that name's best score. Names pass the chat word filter and the
+// staff-name check. A score must fit the actions and time it took (each game sends both, checked against
+// the per-game limits below), so typing a big number into the console doesn't work without also faking
+// a believable game. Play counts (one per game start) sort the games menu by what people play most.
+export const GAMES = {
+  palaka:  { perAction: 8, msPerAction: 350 },  // 1 + up to 5 combo + flies per jump
+  jeepney: { perSec: 3 },
+  kite:    { perSec: 4 },
+  taho:    { perSec: 7 },
+  tumbang: { perAction: 4, msPerAction: 500 },  // 1 + streak bonus per throw
+  sungka:  { perAction: 15 },                   // stored shells, +10 for a cleared board
+  tuner:   { perSec: 3 },
+};
 const GAME_TOP = 10;
-const GAME_KEEP = 300;          // rows kept; the lowest are pruned
+const GAME_KEEP = 300;          // rows kept per game; the lowest are pruned
 const GAME_MAX = 5000;          // highest score accepted
 const GAME_PER_HOUR = 20;       // saves per network per hour
 
@@ -65,13 +75,34 @@ export class Stats extends DurableObject {
       this.base = (await ctx.storage.get("base")) || {};     // totals imported from Abacus
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS live (id TEXT PRIMARY KEY, st TEXT NOT NULL, who TEXT NOT NULL, t INTEGER NOT NULL)");
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS scores (name TEXT PRIMARY KEY COLLATE NOCASE, score INTEGER NOT NULL, t INTEGER NOT NULL, who TEXT NOT NULL)");
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS gscores (g TEXT NOT NULL, name TEXT NOT NULL COLLATE NOCASE, score INTEGER NOT NULL, t INTEGER NOT NULL, who TEXT NOT NULL, PRIMARY KEY (g, name))");
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS gplays (g TEXT PRIMARY KEY, n INTEGER NOT NULL)");
+      // One-time move of the first (Palaka-only) leaderboard into the per-game table.
+      if (!(await ctx.storage.get("gscoresMoved"))) {
+        ctx.storage.sql.exec("INSERT OR IGNORE INTO gscores (g, name, score, t, who) SELECT 'palaka', name, score, t, who FROM scores");
+        await ctx.storage.put("gscoresMoved", true);
+      }
     });
     this.pruned = 0;
     this.gameSaves = new Map(); // hashed IP -> [timestamps] (memory only)
   }
 
-  gameTop() {
-    return this.ctx.storage.sql.exec("SELECT name AS n, score AS s FROM scores ORDER BY score DESC, t ASC LIMIT ?", GAME_TOP).toArray();
+  gameTop(g) {
+    return this.ctx.storage.sql.exec("SELECT name AS n, score AS s FROM gscores WHERE g = ? ORDER BY score DESC, t ASC LIMIT ?", g, GAME_TOP).toArray();
+  }
+
+  /** Every game's #1 and how many times each game has been started. */
+  gameTops() {
+    const sql = this.ctx.storage.sql, tops = {}, plays = {};
+    for (const g of Object.keys(GAMES)) tops[g] = this.gameTop(g)[0] || null;
+    for (const r of sql.exec("SELECT g, n FROM gplays").toArray()) if (r.g in GAMES) plays[r.g] = r.n;
+    return { tops, plays };
+  }
+
+  gamePlay(g) {
+    if (!(g in GAMES)) return false;
+    this.ctx.storage.sql.exec("INSERT INTO gplays (g, n) VALUES (?, 1) ON CONFLICT(g) DO UPDATE SET n = n + 1", g);
+    return true;
   }
 
   gameSave(b, who) {
@@ -80,20 +111,26 @@ export class Stats extends DurableObject {
     if (recent.length >= GAME_PER_HOUR) return { error: "Too many scores saved. Try again later.", status: 429 };
     const name = gameName(b.n);
     if (!name) return { error: "Please pick another name (2 to 20 letters, no bad words).", status: 400 };
-    const score = b.s, jumps = b.j, ms = b.d;
-    const ok = [score, jumps, ms].every(Number.isInteger) && score >= 1 && score <= GAME_MAX
-      && jumps >= 1 && score <= jumps * 8 && ms >= jumps * 350 && ms <= 6 * 3600e3;
+    const g = typeof b.g === "string" && b.g in GAMES ? b.g : (b.g == null ? "palaka" : "");
+    if (!g) return { error: "Unknown game.", status: 400 };
+    const rule = GAMES[g];
+    const score = b.s, acts = b.j, ms = b.d;
+    const ok = [score, acts, ms].every(Number.isInteger) && score >= 1 && score <= GAME_MAX
+      && acts >= 1 && ms <= 6 * 3600e3
+      && (!rule.perAction || score <= acts * rule.perAction)
+      && (!rule.msPerAction || ms >= acts * rule.msPerAction)
+      && (!rule.perSec || score <= (ms / 1000) * rule.perSec + 3);
     if (!ok) return { error: "That score couldn't be checked.", status: 400 };
     recent.push(now); this.gameSaves.set(who, recent);
     if (this.gameSaves.size > 5000) this.gameSaves.clear();
     const sql = this.ctx.storage.sql;
-    const had = sql.exec("SELECT score FROM scores WHERE name = ?", name).toArray()[0];
-    if (!had || score > had.score) sql.exec("INSERT OR REPLACE INTO scores (name, score, t, who) VALUES (?, ?, ?, ?)", name, score, now, who);
-    const count = sql.exec("SELECT count(*) AS c FROM scores").one().c;
-    if (count > GAME_KEEP) sql.exec("DELETE FROM scores WHERE name IN (SELECT name FROM scores ORDER BY score ASC, t DESC LIMIT ?)", count - GAME_KEEP);
+    const had = sql.exec("SELECT score FROM gscores WHERE g = ? AND name = ?", g, name).toArray()[0];
+    if (!had || score > had.score) sql.exec("INSERT OR REPLACE INTO gscores (g, name, score, t, who) VALUES (?, ?, ?, ?, ?)", g, name, score, now, who);
+    const count = sql.exec("SELECT count(*) AS c FROM gscores WHERE g = ?", g).one().c;
+    if (count > GAME_KEEP) sql.exec("DELETE FROM gscores WHERE g = ? AND name IN (SELECT name FROM gscores WHERE g = ? ORDER BY score ASC, t DESC LIMIT ?)", g, g, count - GAME_KEEP);
     const best = Math.max(score, had?.score || 0);
-    const rank = sql.exec("SELECT count(*) AS c FROM scores WHERE score > ?", best).one().c + 1;
-    return { name, best, rank, top: this.gameTop() };
+    const rank = sql.exec("SELECT count(*) AS c FROM gscores WHERE g = ? AND score > ?", g, best).one().c + 1;
+    return { g, name, best, rank, top: this.gameTop(g) };
   }
 
   total(k) { return (this.counts[k] || 0) + (this.base[k] || 0); }
@@ -130,7 +167,7 @@ export class Stats extends DurableObject {
   }
 
   async fetch(req) {
-    const path = new URL(req.url).pathname;
+    const url = new URL(req.url), path = url.pathname;
 
     if (path === "/live") {
       if (req.method === "GET") return Response.json({ n: this.liveCount().n });
@@ -157,7 +194,15 @@ export class Stats extends DurableObject {
       return Response.json({ visits: this.total("visits") });
     }
 
-    if (path === "/game/top") return Response.json({ top: this.gameTop() });
+    if (path === "/game/top") {
+      const g = url.searchParams.get("g") || "palaka";
+      return g in GAMES ? Response.json({ top: this.gameTop(g) }) : Response.json({ error: "unknown game" }, { status: 400 });
+    }
+    if (path === "/game/tops") return Response.json(this.gameTops());
+    if (path === "/game/play" && req.method === "POST") {
+      const b = await req.json().catch(() => ({}));
+      return this.gamePlay(b.g) ? Response.json({ ok: true }) : Response.json({ error: "unknown game" }, { status: 400 });
+    }
     if (path === "/game/score" && req.method === "POST") {
       const r = this.gameSave(await req.json().catch(() => ({})), req.headers.get("X-Who") || "");
       const { status = 200, ...body } = r;
@@ -182,8 +227,9 @@ export class Stats extends DurableObject {
         return Response.json({ ok: true, keys: Object.keys(base).length, visits: this.total("visits") });
       }
       if (b.action === "statsgamedel") { // remove a name from the game leaderboard
-        this.ctx.storage.sql.exec("DELETE FROM scores WHERE name = ?", String(b.name || ""));
-        return Response.json({ ok: true, top: this.gameTop() });
+        const g = String(b.g || "palaka");
+        this.ctx.storage.sql.exec("DELETE FROM gscores WHERE g = ? AND name = ?", g, String(b.name || ""));
+        return Response.json({ ok: true, top: this.gameTop(g) });
       }
       if (b.action === "stats") return Response.json({ ok: true, counts: this.counts, base: this.base });
       return Response.json({ ok: false, error: "unknown action" }, { status: 400 });

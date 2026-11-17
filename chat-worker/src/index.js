@@ -2,7 +2,7 @@
 // Runs on Cloudflare (not Hostinger). WebSocket Hibernation means idle listeners cost nothing.
 import { DurableObject } from "cloudflare:workers";
 import { check, tidy, reserved } from "./filter.js";
-import { Stats } from "./stats.js";
+import { Stats, GAMES } from "./stats.js";
 export { Stats };
 
 const ORIGINS = ["https://filradio.xyz", "https://www.filradio.xyz", "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5500", "http://127.0.0.1:5500"];
@@ -63,7 +63,7 @@ export default {
       if (!(await allowed(env.ADMIN_LIMIT, ip))) return deny(429);
       return adminProxy(req, env);
     }
-    if (["/hit", "/count", "/stats", "/live", "/game/top", "/game/score"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
+    if (["/hit", "/count", "/stats", "/live", "/game/top", "/game/tops", "/game/score", "/game/play"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
     if (url.pathname !== "/ws" || req.method !== "GET") return deny(404);
     const origin = req.headers.get("Origin") || "";
     if (!ORIGINS.includes(origin)) return deny(403);
@@ -149,20 +149,36 @@ async function statsRoute(req, env, ctx, url, ip) {
     if (body.length > 200) return deny(413);
     const who = await hashIp(ip, env.IP_SALT || "filradio");
     const r = await stub.fetch(new Request("https://stats/game/score", { method: "POST", body, headers: { "X-Who": who } }));
-    if (r.ok) ctx.waitUntil(caches.default.delete(new Request(`${url.origin}/__cache/game/top`))); // new score shows right away
+    if (r.ok) { // the new score shows right away
+      let g = "palaka";
+      try { const b = JSON.parse(body); if (b.g in GAMES) g = b.g; } catch {}
+      ctx.waitUntil(Promise.all([`/game/top?g=${g}`, "/game/tops"].map((p) => caches.default.delete(new Request(`${url.origin}/__cache${p}`)))));
+    }
     return out(r, { "Cache-Control": "no-store" });
+  }
+
+  if (url.pathname === "/game/play") {
+    // One count per game start (sorts the games menu by what people play most).
+    if (req.method !== "POST" || !okOrigin) return deny(403);
+    if (Number(req.headers.get("Content-Length") || 0) > 60) return deny(413);
+    if (!(await allowed(env.PLAY_LIMIT, ip))) return deny(429);
+    const body = await req.text();
+    if (body.length > 60) return deny(413);
+    return out(await stub.fetch(new Request("https://stats/game/play", { method: "POST", body })), { "Cache-Control": "no-store" });
   }
 
   if (req.method !== "GET") return deny(405);
   if (!(await allowed(env.READ_LIMIT, ip))) return deny(429);
   // Reads are cached at the edge (60 s, live count 30 s): repeat views and refreshes never wake the counter.
   const cache = caches.default;
-  const key = new Request(`${url.origin}/__cache${url.pathname}`);
+  // Only the game id is kept from the query string, so junk parameters can't bust the cache.
+  const gq = url.pathname === "/game/top" ? `?g=${url.searchParams.get("g") in GAMES ? url.searchParams.get("g") : "palaka"}` : "";
+  const key = new Request(`${url.origin}/__cache${url.pathname}${gq}`);
   let r = await cache.match(key);
   if (!r) {
-    const fresh = await stub.fetch(new Request(`https://stats${url.pathname}`));
+    const fresh = await stub.fetch(new Request(`https://stats${url.pathname}${gq}`));
     r = new Response(fresh.body, fresh);
-    r.headers.set("Cache-Control", `public, max-age=${url.pathname === "/live" || url.pathname === "/game/top" ? 30 : 60}`);
+    r.headers.set("Cache-Control", `public, max-age=${["/live", "/game/top", "/game/tops"].includes(url.pathname) ? 30 : 60}`);
     if (fresh.ok) ctx.waitUntil(cache.put(key, r.clone()));
   }
   return out(r);

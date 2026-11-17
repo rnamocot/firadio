@@ -59,5 +59,11 @@ name = "GAME_LIMIT"
 namespace_id = "7106"
 simple = { limit = 6, period = 60 }
 
+# Mini game play counts (one per game start).
+[[ratelimits]]
+name = "PLAY_LIMIT"
+namespace_id = "7107"
+simple = { limit = 20, period = 60 }
+
 [observability]
 enabled = false

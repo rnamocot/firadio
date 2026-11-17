@@ -1973,9 +1973,10 @@ html.dark .sc-go { background: var(--sun); color: var(--sun-ink); }
   transition: transform .15s var(--ease), opacity .2s;
   animation: game-fab-in .5s var(--ease) 1.2s both;
 }
-.game-fab .gf-frog { width: 34px; height: 34px; flex: none; animation: frog-hop 3.2s ease-in-out 3s infinite; transform-origin: 50% 90%; }
+.game-fab .gf-ico { width: 34px; height: 34px; flex: none; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .45)); animation: joy-wiggle 3.2s ease-in-out 3s infinite; transform-origin: 50% 85%; }
+@keyframes joy-wiggle { 0%, 70%, 100% { transform: none; } 76% { transform: rotate(-14deg); } 84% { transform: rotate(12deg); } 92% { transform: rotate(-6deg); } }
 .game-fab:hover { transform: translateY(-2px); }
-.game-fab:hover .gf-frog { animation-duration: .9s; animation-delay: 0s; }
+.game-fab:hover .gf-ico { animation-duration: .9s; animation-delay: 0s; }
 .game-fab:active { transform: scale(.96); }
 .game-fab.loading { opacity: .7; cursor: progress; }
 html.dark .game-fab { border-color: #4cbf5a; }
@@ -1986,7 +1987,7 @@ html.chat-open .game-fab { display: none; } /* the chat panel sits here */
 /* Phones: above the chat bubble, over the tab bar (and above the mini player when it shows) */
 @media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
   .game-fab { right: 12px; bottom: calc(var(--tab-h) + 72px); height: 44px; padding: 0 14px 0 6px; font-size: 14px; z-index: 27; }
-  .game-fab .gf-frog { width: 32px; height: 32px; }
+  .game-fab .gf-ico { width: 32px; height: 32px; }
   .app:has(.player:not([hidden])) ~ .game-fab, .app:has(.player:not([hidden])) .game-fab { bottom: calc(var(--tab-h) + 144px); }
 }
 /* Landscape phones */
@@ -2043,7 +2044,7 @@ dialog.game-dlg[open] { animation: game-in .3s var(--ease); }
   .game-head { padding: 6px 8px 4px 14px; }
   .game-title small { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .game-fab, .game-fab .gf-frog, dialog.game-dlg[open] { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .game-fab, .game-fab .gf-ico, dialog.game-dlg[open] { animation: none; } }
 
 /* Chat footer: the mini game and its top scorer */
 .chat-game {
@@ -2052,9 +2053,9 @@ dialog.game-dlg[open] { animation: game-in .3s var(--ease); }
   transition: background .15s, border-color .15s;
 }
 .chat-game:hover { background: rgba(76, 191, 90, .15); border-color: rgba(76, 191, 90, .8); }
-.chat-game:hover .cg-frog { animation: frog-hop .9s ease-in-out infinite; }
+.chat-game:hover .cg-frog { animation: joy-wiggle .9s ease-in-out infinite; transform-origin: 50% 85%; }
 .chat-game.loading { opacity: .7; cursor: progress; }
-.cg-frog { width: 30px; height: 30px; flex: none; transform-origin: 50% 90%; }
+.cg-frog { width: 32px; height: 32px; flex: none; transform-origin: 50% 90%; }
 .cg-text { flex: 1; min-width: 0; display: grid; }
 .cg-text b { font: 800 13px/1.25 var(--display); }
 .cg-text small { font-size: 11.5px; color: var(--c-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2116,3 +2117,111 @@ dialog.game-dlg[open] { animation: game-in .3s var(--ease); }
 .gs-mine:empty { display: none; }
 @media (max-height: 640px) { .gs-top { display: none; } .gs-champ { padding-top: 18px; } }
 @media (prefers-reduced-motion: reduce) { .gs-champ::before, .gs-go { animation: none; } }
+
+/* Games menu: a countdown chart of games, most played at No. 1 */
+.game-menu { position: absolute; inset: 0; overflow-y: auto; padding: 10px 10px 12px; background: #10172a; overscroll-behavior: contain; }
+.game-menu[hidden] { display: none; }
+.gm-lcd {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; padding: 9px 14px;
+  border-radius: 12px; background: #0b1020; border: 1px solid #243051; font: 12px var(--mono); letter-spacing: .1em; text-transform: uppercase;
+}
+.gm-lcd span { color: rgba(255, 255, 255, .45); }
+.gm-lcd b { font-weight: 400; color: var(--sun); text-shadow: 0 0 10px rgba(255, 201, 60, .35); white-space: nowrap; }
+.gm-grid { display: grid; gap: 6px; }
+.gm-row {
+  --gc: #ffc93c; display: grid; grid-template-columns: 30px 48px minmax(0, 1fr) 18px; align-items: center; gap: 12px;
+  width: 100%; padding: 10px 10px 10px 8px; border: 1px solid transparent; border-radius: 14px; background: #172038;
+  color: #fff; font: inherit; text-align: left; cursor: pointer; transition: background .15s, border-color .15s, transform .15s var(--ease);
+}
+.gm-row:hover, .gm-row:focus-visible { background: #1d2846; border-color: color-mix(in srgb, var(--gc) 55%, transparent); outline: none; }
+.gm-row:active { transform: scale(.985); }
+.gm-row.loading { opacity: .6; cursor: progress; }
+.gm-rank { font: 22px/1 var(--mono); color: rgba(255, 255, 255, .35); text-align: center; }
+.gm-row.first { background: linear-gradient(90deg, rgba(255, 201, 60, .14), #172038 60%); border-color: rgba(255, 201, 60, .35); }
+.gm-row.first .gm-rank { color: var(--sun); text-shadow: 0 0 12px rgba(255, 201, 60, .5); }
+.gm-art { perspective: 300px; }
+.gm-art svg {
+  display: block; width: 48px; height: 48px; border-radius: 12px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .35), 0 8px 14px -6px rgba(0, 0, 0, .7), inset 0 0 0 1px rgba(255, 255, 255, .08);
+  transform: rotateX(8deg); transition: transform .25s var(--ease), box-shadow .25s;
+}
+.gm-row:hover .gm-art svg, .gm-row:focus-visible .gm-art svg { transform: rotateX(0) rotateY(-14deg) translateY(-2px); box-shadow: 4px 5px 0 rgba(0, 0, 0, .3), 6px 12px 18px -6px rgba(0, 0, 0, .7); }
+.gm-txt { display: grid; gap: 1px; min-width: 0; }
+/* "Most played" ribbon: wraps over the row's left edge like the Today's Sponsor ribbon (notch + folded tail) */
+.gm-row { position: relative; }
+.gm-row.first { padding-top: 30px; }
+.gm-no1 { position: absolute; top: 7px; left: -7px; filter: drop-shadow(0 2px 3px rgba(230, 57, 70, .45)); }
+.gm-no1 > span {
+  display: flex; align-items: center; height: 20px; padding: 0 18px 0 10px; border-radius: 3px 0 0 0;
+  background: var(--red); color: #fff; font: 800 10.5px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%);
+}
+.gm-no1::after { content: ""; position: absolute; left: 0; top: 100%; border-top: 6px solid #9e1d28; border-left: 7px solid transparent; }
+.gm-txt b { font: 800 15px/1.2 var(--display); }
+.gm-txt small { font-size: 12px; line-height: 1.3; color: rgba(255, 255, 255, .62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-meta { margin-top: 3px; font-size: 12px; color: rgba(255, 255, 255, .8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-top { display: inline-block; padding: 0 5px; margin-right: 3px; border-radius: 4px; background: var(--sun); color: #10172a; font: 11px/16px var(--mono); letter-spacing: .06em; }
+.gm-top.dim { background: rgba(255, 255, 255, .14); color: rgba(255, 255, 255, .7); }
+.gm-meta em { font: normal 13px var(--mono); color: var(--sun); }
+.gm-meta i { font-style: normal; color: rgba(255, 255, 255, .45); }
+.gm-go { width: 18px; height: 18px; color: rgba(255, 255, 255, .35); }
+.gm-row:hover .gm-go { color: var(--gc); }
+.gm-note { margin: 10px 4px 2px; font: 11px var(--mono); letter-spacing: .06em; color: rgba(255, 255, 255, .4); text-align: center; }
+@media (max-width: 380px) { .gm-row { grid-template-columns: 24px 44px minmax(0, 1fr) 14px; gap: 9px; } .gm-art svg { width: 44px; height: 44px; } .gm-rank { font-size: 18px; } }
+@media (prefers-reduced-motion: reduce) { .gm-art svg, .gm-row:hover .gm-art svg { transform: none; transition: none; } }
+.game-back { margin-right: -6px; }
+.gs-link { border: 0; background: none; color: rgba(255, 255, 255, .75); font: 700 13px var(--display); cursor: pointer; padding: 6px 10px; border-radius: 8px; }
+.gs-link:hover { color: #fff; background: rgba(255, 255, 255, .08); }
+.game-start { --gc: #ffc93c; }
+.game-start .gs-champ { border-color: color-mix(in srgb, var(--gc) 60%, #ffc93c); }
+.game-x[hidden] { display: none; }
+
+/* Featured game (Talon, Palaka!) above the countdown */
+.gm-feature {
+  position: relative; display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 14px;
+  width: 100%; margin: 6px 0 12px; padding: 30px 14px 14px; border-radius: 18px; cursor: pointer; text-align: left; color: #fff; font: inherit;
+  border: 1px solid rgba(76, 191, 90, .55);
+  background: radial-gradient(120% 140% at 0% 0%, rgba(76, 191, 90, .32), transparent 60%), linear-gradient(160deg, #1f3a4a, #172038 70%);
+  box-shadow: 0 12px 28px -16px rgba(76, 191, 90, .7);
+  transition: transform .15s var(--ease), border-color .15s, box-shadow .2s;
+}
+.gm-feature:hover, .gm-feature:focus-visible { transform: translateY(-2px); border-color: #4cbf5a; box-shadow: 0 16px 32px -14px rgba(76, 191, 90, .85); outline: none; }
+.gm-feature.loading { opacity: .6; cursor: progress; }
+.gm-art.big svg { width: 84px; height: 84px; border-radius: 20px; }
+.gm-ftxt { display: grid; gap: 2px; min-width: 0; }
+.gm-ftxt b { font: 800 20px/1.15 var(--display); font-stretch: 112%; }
+.gm-ftxt small { font-size: 12.5px; color: rgba(255, 255, 255, .7); }
+.gm-play {
+  justify-self: start; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; height: 34px; padding: 0 14px 0 16px;
+  border-radius: 999px; background: #4cbf5a; color: #0d2a12; font: 800 13.5px var(--display);
+  box-shadow: 0 6px 14px -6px rgba(76, 191, 90, .9);
+}
+.gm-play svg { width: 14px; height: 14px; }
+.gm-feature:hover .gm-play { filter: brightness(1.08); }
+/* Gold ribbon in the sponsor style */
+.gm-ribbon { position: absolute; top: 8px; left: -7px; filter: drop-shadow(0 2px 3px rgba(184, 134, 11, .5)); }
+.gm-ribbon > span {
+  display: flex; align-items: center; height: 20px; padding: 0 18px 0 10px; border-radius: 3px 0 0 0;
+  background: var(--sun); color: #10172a; font: 800 10.5px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%);
+}
+.gm-ribbon::after { content: ""; position: absolute; left: 0; top: 100%; border-top: 6px solid #a8780a; border-left: 7px solid transparent; }
+@media (max-width: 380px) { .gm-feature { grid-template-columns: 68px minmax(0, 1fr); gap: 11px; } .gm-art.big svg { width: 68px; height: 68px; border-radius: 16px; } .gm-ftxt b { font-size: 17px; } }
+
+/* Share buttons on the start / game-over screens, and the share panel */
+.gs-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.gs-share { display: inline-flex; align-items: center; gap: 6px; color: var(--sun); }
+.gs-share svg { width: 15px; height: 15px; }
+.game-share { position: absolute; inset: 0; z-index: 5; display: grid; place-items: end center; padding: 12px; background: rgba(8, 12, 24, .6); animation: game-in .2s var(--ease); }
+.game-share[hidden] { display: none; }
+.gsh-card { width: min(360px, 100%); padding: 12px 14px 14px; border-radius: 18px; background: #172038; border: 1px solid #243051; box-shadow: 0 20px 40px -16px rgba(0, 0, 0, .8); }
+.gsh-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.gsh-head b { font: 800 16px var(--display); color: #fff; }
+.gsh-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.gsh-grid a, .gsh-grid button, .gsh-more {
+  display: grid; place-items: center; height: 42px; border-radius: 12px; border: 1px solid #2c3a63; background: #10172a; color: #fff;
+  font: 700 13px var(--display); text-decoration: none; cursor: pointer;
+}
+.gsh-grid a:hover, .gsh-grid button:hover, .gsh-more:hover { border-color: var(--sun); }
+.gsh-grid [hidden], .gsh-more[hidden] { display: none; }
+.gsh-more { width: 100%; margin-top: 8px; }
