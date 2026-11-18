@@ -485,4 +485,4 @@ Git-ignored: `dist/`, `node_modules/`, `chat-worker/node_modules/`, `chat-worker
 
 ---
 
-FilRadio · Created by a dev aka [Jun Asak](https://www.renienamocot.com/).
+FilRadio · Created by [Zendz](https://www.renienamocot.com/).

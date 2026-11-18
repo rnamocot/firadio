@@ -63,6 +63,7 @@ export const GAMES = {
   tuner:   { perSec: 3 },
   rene:    { perAction: 6, msPerAction: 400 },  // swish 3, x2 on fire, per shot
   tinikling: { perAction: 2, msPerAction: 400 }, // Perfect 2 per jump; a jump lasts 0.42 s
+  dama:    { perAction: 8, msPerAction: 500 },  // captures 1/3, crown 2, win 5 x level (max 30); 12+ moves a board
 };
 const GAME_TOP = 10;
 const GAME_KEEP = 300;          // rows kept per game; the lowest are pruned

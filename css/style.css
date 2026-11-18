@@ -1577,6 +1577,13 @@ html.dark .chat-fab { border-color: var(--sun); box-shadow: 0 10px 26px -6px rgb
 .chat-x { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border-radius: 10px; border: 0; background: transparent; color: var(--c-dim); cursor: pointer; }
 .chat-x:hover { color: var(--c-text); background: var(--c-bg2); }
 .chat-x svg { width: 16px; height: 16px; }
+.chat-x[aria-pressed="true"] { color: var(--sun); }
+/* Full screen chat: over everything, edge to edge (real full screen where supported) */
+.chat.is-full {
+  inset: 0; z-index: 90; width: auto; height: auto; border: 0; border-radius: 0;
+  padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); animation: none;
+}
+.chat.is-full:fullscreen { width: 100%; height: 100%; }
 
 .chat-rules { margin: 10px 16px 2px; font-size: 11.5px; line-height: 1.45; color: var(--c-dim); }
 /* "Add FilRadio to your app or site" tip under the rules */
@@ -2044,6 +2051,11 @@ dialog.game-dlg[open] { animation: game-in .3s var(--ease); }
   .game-head { padding: 6px 8px 4px 14px; }
   .game-title small { display: none; }
 }
+/* Full screen (button in the header): real full screen where supported, else fills the window */
+dialog.game-dlg.is-full { width: 100vw; height: 100dvh; margin: 0; }
+dialog.game-dlg.is-full .game-card { border-radius: 0; border: 0; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+dialog.game-dlg.is-full .game-stage { margin: 0 8px 8px; }
+.game-x[aria-pressed="true"] { color: var(--sun); }
 @media (prefers-reduced-motion: reduce) { .game-fab, .game-fab .gf-ico, dialog.game-dlg[open] { animation: none; } }
 
 /* Chat footer: the mini game and its top scorer */
@@ -2127,47 +2139,51 @@ dialog.game-dlg[open] { animation: game-in .3s var(--ease); }
 }
 .gm-lcd span { color: rgba(255, 255, 255, .45); }
 .gm-lcd b { font-weight: 400; color: var(--sun); text-shadow: 0 0 10px rgba(255, 201, 60, .35); white-space: nowrap; }
-.gm-grid { display: grid; gap: 6px; }
+.gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+/* Each game is a tile: art, title, tag, then the top scorer and play count pinned to the bottom */
 .gm-row {
-  --gc: #ffc93c; display: grid; grid-template-columns: 30px 48px minmax(0, 1fr) 18px; align-items: center; gap: 12px;
-  width: 100%; padding: 10px 10px 10px 8px; border: 1px solid transparent; border-radius: 14px; background: #172038;
+  --gc: #ffc93c; position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 9px;
+  width: 100%; min-width: 0; padding: 12px; border: 1px solid rgba(255, 255, 255, .06); border-radius: 16px;
+  background: radial-gradient(130% 80% at 0% 0%, color-mix(in srgb, var(--gc) 24%, transparent), transparent 70%), #172038;
   color: #fff; font: inherit; text-align: left; cursor: pointer; transition: background .15s, border-color .15s, transform .15s var(--ease);
 }
-.gm-row:hover, .gm-row:focus-visible { background: #1d2846; border-color: color-mix(in srgb, var(--gc) 55%, transparent); outline: none; }
-.gm-row:active { transform: scale(.985); }
+.gm-row:hover, .gm-row:focus-visible { background-color: #1d2846; border-color: color-mix(in srgb, var(--gc) 60%, transparent); transform: translateY(-2px); outline: none; }
+.gm-row:active { transform: scale(.97); }
 .gm-row.loading { opacity: .6; cursor: progress; }
-.gm-rank { font: 22px/1 var(--mono); color: rgba(255, 255, 255, .35); text-align: center; }
-.gm-row.first { background: linear-gradient(90deg, rgba(255, 201, 60, .14), #172038 60%); border-color: rgba(255, 201, 60, .35); }
-.gm-row.first .gm-rank { color: var(--sun); text-shadow: 0 0 12px rgba(255, 201, 60, .5); }
+.gm-rank { position: absolute; top: 10px; right: 10px; padding: 4px 6px; border-radius: 7px; background: rgba(8, 12, 24, .55); font: 13px/1 var(--mono); color: rgba(255, 255, 255, .6); }
+.gm-row.first { border-color: rgba(255, 201, 60, .45); background: radial-gradient(130% 80% at 0% 0%, rgba(255, 201, 60, .22), transparent 70%), #172038; box-shadow: 0 10px 24px -14px rgba(255, 201, 60, .6); }
+.gm-row.first .gm-rank { display: none; }
 .gm-art { perspective: 300px; }
 .gm-art svg {
-  display: block; width: 48px; height: 48px; border-radius: 12px;
+  display: block; width: 60px; height: 60px; border-radius: 15px;
   box-shadow: 0 3px 0 rgba(0, 0, 0, .35), 0 8px 14px -6px rgba(0, 0, 0, .7), inset 0 0 0 1px rgba(255, 255, 255, .08);
   transform: rotateX(8deg); transition: transform .25s var(--ease), box-shadow .25s;
 }
 .gm-row:hover .gm-art svg, .gm-row:focus-visible .gm-art svg { transform: rotateX(0) rotateY(-14deg) translateY(-2px); box-shadow: 4px 5px 0 rgba(0, 0, 0, .3), 6px 12px 18px -6px rgba(0, 0, 0, .7); }
-.gm-txt { display: grid; gap: 1px; min-width: 0; }
-/* "Most played" ribbon: wraps over the row's left edge like the Today's Sponsor ribbon (notch + folded tail) */
-.gm-row { position: relative; }
-.gm-row.first { padding-top: 30px; }
-.gm-no1 { position: absolute; top: 7px; left: -7px; filter: drop-shadow(0 2px 3px rgba(230, 57, 70, .45)); }
+.gm-txt { display: grid; gap: 2px; width: 100%; min-width: 0; }
+/* "Most played" ribbon: wraps over the tile's right edge (notch + folded tail), in place of the rank */
+.gm-no1 { position: absolute; top: 10px; right: -7px; filter: drop-shadow(0 2px 3px rgba(230, 57, 70, .45)); }
 .gm-no1 > span {
-  display: flex; align-items: center; height: 20px; padding: 0 18px 0 10px; border-radius: 3px 0 0 0;
-  background: var(--red); color: #fff; font: 800 10.5px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%);
+  display: flex; align-items: center; height: 20px; padding: 0 10px 0 16px; border-radius: 0 3px 0 0;
+  background: var(--red); color: #fff; font: 800 10px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 7px 50%);
 }
-.gm-no1::after { content: ""; position: absolute; left: 0; top: 100%; border-top: 6px solid #9e1d28; border-left: 7px solid transparent; }
+.gm-no1::after { content: ""; position: absolute; right: 0; top: 100%; border-top: 6px solid #9e1d28; border-right: 7px solid transparent; }
 .gm-txt b { font: 800 15px/1.2 var(--display); }
-.gm-txt small { font-size: 12px; line-height: 1.3; color: rgba(255, 255, 255, .62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-txt small {
+  min-height: 2.6em; font-size: 12px; line-height: 1.3; color: rgba(255, 255, 255, .62);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .gm-meta { margin-top: 3px; font-size: 12px; color: rgba(255, 255, 255, .8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-row .gm-meta { display: grid; gap: 3px; width: 100%; margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .07); }
+.gm-row .gm-meta > span { overflow: hidden; text-overflow: ellipsis; }
 .gm-top { display: inline-block; padding: 0 5px; margin-right: 3px; border-radius: 4px; background: var(--sun); color: #10172a; font: 11px/16px var(--mono); letter-spacing: .06em; }
 .gm-top.dim { background: rgba(255, 255, 255, .14); color: rgba(255, 255, 255, .7); }
 .gm-meta em { font: normal 13px var(--mono); color: var(--sun); }
 .gm-meta i { font-style: normal; color: rgba(255, 255, 255, .45); }
-.gm-go { width: 18px; height: 18px; color: rgba(255, 255, 255, .35); }
-.gm-row:hover .gm-go { color: var(--gc); }
+.gm-plays { font: 11px var(--mono); letter-spacing: .04em; color: rgba(255, 255, 255, .45); }
 .gm-note { margin: 10px 4px 2px; font: 11px var(--mono); letter-spacing: .06em; color: rgba(255, 255, 255, .4); text-align: center; }
-@media (max-width: 380px) { .gm-row { grid-template-columns: 24px 44px minmax(0, 1fr) 14px; gap: 9px; } .gm-art svg { width: 44px; height: 44px; } .gm-rank { font-size: 18px; } }
+@media (max-width: 340px) { .gm-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; } .gm-row { padding: 10px; } .gm-art svg { width: 52px; height: 52px; border-radius: 13px; } }
 @media (prefers-reduced-motion: reduce) { .gm-art svg, .gm-row:hover .gm-art svg { transform: none; transition: none; } }
 .game-back { margin-right: -6px; }
 .gs-link { border: 0; background: none; color: rgba(255, 255, 255, .75); font: 700 13px var(--display); cursor: pointer; padding: 6px 10px; border-radius: 8px; }

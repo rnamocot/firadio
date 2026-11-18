@@ -426,6 +426,7 @@
   function setOpen(v) {
     open = v;
     panel.hidden = !v;
+    if (!v) setFull(false);
     btn.setAttribute("aria-expanded", String(v));
     document.documentElement.classList.toggle("chat-open", v);
     clearTimeout(idleT);
@@ -446,6 +447,34 @@
     setTimeout(hideHint, 9000);
   }, 6000);
   hint?.addEventListener("click", () => { hideHint(); setOpen(true); });
+  // Full screen toggle: the real Fullscreen API where the browser has it (desktop, Android); otherwise
+  // (iPhone) the panel just fills the window. Pressing Esc out of real full screen also turns it off.
+  function fullToggle(el, btn) {
+    let real = false;
+    const sync = () => {
+      const on = el.classList.contains("is-full");
+      btn.setAttribute("aria-pressed", String(on));
+      btn.setAttribute("aria-label", on ? "Exit full screen" : "Full screen");
+      btn.title = on ? "Exit full screen" : "Full screen";
+      btn.querySelector("use")?.setAttribute("href", on ? "#i-unfull" : "#i-full");
+      window.dispatchEvent(new Event("resize"));
+    };
+    async function set(on) {
+      if (on === el.classList.contains("is-full")) return;
+      el.classList.toggle("is-full", on);
+      sync();
+      if (on && el.requestFullscreen && !document.fullscreenElement) {
+        try { await el.requestFullscreen({ navigationUI: "hide" }); real = true; } catch {}
+      } else if (!on && real) {
+        real = false;
+        if (document.fullscreenElement === el) document.exitFullscreen().catch(() => {});
+      }
+    }
+    document.addEventListener("fullscreenchange", () => { if (real && document.fullscreenElement !== el) { real = false; set(false); } });
+    btn.addEventListener("click", () => set(!el.classList.contains("is-full")));
+    return set;
+  }
+  const setFull = $("chatFull") ? fullToggle(panel, $("chatFull")) : () => {};
   $("chatClose").addEventListener("click", () => setOpen(false));
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || !open || nameForm.contains(document.activeElement)) return;

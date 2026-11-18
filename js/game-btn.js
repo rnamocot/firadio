@@ -5,7 +5,7 @@
   if (!btn || !dlg) return;
   const v = (document.querySelector('script[src*="game-btn.js"]')?.src.match(/\?v=(\d+)/) || [])[1] || "1";
   const API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://localhost:8787" : "https://chat.filradio.xyz";
-  const TITLES = { palaka: "Talon, Palaka!", jeepney: "Jeepney Dash", kite: "Saranggola", taho: "Taho Catch", tumbang: "Tumbang Preso", sungka: "Sungka Solo", tuner: "Radio Tuner", rene: "Rene, Shoot mo Bola!", tinikling: "Tinikling" };
+  const TITLES = { palaka: "Talon, Palaka!", jeepney: "Jeepney Dash", kite: "Saranggola", taho: "Taho Catch", tumbang: "Tumbang Preso", sungka: "Sungka Solo", tuner: "Radio Tuner", rene: "Rene, Shoot mo Bola!", tinikling: "Tinikling", dama: "Dama" };
   let loading = null;
   function load() {
     if (window.FilGame) return Promise.resolve();
@@ -34,6 +34,38 @@
     if (document.readyState === "complete") setTimeout(go, 800); else addEventListener("load", () => setTimeout(go, 800), { once: true });
   }
   btn.addEventListener("pointerenter", () => { load().catch(() => {}); }, { once: true });
+  // Full screen toggle: the real Fullscreen API where the browser has it (desktop, Android); otherwise
+  // (iPhone) the panel just fills the window. Pressing Esc out of real full screen also turns it off.
+  function fullToggle(el, btn) {
+    let real = false;
+    const sync = () => {
+      const on = el.classList.contains("is-full");
+      btn.setAttribute("aria-pressed", String(on));
+      btn.setAttribute("aria-label", on ? "Exit full screen" : "Full screen");
+      btn.title = on ? "Exit full screen" : "Full screen";
+      btn.querySelector("use")?.setAttribute("href", on ? "#i-unfull" : "#i-full");
+      window.dispatchEvent(new Event("resize"));
+    };
+    async function set(on) {
+      if (on === el.classList.contains("is-full")) return;
+      el.classList.toggle("is-full", on);
+      sync();
+      if (on && el.requestFullscreen && !document.fullscreenElement) {
+        try { await el.requestFullscreen({ navigationUI: "hide" }); real = true; } catch {}
+      } else if (!on && real) {
+        real = false;
+        if (document.fullscreenElement === el) document.exitFullscreen().catch(() => {});
+      }
+    }
+    document.addEventListener("fullscreenchange", () => { if (real && document.fullscreenElement !== el) { real = false; set(false); } });
+    btn.addEventListener("click", () => set(!el.classList.contains("is-full")));
+    return set;
+  }
+  const fullBtn = document.getElementById("gameFull");
+  const setFull = fullBtn ? fullToggle(dlg, fullBtn) : () => {};
+  // Phones already get the whole screen; without the Fullscreen API (iPhone) the button would do nothing there.
+  if (fullBtn && !dlg.requestFullscreen) fullBtn.hidden = matchMedia("(max-width: 760px) and (min-height: 501px), (max-width: 480px)").matches;
+  dlg.addEventListener("close", () => setFull(false));
   document.getElementById("gameClose").addEventListener("click", () => dlg.close());
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
 
