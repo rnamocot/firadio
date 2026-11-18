@@ -507,6 +507,7 @@
     requestAnimationFrame(step);
   }
   function setPlayingFeature() {
+    window.FilXmas?.mapLights(map, current, !!current && !audio.paused);
     if (!mapReady) return;
     if (current && current.id !== lastPinId) { lastPinId = current.id; dropPin(); }
     map.getSource("playing").setData(current
