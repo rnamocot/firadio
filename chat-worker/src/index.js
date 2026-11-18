@@ -63,7 +63,9 @@ export default {
       if (!(await allowed(env.ADMIN_LIMIT, ip))) return deny(429);
       return adminProxy(req, env);
     }
-    if (["/hit", "/count", "/stats", "/live", "/top", "/game/top", "/game/tops", "/game/score", "/game/play"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
+    if (url.pathname === "/pv") return pageView(req, env, url, ip);
+    if (url.pathname === "/stats" || url.pathname === "/stats/login") return statsReport(req, env, ctx, url, ip);
+    if (["/hit", "/count", "/live", "/top", "/game/top", "/game/tops", "/game/score", "/game/play"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
     if (url.pathname !== "/ws" || req.method !== "GET") return deny(404);
     const origin = req.headers.get("Origin") || "";
     if (!ORIGINS.includes(origin)) return deny(403);
@@ -104,6 +106,77 @@ async function adminProxy(req, env) {
   const isStats = /"action"\s*:\s*"stats/.test(body);
   const stub = isStats ? env.STATS.get(env.STATS.idFromName("filradio")) : env.ROOM.get(env.ROOM.idFromName("global"));
   return stub.fetch(new Request(isStats ? "https://stats/admin" : "https://room/admin", { method: "POST", body }));
+}
+
+// ----- page views: a 1x1 image on every page, /pv?p=/station/x/ (see stats.js) -----
+const PIXEL = Uint8Array.from(atob("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"), (c) => c.charCodeAt(0));
+const BOTS = /bot|crawl|spider|slurp|preview|lighthouse|headless|facebookexternalhit|embedly|whatsapp|telegram|discord|skype|curl|wget|python|node-fetch|axios|go-http/i;
+async function pageView(req, env, url, ip) {
+  const pixel = () => new Response(PIXEL, { headers: { "Content-Type": "image/gif", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+  if (req.method !== "GET" || url.search.length > 140) return pixel();
+  // Only views from our own pages (the browser sends the page's origin as the referrer), and no bots.
+  let from = "";
+  try { from = new URL(req.headers.get("Referer") || "").origin; } catch {}
+  if (!ORIGINS.includes(from) || BOTS.test(req.headers.get("User-Agent") || "")) return pixel();
+  if (!(await allowed(env.PV_LIMIT, ip))) return pixel();
+  const who = await hashIp(ip, env.IP_SALT || "filradio");
+  const p = (url.searchParams.get("p") || "").toLowerCase();
+  const stub = env.STATS.get(env.STATS.idFromName("filradio"));
+  await stub.fetch(new Request(`https://stats/pv?p=${encodeURIComponent(p)}`, { headers: { "X-Who": who } })).catch(() => {});
+  return pixel();
+}
+
+// ----- private traffic report: sign in with STATS_USER / STATS_PASS (worker secrets) -----
+// POST /stats/login {u, p} -> { token } valid SESSION_DAYS; GET /stats?days=N with "Authorization: Bearer <token>".
+// Tokens are signed with the password, so changing STATS_PASS signs everyone out.
+const SESSION_DAYS = 14;
+async function sign(env, text) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(`${env.STATS_USER}|${env.STATS_PASS}|${env.IP_SALT || ""}`), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function statsReport(req, env, ctx, url, ip) {
+  const origin = req.headers.get("Origin") || "";
+  const cors = ORIGINS.includes(origin)
+    ? { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Headers": "Authorization", "Access-Control-Allow-Methods": "GET, POST", "Access-Control-Max-Age": "86400", Vary: "Origin" }
+    : {};
+  const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (!env.STATS_USER || !env.STATS_PASS || env.STATS_PASS.length < 8) return json({ error: "The stats login is not set up yet." }, 503);
+
+  if (url.pathname === "/stats/login") {
+    if (req.method !== "POST") return deny(405);
+    if (!(await allowed(env.ADMIN_LIMIT, ip))) return json({ error: "Too many tries. Wait a minute and try again." }, 429);
+    const body = await req.text();
+    if (body.length > 400) return deny(413);
+    let b = {};
+    try { b = JSON.parse(body); } catch {}
+    const [okU, okP] = await Promise.all([sameSecret(String(b.u || ""), env.STATS_USER), sameSecret(String(b.p || ""), env.STATS_PASS)]);
+    if (!okU || !okP) return json({ error: "Wrong username or password." }, 401);
+    const exp = String(Date.now() + SESSION_DAYS * 864e5);
+    return json({ token: `${exp}.${await sign(env, exp)}` });
+  }
+
+  if (req.method !== "GET") return deny(405);
+  const [exp, sig] = (req.headers.get("Authorization") || "").replace(/^Bearer /, "").split(".");
+  if (!/^\d{13}$/.test(exp || "") || Number(exp) < Date.now() || !(await sameSecret(sig || "", await sign(env, exp)))) {
+    return json({ error: "Please sign in again." }, 401);
+  }
+  if (!(await allowed(env.READ_LIMIT, ip))) return json({ error: "Too many requests. Wait a minute." }, 429);
+  const d = Number(url.searchParams.get("days"));
+  const days = [1, 7, 30, 90, 365].includes(d) ? d : 0;
+  // Signed-in reads are cached for a minute at the edge (the key is never served without the check above).
+  const key = new Request(`${url.origin}/__cache/stats-report?days=${days}`);
+  let r = await caches.default.match(key);
+  if (!r) {
+    const fresh = await env.STATS.get(env.STATS.idFromName("filradio")).fetch(new Request(`https://stats/stats?days=${days}`));
+    r = new Response(fresh.body, fresh);
+    r.headers.set("Cache-Control", "public, max-age=60");
+    if (fresh.ok) ctx.waitUntil(caches.default.put(key, r.clone()));
+  }
+  const res = new Response(r.body, r);
+  for (const [k, v] of Object.entries({ ...cors, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" })) res.headers.set(k, v);
+  return res;
 }
 
 // ----- visitor counter + traffic report (see stats.js) -----

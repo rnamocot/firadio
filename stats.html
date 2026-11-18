@@ -5,75 +5,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>FilRadio Traffic</title>
   <meta name="robots" content="noindex, nofollow" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://chat.filradio.xyz http://localhost:8787; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://chat.filradio.xyz http://localhost:8787; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <meta name="theme-color" content="#10182B" />
-  <link rel="icon" href="icon.svg?v=100" type="image/svg+xml" />
+  <link rel="icon" href="icon.svg?v=102" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/stats.css?v=100" />
+  <link rel="stylesheet" href="css/stats.css?v=102" />
 </head>
 <body>
   <main class="wrap">
     <header class="top">
-      <a class="brand" href="./"><img src="icon.svg?v=100" alt="" width="44" height="44" /><span>Fil<b>Radio</b></span></a>
+      <a class="brand" href="./"><img src="icon.svg?v=102" alt="" width="44" height="44" /><span>Fil<b>Radio</b></span></a>
       <h1>Traffic</h1>
-      <button id="refresh" type="button">Refresh</button>
+      <span class="top-actions" id="actions" hidden>
+        <button id="refresh" type="button">Refresh</button>
+        <button id="logout" class="ghost" type="button">Sign out</button>
+      </span>
     </header>
 
-    <section class="hero">
-      <div class="lcd">
-        <small>Total visits</small>
-        <b id="total">…</b>
-      </div>
-      <div class="lcd">
-        <small>Sources tracked</small>
-        <b id="tracked">…</b>
-      </div>
-      <p class="note">Each device counts once per day. Sources, location and device are tracked from the day this report was added, so they can be lower than the total.</p>
-    </section>
+    <!-- Sign in (STATS_USER / STATS_PASS secrets on the chat worker) -->
+    <form class="card login" id="login" hidden>
+      <h2>Sign in to see the stats</h2>
+      <label>Username<input id="user" name="username" autocomplete="username" required /></label>
+      <label>Password<input id="pass" name="password" type="password" autocomplete="current-password" required /></label>
+      <p class="err" id="loginErr" role="alert" hidden></p>
+      <button type="submit" id="loginBtn">Sign in</button>
+    </form>
 
-    <section class="card">
-      <h2>Where visitors come from</h2>
-      <ol class="bars" id="sources"><li class="muted">Loading…</li></ol>
-    </section>
+    <div id="report" hidden>
+      <nav class="range" id="range" aria-label="Date range">
+        <button type="button" data-days="1">Today</button>
+        <button type="button" data-days="7">7 days</button>
+        <button type="button" data-days="30" aria-pressed="true">30 days</button>
+        <button type="button" data-days="90">90 days</button>
+        <button type="button" data-days="0">All time</button>
+      </nav>
 
-    <section class="card">
-      <h2>Countries</h2>
-      <ol class="bars" id="countries"></ol>
-      <p class="hint">Based on each visitor's time zone (no location access). Someone abroad whose phone is set to Manila time counts as the Philippines.</p>
-    </section>
-
-    <div class="grid">
-      <section class="card">
-        <h2>Philippines vs abroad</h2>
-        <ol class="bars" id="places"></ol>
+      <section class="hero">
+        <div class="lcd"><small>Visitors</small><b id="kVisitors">…</b></div>
+        <div class="lcd"><small>Page views</small><b id="kViews">…</b></div>
+        <div class="lcd"><small>Station plays</small><b id="kListens">…</b></div>
+        <div class="lcd"><small>Listening now</small><b id="kLive">…</b></div>
+        <p class="note" id="note"></p>
       </section>
+
       <section class="card">
-        <h2>Mobile or desktop</h2>
-        <ol class="bars" id="devices"></ol>
+        <div class="card-head">
+          <h2 id="dayTitle">Visitors per day</h2>
+          <button type="button" class="ghost small" id="dayTableBtn" aria-expanded="false">Show table</button>
+        </div>
+        <div class="daychart" id="dayChart"></div>
+        <div class="daytable" id="dayTable" hidden></div>
+      </section>
+
+      <section class="card">
+        <h2>Top pages</h2>
+        <ol class="bars" id="pages"></ol>
+        <p class="hint">Page views: every time a page opens. "Radio map" is the main app.</p>
+      </section>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Channels</h2>
+          <ol class="bars" id="channels"></ol>
+        </section>
+        <section class="card">
+          <h2>Referring sites</h2>
+          <ol class="bars" id="refs"></ol>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>Traffic sources</h2>
+        <ol class="bars" id="sources"></ol>
+      </section>
+
+      <section class="card">
+        <h2 id="stTitle">Most played stations</h2>
+        <ol class="bars" id="stations"></ol>
+        <p class="hint">One play is about 2 minutes of listening. Kept for the last 30 days.</p>
+      </section>
+
+      <section class="card">
+        <h2>Countries</h2>
+        <ol class="bars" id="countries"></ol>
+        <p class="hint">Based on each visitor's time zone (no location access). Someone abroad whose phone is set to Manila time counts as the Philippines.</p>
+      </section>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Philippines vs abroad</h2>
+          <ol class="bars" id="places"></ol>
+        </section>
+        <section class="card">
+          <h2>Mobile or desktop</h2>
+          <ol class="bars" id="devices"></ol>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>Phone &amp; computer type</h2>
+        <ol class="bars" id="systems"></ol>
+      </section>
+
+      <section class="card tips">
+        <h2>Tag your posts for exact numbers</h2>
+        <p>Most apps are detected automatically. To track a specific post, share a tagged link:</p>
+        <ul>
+          <li><code>filradio.xyz/?utm_source=facebook</code></li>
+          <li><code>filradio.xyz/?utm_source=tiktok</code></li>
+          <li><code>filradio.xyz/?utm_source=viber</code></li>
+        </ul>
+        <p>The tag is removed from the address bar after the visit is counted.</p>
       </section>
     </div>
 
-    <section class="card">
-      <h2>Phone &amp; computer type</h2>
-      <ol class="bars" id="systems"></ol>
-    </section>
-
-    <section class="card tips">
-      <h2>Tag your posts for exact numbers</h2>
-      <p>Most apps are detected automatically. To track a specific post, share a tagged link:</p>
-      <ul>
-        <li><code>filradio.xyz/?utm_source=facebook</code></li>
-        <li><code>filradio.xyz/?utm_source=tiktok</code></li>
-        <li><code>filradio.xyz/?utm_source=viber</code></li>
-      </ul>
-      <p>The tag is removed from the address bar after the visit is counted.</p>
-    </section>
-
     <footer>No personal data is collected. Only anonymous counts.</footer>
   </main>
-  <script src="js/traffic.js?v=100" defer></script>
-  <script src="js/stats.js?v=100" defer></script>
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+  <script src="js/traffic.js?v=102" defer></script>
+  <script src="js/stats.js?v=102" defer></script>
 </body>
 </html>

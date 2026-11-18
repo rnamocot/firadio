@@ -35,6 +35,17 @@ const TOP_N = 30;
 const TOP_GAP = 100e3;
 const TOP_KEEP_ROWS = 50000;   // hard cap on stored (station, day) rows
 
+// Daily history (added v100), in Philippine dates: visits and report keys per day, page views per page per
+// day, and referring site names per day. Only counters; no ids, no networks. Kept KEEP_DAYS days.
+const KEEP_DAYS = 400;
+const PAGES_PER_DAY = 3000;      // distinct pages counted per day (junk paths can't grow the table forever)
+const REFS_PER_DAY = 500;        // distinct referring sites per day
+const PV_PER_IP_DAY = 400;       // page views counted per network per day
+// Pages that exist on the site. Anything else is ignored.
+export const PAGE_RE = /^\/(?:|stations\/|games\/|games\/[a-z0-9-]{1,60}\/|station\/[a-z0-9-]{1,90}\/|city\/[a-z0-9-]{1,60}\/|privacy\.html|add-station\.html|sitemap\.html|embed\.html|widget\.html|404)$/;
+const HOST_RE = /^(?=.{3,80}$)[a-z0-9-]+(\.[a-z0-9-]+)+$/;
+const phDay = (t = Date.now()) => new Date(t + 8 * 3600e3).toISOString().slice(0, 10);
+
 /** Validates the keys a visitor sends: at most one per group, known format only. */
 export function cleanKeys(k) {
   if (!Array.isArray(k) || k.length > 5) return null;
@@ -89,6 +100,9 @@ export class Stats extends DurableObject {
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS scores (name TEXT PRIMARY KEY COLLATE NOCASE, score INTEGER NOT NULL, t INTEGER NOT NULL, who TEXT NOT NULL)");
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS gscores (g TEXT NOT NULL, name TEXT NOT NULL COLLATE NOCASE, score INTEGER NOT NULL, t INTEGER NOT NULL, who TEXT NOT NULL, PRIMARY KEY (g, name))");
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS gplays (g TEXT PRIMARY KEY, n INTEGER NOT NULL)");
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS daily (d TEXT NOT NULL, k TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (d, k))");
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS pages (d TEXT NOT NULL, p TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (d, p))");
+      ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS refs (d TEXT NOT NULL, h TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (d, h))");
       ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS splays (st TEXT NOT NULL, d TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (st, d))");
       // One-time move of the first (Palaka-only) leaderboard into the per-game table.
       if (!(await ctx.storage.get("gscoresMoved"))) {
@@ -98,6 +112,73 @@ export class Stats extends DurableObject {
     });
     this.pruned = 0;
     this.gameSaves = new Map(); // hashed IP -> [timestamps] (memory only)
+    this.pvNets = new Map();    // hashed IP -> page views counted today (memory only)
+    this.pvDay = "";
+    this.histDay = "";
+  }
+
+  // ----- daily history -----
+  /** Once a day: drop history older than KEEP_DAYS. */
+  pruneHistory(d) {
+    if (d === this.histDay) return;
+    this.histDay = d;
+    const old = phDay(Date.now() - KEEP_DAYS * 864e5);
+    for (const t of ["daily", "pages", "refs"]) this.ctx.storage.sql.exec(`DELETE FROM ${t} WHERE d < ?`, old);
+  }
+
+  addDaily(keys, ref) {
+    const sql = this.ctx.storage.sql, d = phDay();
+    this.pruneHistory(d);
+    for (const k of ["visits", ...keys]) sql.exec("INSERT INTO daily (d, k, n) VALUES (?, ?, 1) ON CONFLICT(d, k) DO UPDATE SET n = n + 1", d, k);
+    if (ref && HOST_RE.test(ref)) {
+      const known = sql.exec("SELECT 1 FROM refs WHERE d = ? AND h = ?", d, ref).toArray().length > 0;
+      if (known || sql.exec("SELECT count(*) AS c FROM refs WHERE d = ?", d).one().c < REFS_PER_DAY) {
+        sql.exec("INSERT INTO refs (d, h, n) VALUES (?, ?, 1) ON CONFLICT(d, h) DO UPDATE SET n = n + 1", d, ref);
+      }
+    }
+  }
+
+  pageView(p, who) {
+    if (!PAGE_RE.test(p)) return false;
+    const sql = this.ctx.storage.sql, d = phDay();
+    if (d !== this.pvDay) { this.pvDay = d; this.pvNets.clear(); }
+    const n = (this.pvNets.get(who) || 0) + 1;
+    this.pvNets.set(who, n);
+    if (n > PV_PER_IP_DAY) return false;
+    this.pruneHistory(d);
+    const known = sql.exec("SELECT 1 FROM pages WHERE d = ? AND p = ?", d, p).toArray().length > 0;
+    if (!known && sql.exec("SELECT count(*) AS c FROM pages WHERE d = ?", d).one().c >= PAGES_PER_DAY) return false;
+    sql.exec("INSERT INTO pages (d, p, n) VALUES (?, ?, 1) ON CONFLICT(d, p) DO UPDATE SET n = n + 1", d, p);
+    return true;
+  }
+
+  /**
+   * The private traffic report for the last `days` days (0 = all time).
+   * Sources, countries and devices: all-time totals for "all", else the daily history.
+   */
+  report(days) {
+    const sql = this.ctx.storage.sql;
+    const today = phDay();
+    const since = sql.exec("SELECT min(d) AS d FROM daily").one().d || today;
+    const from = days ? phDay(Date.now() - (days - 1) * 864e5) : "0000-00-00";
+    let counts;
+    if (days) {
+      counts = {};
+      for (const r of sql.exec("SELECT k, sum(n) AS n FROM daily WHERE d >= ? GROUP BY k", from).toArray()) counts[r.k] = r.n;
+    } else counts = this.all();
+    // Visitors per day: the range, or the last 365 days for "all time".
+    const dayFrom = days ? from : phDay(Date.now() - 364 * 864e5);
+    const perDay = sql.exec("SELECT d, n FROM daily WHERE k = 'visits' AND d >= ? ORDER BY d", dayFrom).toArray();
+    const pvPerDay = sql.exec("SELECT d, sum(n) AS n FROM pages WHERE d >= ? GROUP BY d ORDER BY d", dayFrom).toArray();
+    const pages = sql.exec("SELECT p, sum(n) AS n FROM pages WHERE d >= ? GROUP BY p ORDER BY n DESC LIMIT 50", from).toArray();
+    const views = sql.exec("SELECT coalesce(sum(n), 0) AS n FROM pages WHERE d >= ?", from).one().n;
+    const refs = sql.exec("SELECT h, sum(n) AS n FROM refs WHERE d >= ? GROUP BY h ORDER BY n DESC LIMIT 40", from).toArray();
+    // Most played keeps TOP_DAYS days of UTC dates.
+    const topDays = days ? Math.min(days, TOP_DAYS) : TOP_DAYS;
+    const tFrom = new Date(Date.now() - (topDays - 1) * 864e5).toISOString().slice(0, 10);
+    const stations = sql.exec("SELECT st AS s, sum(n) AS n FROM splays WHERE d >= ? GROUP BY st ORDER BY n DESC LIMIT 40", tFrom).toArray();
+    const listens = sql.exec("SELECT coalesce(sum(n), 0) AS n FROM splays WHERE d >= ?", tFrom).one().n;
+    return { days, today, since, counts, perDay, pvPerDay, pages, views, refs, stations, listens, topDays, live: this.liveCount().n };
   }
 
   gameTop(g) {
@@ -212,8 +293,14 @@ export class Stats extends DurableObject {
       return out ? Response.json(out) : Response.json({ error: "bad ping" }, { status: 400 });
     }
 
+    if (path === "/pv") {
+      const p = url.searchParams.get("p") || "";
+      return Response.json({ ok: this.pageView(p, req.headers.get("X-Who") || "") });
+    }
+
     if (path === "/hit") {
-      const keys = cleanKeys((await req.json().catch(() => ({}))).k);
+      const hb = await req.json().catch(() => ({}));
+      const keys = cleanKeys(hb.k);
       if (!keys) return Response.json({ error: "bad keys" }, { status: 400 });
       const today = new Date().toISOString().slice(0, 10);
       if (today !== this.day) { this.day = today; this.nets.clear(); }
@@ -227,6 +314,7 @@ export class Stats extends DurableObject {
           this.counts[k] = (this.counts[k] || 0) + 1;
         }
         await this.ctx.storage.put("counts", this.counts); // one write per counted visit
+        this.addDaily(keys, typeof hb.r === "string" ? hb.r.toLowerCase().replace(/^www\./, "") : "");
       }
       return Response.json({ visits: this.total("visits") });
     }
@@ -247,7 +335,10 @@ export class Stats extends DurableObject {
     }
 
     if (path === "/count") return Response.json({ visits: this.total("visits") });
-    if (path === "/stats") return Response.json({ counts: this.all() });
+    if (path === "/stats") {
+      const d = Number(url.searchParams.get("days"));
+      return Response.json(this.report([1, 7, 30, 90, 365].includes(d) ? d : 0));
+    }
 
     // Admin (reached only through the token-checked /admin proxy in index.js).
     if (path === "/admin") {

@@ -855,6 +855,29 @@
     if ($("topOnly").checked) render();
   }
 
+  // News strip above the filters: shows that the station list keeps growing. Tapping it opens the New filter.
+  function newsTicker() {
+    const box = $("newsTicker"), track = $("newsTrack");
+    if (!box || !stations.length) return;
+    const recent = stations.filter(isNew).sort((a, b) => b.added - a.added);
+    const month = recent.filter((s) => Date.now() - s.added < 30 * 864e5).length;
+    const items = ["We add new radio stations every week"];
+    if (recent.length) items.push(`Just added: ${recent.slice(0, 8).map((s) => s.name).join(", ")}`);
+    if (month > 1) items.push(`${month} new stations in the last 30 days`);
+    items.push(`${stations.length} Philippine FM, AM and online stations and counting`);
+    if (dataChecked) items.push(`Station list checked ${new Date(dataChecked).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`);
+    items.push("Missing a station? Tap Add your station and we'll list it for free");
+    const html = items.map((t) => `<span class="nt-item">${esc(t)}</span>`).join("");
+    // Two copies side by side make the scroll loop without a gap.
+    track.innerHTML = `<span class="nt-run">${html}</span><span class="nt-run" aria-hidden="true">${html}</span>`;
+    track.style.setProperty("--nt-dur", `${Math.max(30, Math.round(items.join(" ").length / 6))}s`);
+    box.hidden = false;
+    box.onclick = () => {
+      const n = $("newOnly");
+      if (!n.checked) { n.checked = true; n.dispatchEvent(new Event("change")); }
+    };
+  }
+
   function isNew(st) { return !!st.added && Date.now() - st.added < NEW_DAYS * 864e5; }
 
   // "Run a station?" call to action: top of the New list, end of every other list.
@@ -1531,6 +1554,8 @@
     const count = !dev && guard.allow("visit", 24 * 60 * 60 * 1000);
     // Read before tidyUrl() strips the tracking parameters.
     const keys = count ? [`src-${T.classify()}`, `loc-${T.place()}`, `cc-${T.country()}`, `dev-${T.device()}`, `os-${T.system()}`] : null;
+    const ref = count ? T.referrer() : "";
+    if (!dev) T.pageView("/");
     T.tidyUrl();
     // Show the saved number at once, then refresh it if it's more than 10 minutes old
     // (the server caches /count for 60 s, so this stays cheap).
@@ -1539,7 +1564,7 @@
     try {
       // Plain-text body keeps this a "simple" request (no extra CORS preflight request).
       const res = count
-        ? await fetch(`${T.STATS}/hit`, { method: "POST", body: JSON.stringify({ k: keys }), keepalive: true })
+        ? await fetch(`${T.STATS}/hit`, { method: "POST", body: JSON.stringify(ref ? { k: keys, r: ref } : { k: keys }), keepalive: true })
         : await fetch(`${T.STATS}/count`);
       if (!res.ok) throw new Error(String(res.status));
       const { visits } = await res.json();
@@ -1844,6 +1869,7 @@
         $("checkedAt").textContent = new Date(dataChecked).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       }
       render();
+      newsTicker();
       hideSplash();
       setTimeout(offerResume, 1200);
     } catch (e) {

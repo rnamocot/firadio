@@ -1,5 +1,5 @@
 {
-  "_help": "Stations you add by hand (from add-station.html requests). Copy _example into stations, fill it in, then run: python tools/update_stations.py --extras-only  (or a full update). id must be unique, lowercase letters/numbers/dashes. lat/lng are optional: without them the city/province places the pin when the app knows the place. added is the date you list it (YYYY-MM-DD); it puts the station under the New filter for 60 days. name should include the frequency (e.g. 97.3 or 666) so the app files it under FM or AM.",
+  "_help": "Stations you add by hand (from add-station.html requests). Copy _example into stations, fill it in, then run: python tools/update_stations.py --extras-only  (or a full update). id must be unique, lowercase letters/numbers/dashes. lat/lng are optional: without them the city/province places the pin when the app knows the place. added is the date you list it (YYYY-MM-DD); it puts the station under the New filter for 60 days. name should include the frequency (e.g. 97.3 or 666) so the app files it under FM or AM. Optional \"replaces\": a list of old directory names for the same station; those listings are dropped.",
   "_example": {
     "id": "radyo-bandera-iloilo",
     "name": "Radyo Bandera 97.3 Iloilo",
@@ -17,7 +17,7 @@
     {
       "id": "sweet-fm-901-governor-generoso",
       "name": "Sweet FM 90.1",
-      "stream": "https://sapircast.caster.fm:13984/pUCje?token=0986cdacd23a864575781b8d2d439696",
+      "stream": "https://sweetfm901.tail6f5939.ts.net/stream",
       "website": "https://sweetfm901govgen.ismyradio.com/",
       "logo": "https://user-content.cloud.caster.fm/file/casterfm-cloud-usercontent/82426/logo.png?v=1794907946",
       "tags": "retro,public affairs",
@@ -26,6 +26,1032 @@
       "lat": 6.6556,
       "lng": 126.0728,
       "added": "2026-11-17"
+    },
+    {
+      "id": "ifm-105-3-vigan",
+      "name": "iFM 105.3 Vigan",
+      "stream": "https://livestream.rmn.ph/ifmvigan",
+      "website": "https://thermnnetworks.ph/stations/vigan/",
+      "logo": "",
+      "tags": "opm,music,ilocano,105.3 fm",
+      "city": "Vigan City",
+      "province": "Ilocos Sur",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "ifm-baguio",
+      "name": "iFM Baguio",
+      "stream": "https://livestream.rmn.ph/ifmbaguio",
+      "website": "https://thermnnetworks.ph/stations/baguio/",
+      "logo": "",
+      "tags": "opm,music,103.9 fm",
+      "city": "Baguio City",
+      "province": "Benguet"
+    },
+    {
+      "id": "ifm-dagupan",
+      "name": "iFM Dagupan",
+      "stream": "https://livestream.rmn.ph/ifmdagupan",
+      "website": "https://thermnnetworks.ph/stations/dagupan/",
+      "logo": "",
+      "tags": "opm,music,pangasinan,104.7 fm",
+      "city": "Dagupan City",
+      "province": "Pangasinan"
+    },
+    {
+      "id": "ifm-laoag",
+      "name": "iFM Laoag",
+      "stream": "https://livestream.rmn.ph/ifmlaoag",
+      "website": "https://thermnnetworks.ph/stations/laoag/",
+      "logo": "",
+      "tags": "opm,music,ilocano,99.5 fm",
+      "city": "Laoag City",
+      "province": "Ilocos Norte"
+    },
+    {
+      "id": "dwiz-news-882",
+      "name": "DWIZ News 882",
+      "stream": "https://dwizmanila.radioca.st/stream",
+      "website": "https://www.dwiz882am.com/",
+      "logo": "",
+      "tags": "news,talk,tagalog,am,882 khz am",
+      "city": "Makati City",
+      "province": "Metro Manila"
+    },
+    {
+      "id": "97-9-home-radio-manila-dwqz",
+      "name": "97.9 Home Radio Manila - DWQZ",
+      "stream": "https://hrmanila.radioca.st/stream",
+      "website": "https://www.979homeradio.com/",
+      "logo": "",
+      "tags": "adult contemporary,music,english,97.9 fm",
+      "city": "Pasig City",
+      "province": "Metro Manila"
+    },
+    {
+      "id": "home-radio-gensan",
+      "name": "Home Radio GenSan",
+      "stream": "https://hrgensan.radioca.st/stream",
+      "website": "https://www.979homeradio.com/",
+      "logo": "",
+      "tags": "music,news,gensan",
+      "city": "General Santos City",
+      "province": "South Cotabato",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "monster-rx-93-1-manila",
+      "name": "Monster RX 93.1 Manila",
+      "stream": "https://in-icecast.eradioportal.com:8443/monsterrrx",
+      "website": "https://www.rx931.com/",
+      "logo": "",
+      "tags": "top 40,english,pop,93.1 fm",
+      "city": "Makati City",
+      "province": "Metro Manila",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "monster-bt-105-9-cebu",
+      "name": "Monster BT 105.9 Cebu",
+      "stream": "https://in-icecast.eradioportal.com:8443/rxcebu",
+      "website": "https://www.rx931.com/",
+      "logo": "",
+      "tags": "top 40,english,pop,105.9 fm",
+      "city": "Cebu City",
+      "province": "Cebu",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "monster-bt-99-5-davao",
+      "name": "Monster BT 99.5 Davao",
+      "stream": "https://in-icecast.eradioportal.com:8443/monsterrx_davao_",
+      "website": "https://www.rx931.com/",
+      "logo": "",
+      "tags": "top 40,english,pop,99.5 fm",
+      "city": "Davao City",
+      "province": "Davao del Sur",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "jam-88-3-manila",
+      "name": "Jam 88.3 Manila",
+      "stream": "https://in-icecast.eradioportal.com:8443/jam883",
+      "website": "",
+      "logo": "",
+      "tags": "alternative,indie,english,88.3 fm",
+      "city": "Makati City",
+      "province": "Metro Manila",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "radyo-veritas-846",
+      "name": "Radyo Veritas 846",
+      "stream": "https://in-icecast.eradioportal.com:8443/radyo-veritas-846",
+      "website": "https://www.veritasph.net/",
+      "logo": "",
+      "tags": "catholic,news,religious,tagalog,am,846 khz am",
+      "city": "Quezon City",
+      "province": "Metro Manila",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "702-dzas",
+      "name": "702 Dzas",
+      "stream": "https://in-icecast.eradioportal.com:8443/febc_dzas",
+      "website": "https://febc.ph/",
+      "logo": "",
+      "tags": "christian,religious,tagalog,am,702 khz am",
+      "city": "Quezon City",
+      "province": "Metro Manila"
+    },
+    {
+      "id": "98-7-dzfe-the-master-s-touch",
+      "name": "98.7 DZFE The Master's Touch",
+      "stream": "https://in-icecast.eradioportal.com:8443/febc_dzfe",
+      "website": "https://dzfe.febc.ph/",
+      "logo": "",
+      "tags": "classical,christian,english,98.7 fm",
+      "city": "Quezon City",
+      "province": "Metro Manila"
+    },
+    {
+      "id": "dwxi-1314-manila",
+      "name": "DWXI 1314 Manila",
+      "stream": "https://in-icecast.eradioportal.com:8443/dwxi-streaming",
+      "website": "",
+      "logo": "",
+      "tags": "religious,catholic,tagalog,am,1314 khz am",
+      "city": "Paranaque City",
+      "province": "Metro Manila",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "aksyon-radyo-iloilo",
+      "name": "Aksyon Radyo Iloilo",
+      "stream": "https://in-icecast.eradioportal.com:8443/akyson_iloilo",
+      "website": "https://aksyonradyo.mbcmediagroup.com/",
+      "logo": "",
+      "tags": "news,talk,hiligaynon,am,720 khz am",
+      "city": "Iloilo City",
+      "province": "Iloilo"
+    },
+    {
+      "id": "92-3-xfm-dwfm",
+      "name": "92.3 XFM - DWFM",
+      "stream": "https://us2.amfmph.com/ssl/xfmmanila?mp=/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,music,tagalog,92.3 fm",
+      "city": "Quezon City",
+      "province": "Metro Manila"
+    },
+    {
+      "id": "xfm-bacolod",
+      "name": "XFM BACOLOD",
+      "stream": "https://us1.amfmph.com/ssl/xfmbacolod?mp=/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,music,hiligaynon,96.7 fm",
+      "city": "Bacolod City",
+      "province": "Negros Occidental"
+    },
+    {
+      "id": "xfm-88-3-sagay",
+      "name": "XFM 88.3 SAGAY",
+      "stream": "https://us1.amfmph.com/ssl/xfmsagay?mp=/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,music,hiligaynon,88.3 fm",
+      "city": "Sagay City",
+      "province": "Negros Occidental"
+    },
+    {
+      "id": "xfm-palawan",
+      "name": "XFM Palawan",
+      "stream": "https://us1.amfmph.com/ssl/xfmpalawan?mp=/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,music,tagalog",
+      "city": "Puerto Princesa",
+      "province": "Palawan"
+    },
+    {
+      "id": "xfm-tagum",
+      "name": "XFM Tagum",
+      "stream": "https://us1.amfmph.com/ssl/xfmdavao?mp=/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,music,cebuano,100.7 fm",
+      "city": "Tagum City",
+      "province": "Davao del Norte"
+    },
+    {
+      "id": "wild-fm-cagayan-de-oro",
+      "name": "Wild FM Cagayan de Oro",
+      "stream": "https://us2.amfmph.com/ssl/wildcdo?mp=/stream",
+      "website": "http://www.umbn.com.ph/",
+      "logo": "",
+      "tags": "masa,music,cebuano,94.3 fm",
+      "city": "Cagayan de Oro",
+      "province": "Misamis Oriental"
+    },
+    {
+      "id": "wild-fm-davao",
+      "name": "Wild FM Davao",
+      "stream": "https://us2.amfmph.com/ssl/wilddavao?mp=/stream",
+      "website": "http://www.umbn.com.ph/",
+      "logo": "",
+      "tags": "masa,music,cebuano",
+      "city": "Davao City",
+      "province": "Davao del Sur"
+    },
+    {
+      "id": "wild-fm-gensan",
+      "name": "Wild FM Gensan",
+      "stream": "https://us2.amfmph.com/ssl/wildgensan?mp=/stream",
+      "website": "http://www.umbn.com.ph/",
+      "logo": "",
+      "tags": "masa,music,cebuano,99.1 fm",
+      "city": "General Santos City",
+      "province": "South Cotabato"
+    },
+    {
+      "id": "wild-fm-iligan",
+      "name": "Wild FM Iligan",
+      "stream": "https://us2.amfmph.com/ssl/wildiligan?mp=/stream",
+      "website": "http://www.umbn.com.ph/",
+      "logo": "",
+      "tags": "masa,music,cebuano,103.1 fm",
+      "city": "Iligan City",
+      "province": "Lanao del Norte"
+    },
+    {
+      "id": "wild-fm-iloilo",
+      "name": "Wild FM Iloilo",
+      "stream": "https://us2.amfmph.com/ssl/wildiloilo?mp=/stream",
+      "website": "http://www.umbn.com.ph/",
+      "logo": "",
+      "tags": "masa,music,hiligaynon,105.9 fm",
+      "city": "Iloilo City",
+      "province": "Iloilo"
+    },
+    {
+      "id": "radyo-pilipinas-davao",
+      "name": "Radyo Pilipinas Davao",
+      "stream": "https://us2.amfmph.com/ssl/radyopilipinasdavao?mp=/stream",
+      "website": "https://radyopilipinas.ph/",
+      "logo": "",
+      "tags": "news,government,cebuano,92.7 fm",
+      "city": "Davao City",
+      "province": "Davao del Sur"
+    },
+    {
+      "id": "easy-rock-cebu",
+      "name": "Easy Rock Cebu",
+      "stream": "https://easyrockcebu.radioca.st/stream",
+      "website": "https://www.facebook.com/easyrockcebu/",
+      "logo": "https://static.easyrock.com.ph/stations/2023/8/ZgRvNGqc3B1eZWxuuNS7J.png",
+      "tags": "soft rock,easy listening,classics,102.7 fm",
+      "city": "Cebu City",
+      "province": "Cebu"
+    },
+    {
+      "id": "easy-rock-davao",
+      "name": "Easy Rock Davao",
+      "stream": "https://easyrockdavao.radioca.st/stream",
+      "website": "http://facebook.com/easyrockdavao",
+      "logo": "https://static.easyrock.com.ph/stations/2023/8/P1kmWKE4uriGyU1a0ZON8.png",
+      "tags": "soft rock,easy listening,classics,105.1 fm",
+      "city": "Davao City",
+      "province": "Davao del Sur"
+    },
+    {
+      "id": "easy-rock-baguio",
+      "name": "Easy Rock Baguio",
+      "stream": "https://easyrockbaguio.radioca.st/stream",
+      "website": "https://www.facebook.com/easyrockbaguiocity/",
+      "logo": "https://static.easyrock.com.ph/stations/2023/8/l-TEWUfICyQA3zoxDbpWp.png",
+      "tags": "soft rock,easy listening,classics,91.9 fm",
+      "city": "Baguio",
+      "province": "Benguet"
+    },
+    {
+      "id": "easy-rock-iloilo",
+      "name": "Easy Rock Iloilo",
+      "stream": "https://easyrockiloilo.radioca.st/stream",
+      "website": "https://www.facebook.com/easyrockiloilocity/",
+      "logo": "https://static.easyrock.com.ph/stations/2023/8/l7whLUQ1bNniE7m1ttiua.png",
+      "tags": "soft rock,easy listening,classics,92.3 fm",
+      "city": "Iloilo City",
+      "province": "Iloilo"
+    },
+    {
+      "id": "easy-rock-boracay",
+      "name": "Easy Rock Boracay",
+      "stream": "https://easyrockboracay.radioca.st/stream",
+      "website": "https://www.facebook.com/easyrockboracay",
+      "logo": "https://static.easyrock.com.ph/stations/2023/8/4QD7QZYMxgqqFYfxFawaZ.png",
+      "tags": "soft rock,easy listening,classics,93.5 fm",
+      "city": "Malay",
+      "province": "Aklan"
+    },
+    {
+      "id": "easy-rock-cagayan-de-oro",
+      "name": "Easy Rock Cagayan De Oro",
+      "stream": "https://easyrockcagayan.radioca.st/stream",
+      "website": "https://www.facebook.com/easyrockcagayandeoro/",
+      "logo": "https://static.easyrock.com.ph/stations/2023/8/p4tjpVbu1U_W4mPQeLOT4.png",
+      "tags": "soft rock,easy listening,classics,96.9 fm",
+      "city": "Cagayan de Oro",
+      "province": "Misamis Oriental"
+    },
+    {
+      "id": "love-radio-kalibo",
+      "name": "Love Radio Kalibo",
+      "stream": "https://loveradiokalibo.radioca.st/stream",
+      "website": "https://www.facebook.com/Love-Radio-Kalibo-423471404412603",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/Tw3iLPtp-LFdz0dtJU3p-.jpeg",
+      "tags": "opm,pop,masa,tagalog,100.1 fm",
+      "city": "Kalibo",
+      "province": "Aklan"
+    },
+    {
+      "id": "love-radio-koronadal",
+      "name": "Love Radio Koronadal",
+      "stream": "https://lovekoronadal.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiokor/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/5NCQEDmwse03_49bY3cZ-.jpeg",
+      "tags": "opm,pop,masa,tagalog,100.1 fm",
+      "city": "Koronadal",
+      "province": "South Cotabato"
+    },
+    {
+      "id": "love-radio-lucena",
+      "name": "Love Radio Lucena",
+      "stream": "https://loveradiolucena.radioca.st/stream",
+      "website": "http://www.facebook.com/loveradio1007",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/NExp4Adm7xdJIXZitCon8.jpeg",
+      "tags": "opm,pop,masa,tagalog,100.7 fm",
+      "city": "Lucena",
+      "province": "Quezon"
+    },
+    {
+      "id": "love-radio-gensan",
+      "name": "Love Radio Gensan",
+      "stream": "https://loveradiogensan.radioca.st/stream",
+      "website": "https://www.facebook.com/lovegensan",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/FyTRTaCX1_ry-Mw80fFYC.jpeg",
+      "tags": "opm,pop,masa,tagalog,101.5 fm",
+      "city": "General Santos",
+      "province": "South Cotabato"
+    },
+    {
+      "id": "love-radio-la-union",
+      "name": "Love Radio La Union",
+      "stream": "https://loveradiolaunion.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiosflu",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/RL8u6sq8nwlzAvNfMy0Nq.jpeg",
+      "tags": "opm,pop,masa,tagalog,101.7 fm",
+      "city": "San Fernando",
+      "province": "La Union"
+    },
+    {
+      "id": "love-radio-roxas",
+      "name": "Love Radio Roxas",
+      "stream": "https://loveradioroxas.radioca.st/stream",
+      "website": "http://www.facebook.com/loveradioroxascity",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/Y8h4lkIo0U1EqK5ypl4uX.jpeg",
+      "tags": "opm,pop,masa,tagalog,105.7 fm",
+      "city": "Roxas City",
+      "province": "Capiz"
+    },
+    {
+      "id": "love-radio-malaybalay",
+      "name": "Love Radio Malaybalay",
+      "stream": "https://lovemalaybalay.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiomal/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/t3u4_2hjCs4hglb0mVB6z.jpeg",
+      "tags": "opm,pop,masa,tagalog,106.3 fm",
+      "city": "Malaybalay",
+      "province": "Bukidnon"
+    },
+    {
+      "id": "love-radio-davao",
+      "name": "Love Radio Davao",
+      "stream": "https://loveradiodavao.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiodvo",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/YGFuOdRajRiePX3mAGhDy.jpeg",
+      "tags": "opm,pop,masa,tagalog,90.7 fm",
+      "city": "Davao City",
+      "province": "Davao del Sur"
+    },
+    {
+      "id": "love-radio-laoag",
+      "name": "Love Radio Laoag",
+      "stream": "https://loveradiolaoag.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiolaoag/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/Fg4d4xaglZR7quaH0B7Bg.jpeg",
+      "tags": "opm,pop,masa,tagalog,90.7 fm",
+      "city": "Laoag",
+      "province": "Ilocos Norte"
+    },
+    {
+      "id": "love-radio-tacloban",
+      "name": "Love Radio Tacloban",
+      "stream": "https://lovetacloban.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiotac",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/E1ymFmIDfRb26esv1tgiv.jpeg",
+      "tags": "opm,pop,masa,tagalog,91.1 fm",
+      "city": "Tacloban",
+      "province": "Leyte"
+    },
+    {
+      "id": "love-radio-bacolod",
+      "name": "Love Radio Bacolod",
+      "stream": "https://loveradiobacolod.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiobac",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/4QYeE9Kp2ZPGT6UyDndjS.jpeg",
+      "tags": "opm,pop,masa,tagalog,91.9 fm",
+      "city": "Bacolod",
+      "province": "Negros Occidental"
+    },
+    {
+      "id": "love-radio-tuguegarao",
+      "name": "Love Radio Tuguegarao",
+      "stream": "https://lovetuguegarao.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiotuguegarao/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/TWeql8DS635kj9oB-cr6m.jpeg",
+      "tags": "opm,pop,masa,tagalog,94.1 fm",
+      "city": "Tuguegarao",
+      "province": "Cagayan"
+    },
+    {
+      "id": "love-radio-santiago",
+      "name": "Love Radio Santiago",
+      "stream": "https://lovesantiago.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiosantiago/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/i_GUwvmqugYXNTfyACK4m.jpeg",
+      "tags": "opm,pop,masa,tagalog,94.5 fm",
+      "city": "Santiago",
+      "province": "Isabela"
+    },
+    {
+      "id": "love-radio-baguio",
+      "name": "Love Radio Baguio",
+      "stream": "https://loveradiobaguio.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiobaguiocity",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/RXvTpj4Dhe2kIo1D9z7xQ.jpeg",
+      "tags": "opm,pop,masa,tagalog,95.1 fm",
+      "city": "Baguio",
+      "province": "Benguet"
+    },
+    {
+      "id": "love-radio-butuan",
+      "name": "Love Radio Butuan",
+      "stream": "https://loveradiobutuan.radioca.st/stream",
+      "website": "https://www.facebook.com/LoveRadioButuanOfficialFanPage/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/qd_p7rY0YgGowxSLHFSHR.jpeg",
+      "tags": "opm,pop,masa,tagalog,95.1 fm",
+      "city": "Butuan",
+      "province": "Agusan del Norte"
+    },
+    {
+      "id": "love-radio-daet",
+      "name": "Love Radio Daet",
+      "stream": "https://loveradiodaet.radioca.st/stream",
+      "website": "http://facebook.com/loveradiodaet",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/aeVyeIj8c-_rkvGa3IUci.jpeg",
+      "tags": "opm,pop,masa,tagalog,95.3 fm",
+      "city": "Daet",
+      "province": "Camarines Norte"
+    },
+    {
+      "id": "love-radio-iloilo",
+      "name": "Love Radio Iloilo",
+      "stream": "https://loveradioiloilo.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradioiloilo/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/MzjhA15gaPWuUsgayZahD.jpeg",
+      "tags": "opm,pop,masa,tagalog,97.5 fm",
+      "city": "Iloilo City",
+      "province": "Iloilo"
+    },
+    {
+      "id": "love-radio-tarlac",
+      "name": "Love Radio Tarlac",
+      "stream": "https://loveradiotarlac.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiotarlac",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/x-JZl59bbdfPRmymJILPQ.jpeg",
+      "tags": "opm,pop,masa,tagalog,97.7 fm",
+      "city": "Tarlac City",
+      "province": "Tarlac"
+    },
+    {
+      "id": "love-radio-cebu",
+      "name": "Love Radio Cebu",
+      "stream": "https://loveradiocebu.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradio.cebu.3/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/vbIxLcpDXgoGGITUfiban.jpeg",
+      "tags": "opm,pop,masa,tagalog,97.9 fm",
+      "city": "Cebu City",
+      "province": "Cebu"
+    },
+    {
+      "id": "love-radio-zamboanga",
+      "name": "Love Radio Zamboanga",
+      "stream": "https://lovezamboanga.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradiozamboanga",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/4w6nCnehG6KaKbnqPsKHc.jpeg",
+      "tags": "opm,pop,masa,tagalog,97.9 fm",
+      "city": "Zamboanga City",
+      "province": "Zamboanga del Sur"
+    },
+    {
+      "id": "love-radio-dagupan",
+      "name": "Love Radio Dagupan",
+      "stream": "https://loveradiodagupan.radioca.st/stream",
+      "website": "https://www.facebook.com/Love-Radio-Dagupan-140572862775536/",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/GuysKKLoqftBGsvftWhVU.jpeg",
+      "tags": "opm,pop,masa,tagalog,98.3 fm",
+      "city": "Dagupan",
+      "province": "Pangasinan"
+    },
+    {
+      "id": "love-radio-palawan",
+      "name": "Love Radio Palawan",
+      "stream": "https://loveradiopalawan.radioca.st/stream",
+      "website": "https://www.facebook.com/lovepalawan",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/CuTZLvgS5h2dIN4bRTcy_.jpeg",
+      "tags": "opm,pop,masa,tagalog,98.3 fm",
+      "city": "Puerto Princesa",
+      "province": "Palawan"
+    },
+    {
+      "id": "love-radio-legazpi",
+      "name": "Love Radio Legazpi",
+      "stream": "https://loveradiolegaspi.radioca.st/stream",
+      "website": "https://www.facebook.com/loveradio.legazpi",
+      "logo": "https://static.loveradio.com.ph/stations/2023/8/GUPrjc_6Tn55iX-9luNFi.jpeg",
+      "tags": "opm,pop,masa,tagalog,99.5 fm",
+      "city": "Legazpi",
+      "province": "Albay"
+    },
+    {
+      "id": "yes-the-best-zamboanga",
+      "name": "Yes The Best Zamboanga",
+      "stream": "https://yesfmzamboanga.radioca.st/stream",
+      "website": "https://www.facebook.com/yeszamboanga",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/IMDpyv76do7wzpencjGsX.png",
+      "tags": "pop,opm,hits,102.7 fm",
+      "city": "Zamboanga City",
+      "province": "Zamboanga del Sur"
+    },
+    {
+      "id": "yes-fm-urdaneta-mp3",
+      "name": "Yes FM Urdaneta (mp3)",
+      "stream": "https://yesfmurdaneta.radioca.st/stream",
+      "website": "https://www.facebook.com/yesthebesturdaneta",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/bEWWYZSmye1TK1oysjbX0.png",
+      "tags": "pop,opm,hits,104.1 fm",
+      "city": "Urdaneta",
+      "province": "Pangasinan"
+    },
+    {
+      "id": "yes-fm-valencia",
+      "name": "Yes FM Valencia",
+      "stream": "https://yesfmvalencia.radioca.st/stream",
+      "website": "https://www.facebook.com/YESTheBestValencia/",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/jkSHO0kWLhfVlRrweYWk_.png",
+      "tags": "pop,opm,hits,104.1 fm",
+      "city": "Valencia",
+      "province": "Bukidnon",
+      "replaces": [
+        "Yes The Best Valencia"
+      ]
+    },
+    {
+      "id": "yes-the-best-cagayan-de-oro",
+      "name": "Yes The Best Cagayan de Oro",
+      "stream": "https://yesfmcdo.radioca.st/stream",
+      "website": "https://www.facebook.com/yesthebestcdo",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/PfbfZGnjamMyBhGIn6wjH.png",
+      "tags": "pop,opm,hits,104.7 fm",
+      "city": "Cagayan de Oro",
+      "province": "Misamis Oriental"
+    },
+    {
+      "id": "yes-fm-dagupan",
+      "name": "Yes FM Dagupan",
+      "stream": "https://yesfmdagupan.radioca.st/stream",
+      "website": "https://www.facebook.com/yesthebestdagupan",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/ndMRsECTpt8TOpMCftBxX.png",
+      "tags": "pop,opm,hits,106.3 fm",
+      "city": "Dagupan",
+      "province": "Pangasinan",
+      "replaces": [
+        "Yes The Best Dagupan"
+      ]
+    },
+    {
+      "id": "yes-fm-dumaguete",
+      "name": "Yes FM Dumaguete",
+      "stream": "https://yesfmdumaguete.radioca.st/stream",
+      "website": "https://www.facebook.com/yesthebestdumaguete/",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/kmh_iJSmXQc9M-4ipo-zL.png",
+      "tags": "pop,opm,hits,106.3 fm",
+      "city": "Dumaguete",
+      "province": "Negros Oriental",
+      "replaces": [
+        "Yes The Best Dumaguete"
+      ]
+    },
+    {
+      "id": "yes-fm-cauayan",
+      "name": "Yes FM Cauayan",
+      "stream": "https://yesfmcauayan.radioca.st/stream",
+      "website": "https://www.facebook.com/Yes-The-Best-Cauayan-766522746698188/",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/K3A4_y9dH4lyf0FwZo_LT.png",
+      "tags": "pop,opm,hits,89.7 fm",
+      "city": "Cauayan",
+      "province": "Isabela",
+      "replaces": [
+        "Yes The Best Cauayan"
+      ]
+    },
+    {
+      "id": "yes-fm-boracay",
+      "name": "Yes FM Boracay",
+      "stream": "https://yesfmboracay.radioca.st/stream",
+      "website": "https://www.facebook.com/yesboracay",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/HLWvw20jz8MQf-D8TP4CK.png",
+      "tags": "pop,opm,hits,91.1 fm",
+      "city": "Malay",
+      "province": "Aklan"
+    },
+    {
+      "id": "yes-fm-cebu",
+      "name": "Yes FM Cebu",
+      "stream": "https://yesfmcebu.radioca.st/stream",
+      "website": "https://www.facebook.com/yesthebestcebu/",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/utAm-kYZWeyTqEKEG9qB5.png",
+      "tags": "pop,opm,hits,91.5 fm",
+      "city": "Cebu City",
+      "province": "Cebu"
+    },
+    {
+      "id": "dzrh-news-fm-gensan",
+      "name": "DZRH News FM GenSan",
+      "stream": "https://dzrhnewsfmgensan.radioca.st/stream",
+      "website": "https://www.dzrh.com.ph/",
+      "logo": "",
+      "tags": "news,talk,public affairs,94.3 fm",
+      "city": "General Santos",
+      "province": "South Cotabato"
+    },
+    {
+      "id": "yes-fm-iligan",
+      "name": "Yes FM Iligan",
+      "stream": "https://yesfmiligan.radioca.st/stream",
+      "website": "https://www.facebook.com/yesthebestiligan/",
+      "logo": "https://static.yesthebest.com.ph/stations/2024/2/FZdNuof3SeTJA7kboPYCW.png",
+      "tags": "pop,opm,hits,99.3 fm",
+      "city": "Iligan",
+      "province": "Lanao del Norte",
+      "replaces": [
+        "Yes The Best Iligan"
+      ]
+    },
+    {
+      "id": "aksyon-radyo-laoag",
+      "name": "Aksyon Radyo Laoag",
+      "stream": "https://arlaoag.radioca.st/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,talk,public affairs,am,747 khz am",
+      "city": "Laoag",
+      "province": "Ilocos Norte"
+    },
+    {
+      "id": "aksyon-radyo-la-union",
+      "name": "Aksyon Radyo La Union",
+      "stream": "https://arlaunion.radioca.st/stream",
+      "website": "https://www.facebook.com/aksyonradyo.launion/",
+      "logo": "",
+      "tags": "news,talk,public affairs,am,783 khz am",
+      "city": "San Fernando",
+      "province": "La Union"
+    },
+    {
+      "id": "aksyon-radyo-bacolod",
+      "name": "Aksyon Radyo Bacolod",
+      "stream": "https://arbacolod.radioca.st/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,talk,public affairs,am,684 khz am",
+      "city": "Bacolod",
+      "province": "Negros Occidental"
+    },
+    {
+      "id": "aksyon-radyo-cebu-648",
+      "name": "Aksyon Radyo Cebu 648",
+      "stream": "https://arcebu.radioca.st/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,talk,public affairs,am,648 khz am",
+      "city": "Cebu City",
+      "province": "Cebu",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "aksyon-radyo-tacloban",
+      "name": "Aksyon Radyo Tacloban",
+      "stream": "https://artacloban.radioca.st/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,talk,public affairs,am,819 khz am",
+      "city": "Tacloban",
+      "province": "Leyte"
+    },
+    {
+      "id": "aksyon-radyo-davao",
+      "name": "Aksyon Radyo Davao",
+      "stream": "https://ardavao.radioca.st/stream",
+      "website": "",
+      "logo": "",
+      "tags": "news,talk,public affairs,am,855 khz am",
+      "city": "Davao City",
+      "province": "Davao del Sur"
+    },
+    {
+      "id": "96-3-wrock-cebu",
+      "name": "96.3 WRocK CEBU",
+      "stream": "https://wrockceb-iradioph.radioca.st/;",
+      "website": "http://963wrock.com/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/7/23877.v7.png",
+      "tags": "soft rock,adult contemporary,english,96.3 fm",
+      "city": "Cebu City",
+      "province": "Cebu"
+    },
+    {
+      "id": "99-5-play-fm",
+      "name": "99.5 Play FM",
+      "stream": "https://play995.radioca.st/stream/;",
+      "website": "http://www.995play.fm/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/1/74601.v9.png",
+      "tags": "pop,top40,hits,99.5 fm",
+      "city": "Manila",
+      "province": "Metro Manila"
+    },
+    {
+      "id": "dyrd-bohol-worldwide",
+      "name": "DYRD Bohol Worldwide",
+      "stream": "https://stream.zeno.fm/ap44gpbrc0hvv",
+      "website": "http://www.dyrdam.com/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/4/23814.v5.png",
+      "tags": "news,talk,am,boholano,cebuano,1161 khz am",
+      "city": "Tagbilaran City",
+      "province": "Bohol"
+    },
+    {
+      "id": "89-9-memories-fm-cebu-dyki",
+      "name": "89.9 MemoRieS FM Cebu (DYKI)",
+      "stream": "https://server10.reliastream.com/proxy/broadtek?mp=/stream",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/2/80912.v9.png",
+      "tags": "oldies,adult contemporary,cebuano,89.9 fm",
+      "city": "Cebu City",
+      "province": "Cebu",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "dytr-1116-am-tagbilaran",
+      "name": "DYTR 1116 AM Tagbilaran",
+      "stream": "https://stream.zeno.fm/gg1zav3tnywuv",
+      "website": "https://dytrboholradio1116.com/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/5/133905.v3.png",
+      "tags": "news,talk,am,boholano,cebuano,1116 khz am",
+      "city": "Tagbilaran City",
+      "province": "Bohol",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "91-1-balita-fm-tagbilaran-dytr-fm",
+      "name": "91.1 Balita FM Tagbilaran (DYTR-FM)",
+      "stream": "https://a4.asurahosting.com:7950/radio.mp3",
+      "website": "https://www.911fm.live/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/3/122353.v2.png",
+      "tags": "news,talk,music,boholano,91.1 fm",
+      "city": "Tagbilaran City",
+      "province": "Bohol",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "107-5-good-news-radio-legazpi-dwaq",
+      "name": "107.5 Good News Radio Legazpi (DWAQ)",
+      "stream": "https://stream.zeno.fm/ffujhplczsstv",
+      "website": "https://www.ust-legazpi.edu.ph/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/4/114984.v4.png",
+      "tags": "christian,catholic,school,bikol,107.5 fm",
+      "city": "Legazpi City",
+      "province": "Albay",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "106-9-bnnb-news-bicol-sipocot",
+      "name": "106.9 BNNB News Bicol Sipocot",
+      "stream": "https://stream.zeno.fm/k0zzu81mqoguv",
+      "website": "https://bignewsngayonbicol9.wordpress.com/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/6/140396.v3.png",
+      "tags": "news,community,bikol,106.9 fm",
+      "city": "Sipocot",
+      "province": "Camarines Sur",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "107-9-win-radio-iloilo-dyny",
+      "name": "107.9 Win Radio Iloilo (DYNY)",
+      "stream": "https://stream.zeno.fm/kzncgr5orumuv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/9/121089.v14.png",
+      "tags": "pop,hits,hiligaynon,107.9 fm",
+      "city": "Iloilo City",
+      "province": "Iloilo",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "kiss-fm-103-7-catarman-dyns",
+      "name": "Kiss FM 103.7 Catarman (DYNS)",
+      "stream": "https://stream.zeno.fm/dun68fskdphvv",
+      "website": "https://zeno.fm/radio/DYNSKISSFM1037",
+      "logo": "https://cdn.onlineradiobox.com/img/l/4/141424.v5.png",
+      "tags": "news,talk,music,waray,103.7 fm",
+      "city": "Catarman",
+      "province": "Northern Samar",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "radyo-oragon-catanduanes",
+      "name": "Radyo Oragon Catanduanes",
+      "stream": "https://stream.zeno.fm/cx17fn5p6x8uv",
+      "website": "https://zeno.fm/radio/radyooragoncatanduanes/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/7/126147.v4.png",
+      "tags": "news,music,bikol",
+      "city": "Virac",
+      "province": "Catanduanes",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "bicol-star-teleradyo",
+      "name": "Bicol Star Teleradyo",
+      "stream": "https://stream.zeno.fm/mtrvvy0grtvvv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/0/126170.v2.png",
+      "tags": "news,music,bikol,online",
+      "city": "Virac",
+      "province": "Catanduanes",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "libmanan-news-online",
+      "name": "Libmanan News Online",
+      "stream": "https://stream.zeno.fm/meg07idhvoftv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/5/140525.v1.png",
+      "tags": "news,community,bikol,online",
+      "city": "Libmanan",
+      "province": "Camarines Sur",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "tingog-sa-sugbo",
+      "name": "Tingog sa Sugbo",
+      "stream": "https://stream.zeno.fm/9u9bgfliorfvv",
+      "website": "http://sugbo.iradioph.com/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/1/23171.v7.png",
+      "tags": "news,talk,community,cebuano,online",
+      "city": "Cebu City",
+      "province": "Cebu",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "starwave-radio-zamboanga",
+      "name": "Starwave Radio Zamboanga",
+      "stream": "https://stream.zeno.fm/hvrlf848tmptv",
+      "website": "https://zeno.fm/radio/starwaveradio/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/9/133549.v12.png",
+      "tags": "pop,christian,online",
+      "city": "Zamboanga City",
+      "province": "Zamboanga del Sur",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "radio-chavacano",
+      "name": "Radio Chavacano",
+      "stream": "https://stream.zeno.fm/dqcuah1adeyuv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/0/144640.v1.png",
+      "tags": "chavacano,music,online",
+      "city": "Zamboanga City",
+      "province": "Zamboanga del Sur",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "good-fight-baptist-radio",
+      "name": "Good Fight Baptist Radio",
+      "stream": "https://stream.zeno.fm/0sws7z74qy8uv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/9/112499.v2.png",
+      "tags": "christian,gospel,preaching,online",
+      "city": "Lipa City",
+      "province": "Batangas",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "green-pasture-christian-radio",
+      "name": "Green Pasture Christian Radio",
+      "stream": "https://stream.zeno.fm/b4bn55v0r98uv",
+      "website": "https://bit.ly/greenpasturecatangraran",
+      "logo": "https://cdn.onlineradiobox.com/img/l/3/147243.v1.png",
+      "tags": "christian,gospel,ilocano,online",
+      "city": "Solsona",
+      "province": "Ilocos Norte",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "ltm-radio",
+      "name": "LTM Radio",
+      "stream": "https://cast4.my-control-panel.com/proxy/ltmradio/stream",
+      "website": "http://ltmradioph.org/",
+      "logo": "https://cdn.onlineradiobox.com/img/l/7/24567.v4.png",
+      "tags": "christian,gospel,online",
+      "city": "Cebu City",
+      "province": "Cebu",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "season-radio",
+      "name": "Season Radio",
+      "stream": "https://stream.zeno.fm/cabewrhhfg8uv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/1/99201.v5.png",
+      "tags": "music,entertainment,online",
+      "city": "Cebu City",
+      "province": "Cebu",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "sigma-fox-radio",
+      "name": "Sigma Fox Radio",
+      "stream": "https://stream.zeno.fm/kmg55r8a8ehvv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/4/119844.v6.png",
+      "tags": "music,news,waray,online",
+      "city": "Catarman",
+      "province": "Northern Samar",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "omega-radio-online",
+      "name": "Omega Radio Online",
+      "stream": "https://stream.zeno.fm/hv1rde9mgzzuv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/8/119808.v10.png",
+      "tags": "music,news,waray,online",
+      "city": "Catarman",
+      "province": "Northern Samar",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "habagat-radio",
+      "name": "Habagat Radio",
+      "stream": "https://stream.zenolive.com/3v7w43y1bceuv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/9/72709.v4.png",
+      "tags": "music,online",
+      "city": "Carmen",
+      "province": "Surigao del Sur",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "boom-98-dumaguete",
+      "name": "Boom 98 Dumaguete",
+      "stream": "https://stream.zeno.fm/g2hssb6pwtzuv",
+      "website": "https://colemac1.wixsite.com/boom98ph",
+      "logo": "https://cdn.onlineradiobox.com/img/l/0/86310.v4.png",
+      "tags": "oldies,throwback,online",
+      "city": "Dumaguete City",
+      "province": "Negros Oriental",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "drph-webcast-digital-radio-pilipinas",
+      "name": "DRPH Webcast (Digital Radio Pilipinas)",
+      "stream": "https://stream.zeno.fm/6hqsvh66gseuv",
+      "website": "",
+      "logo": "https://cdn.onlineradiobox.com/img/l/4/86154.v3.png",
+      "tags": "news,music,online",
+      "city": "Manila",
+      "province": "Metro Manila",
+      "added": "2026-11-18"
     }
   ]
 }

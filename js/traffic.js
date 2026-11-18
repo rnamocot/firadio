@@ -191,5 +191,21 @@
     };
   }
 
-  window.FilTraffic = { liveTracker, STATS, SOURCES, PLACES, DEVICES, SYSTEMS, COUNTRIES, classify, place, device, system, country, tidyUrl };
+  // Referring site name (hostname only, never the full address), or "" for direct visits and our own pages.
+  function referrer() {
+    try {
+      const h = document.referrer ? new URL(document.referrer).hostname.toLowerCase().replace(/^www\./, "") : "";
+      return h && h !== location.hostname.replace(/^www\./, "") ? h : "";
+    } catch { return ""; }
+  }
+
+  // One page view: a 1x1 image request with the page path (works without CORS; the server ignores bots).
+  function pageView(path) {
+    if (LOCAL) return;
+    const i = new Image(1, 1);
+    i.referrerPolicy = "origin";
+    i.src = `${STATS}/pv?p=${encodeURIComponent(path)}`;
+  }
+
+  window.FilTraffic = { liveTracker, referrer, pageView, STATS, SOURCES, PLACES, DEVICES, SYSTEMS, COUNTRIES, classify, place, device, system, country, tidyUrl };
 })();

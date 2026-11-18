@@ -2330,3 +2330,32 @@ html.dark .add-cta-btn { background: var(--sun); color: var(--sun-ink); }
 
 /* Top filter: rank on each row */
 .list .meta .rank-chip { font: 700 11px var(--mono); color: var(--sun-ink); background: var(--sun); padding: 1px 6px; border-radius: 6px; margin-right: 2px; white-space: nowrap; }
+
+/* News strip at the top of the station list (js/app.js newsTicker) */
+.news-ticker {
+  display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); margin: 6px 12px 2px; padding: 0 0 0 4px; height: 30px;
+  border: 0; border-radius: 999px; background: var(--ink); color: var(--paper); cursor: pointer; overflow: hidden;
+  font: 600 12.5px var(--display); text-align: left;
+}
+.news-ticker[hidden] { display: none; }
+.news-ticker .nt-tag {
+  flex: none; padding: 3px 9px; border-radius: 999px; background: var(--sun); color: var(--sun-ink);
+  font: 800 10.5px var(--display); letter-spacing: .06em; text-transform: uppercase;
+}
+.news-ticker .nt-view {
+  flex: 1; min-width: 0; overflow: hidden; white-space: nowrap;
+  mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 22px), transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 22px), transparent);
+}
+.news-ticker .nt-track { display: inline-flex; animation: nt-scroll var(--nt-dur, 40s) linear infinite; }
+.news-ticker:hover .nt-track, .news-ticker:focus-visible .nt-track { animation-play-state: paused; }
+.news-ticker .nt-run { display: inline-flex; flex: none; }
+.news-ticker .nt-item { padding-right: 30px; position: relative; }
+.news-ticker .nt-item::after { content: "\2605"; position: absolute; right: 10px; color: var(--sun); font-size: 10px; top: 1px; }
+.news-ticker:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+@keyframes nt-scroll { to { transform: translateX(-50%); } }
+html.dark .news-ticker { background: color-mix(in srgb, var(--sun) 14%, var(--panel)); color: var(--text); }
+@media (prefers-reduced-motion: reduce) {
+  .news-ticker .nt-track { animation: none; }
+  .news-ticker .nt-run + .nt-run { display: none; }
+}

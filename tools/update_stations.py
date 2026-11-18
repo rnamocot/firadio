@@ -20,6 +20,7 @@ import os
 import re
 import sys
 import time
+import ssl
 import urllib.request
 
 HOSTS = [
@@ -57,11 +58,17 @@ def candidates(url):
     return ["https://" + url[len("http://"):]]
 
 
+# Some stream servers only offer older TLS 1.2 ciphers that browsers still accept but Python's OpenSSL refuses.
+# Checking only (no data is sent), so allow them, otherwise those stations would be marked off air.
+LEGACY_TLS = ssl.create_default_context()
+LEGACY_TLS.set_ciphers("ALL:@SECLEVEL=0")
+
+
 def probe(url, timeout=8):
     """True if the stream answers with audio within the timeout (reads only a few bytes)."""
     try:
         req = urllib.request.Request(url, headers={"User-Agent": UA, "Icy-MetaData": "0", "Range": "bytes=0-2047"})
-        with urllib.request.urlopen(req, timeout=timeout) as res:
+        with urllib.request.urlopen(req, timeout=timeout, context=LEGACY_TLS) as res:
             ctype = res.headers.get("Content-Type", "")
             if res.status not in (200, 206):
                 return False
@@ -109,11 +116,30 @@ def extras():
             "t": s.get("tags") or "", "st": place, "la": s.get("lat"), "lo": s.get("lng"),
             "b": s.get("bitrate") or 0, "h": 1 if re.search(r"\.m3u8(\?|$)", url, re.I) else 0,
             "v": s.get("votes", 50), "ok": 1, "a": str(s.get("added") or ""),
+            # Directory listings this one replaces (old names of the same station), dropped on save.
+            "_replaces": [str(x) for x in (s.get("replaces") or [])],
         })
     return out
 
 
+def norm(s):
+    return re.sub(r"[^a-z0-9]+", "", str(s or "").lower())
+
+
+def drop_replaced(mine, rest):
+    """A hand-added station with the same name as a directory one merges with it in the app.
+    Drop the directory copy's streams that did not answer, so the player starts with the working one."""
+    names = {norm(r["n"]) for r in mine}
+    gone = {norm(x) for r in mine for x in r.get("_replaces", [])} - names
+    keep = [r for r in rest if norm(r["n"]) not in gone and not (norm(r["n"]) in names and r.get("on") == 0)]
+    if len(keep) != len(rest):
+        print(f"  replaced {len(rest) - len(keep)} dead directory streams with hand-added ones")
+    return keep
+
+
 def save(slim, checked):
+    for r in slim:
+        r.pop("_replaces", None)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({"t": int(time.time() * 1000), "checked": checked, "d": slim}, f, ensure_ascii=False, separators=(",", ":"))
@@ -131,7 +157,7 @@ def main():
             check_all(mine)
             for r in mine:
                 print(f"  {r['n']}: {'on air' if r.get('on') else 'NOT answering'}")
-        save(mine + rest, old.get("checked"))
+        save(mine + drop_replaced(mine, rest), old.get("checked"))
         return
     data = fetch()
     slim = []
@@ -153,6 +179,7 @@ def main():
         checked = int(time.time() * 1000)
         on = sum(r.get("on", 0) for r in slim)
         print(f"On air: {on} of {len(slim)} streams answered")
+        slim = mine + drop_replaced(mine, slim[len(mine):])
     save(slim, checked)
 
 

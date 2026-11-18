@@ -153,7 +153,8 @@ function page({ url, title, desc, body, jsonld, image }) {
 ${body}
 </main>
 <footer>FilRadio: free Philippine FM, AM and online radio on a map, for Pinoys at home and OFWs abroad.
-<a href="/">Open the radio map</a> · <a href="/stations/">All stations</a> · <a href="/games/">Free games</a> · <a href="/add-station.html">Add your station</a> · <a href="/privacy.html">Privacy</a></footer>
+<a href="/">Open the radio map</a> · <a href="/stations/">All stations</a> · <a href="/games/">Free games</a> · <a href="/add-station.html">Add your station</a> · <a href="/sitemap.html">Sitemap</a> · <a href="/privacy.html">Privacy</a></footer>
+<img src="https://chat.filradio.xyz/pv?p=${encodeURIComponent(url)}" alt="" width="1" height="1" referrerpolicy="origin" style="position:absolute;left:-9999px" />
 </body>
 </html>
 `;
@@ -312,11 +313,51 @@ for (const g of GAMES) {
   gamePages.unshift("/games/");
 }
 
+// ----- /sitemap.html: every station FilRadio lists (with or without its own page), searchable, plus the site's pages -----
+{
+  const all = [...byKey.values()].filter((st) => st.playable)
+    .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+  for (const st of all) {
+    if (!st.freq) st.freq = freqFull(st);
+    if (st.place === undefined) st.place = findPlace(st.state, st.name, st.tags.join(", ")) || stationHome(st.name);
+  }
+  const count = (b) => all.filter((st) => st.band === b).length;
+  const where = (st) => st.city?.name || st.place || "";
+  const row = (st) => {
+    const href = st.slug ? `/station/${st.slug}/` : `/?station=${encodeURIComponent(st.key)}`;
+    const band = st.band === "Online" ? "Online" : st.freq ? `${st.band} ${st.freq}` : st.band;
+    const find = `${st.name} ${band} ${where(st)} ${st.tags.join(" ")}`.toLowerCase();
+    return `<li data-f="${esc(find)}"><a href="${href}"${st.slug ? "" : ' rel="nofollow"'}><b>${esc(st.name)}</b><span>${esc([band, where(st)].filter(Boolean).join(" · "))}</span></a></li>`;
+  };
+  const trail = [["FilRadio", "/"], ["Sitemap", "/sitemap.html"]];
+  const body = `${crumbHtml(trail)}
+<h1>FilRadio sitemap: all radio stations</h1>
+<p>Every station on FilRadio: <b>${all.length}</b> in all (${count("FM")} FM, ${count("AM")} AM, ${count("Online")} online). We add new stations every week. Can't find yours? <a href="/add-station.html">Ask us to add it</a>.</p>
+<p><label for="q" class="muted">Search the list</label><br /><input id="q" type="search" placeholder="Station, frequency or city, e.g. Love Radio, 90.7, Cebu" autocomplete="off" style="width:100%;font:inherit;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--text);margin-top:6px" /></p>
+<p class="muted" id="n" aria-live="polite"></p>
+<ul class="list" id="all">${all.map(row).join("")}</ul>
+<p class="muted" id="none" hidden>No station matches that. <a href="/add-station.html">Ask us to add it</a> and we'll look for its stream.</p>
+<h2>More pages</h2>
+<ul class="cities">
+<li><a href="/">Radio map</a></li><li><a href="/stations/">Stations by city</a></li><li><a href="/games/">Free games</a></li>
+<li><a href="/add-station.html">Add your station</a></li><li><a href="/privacy.html">Privacy</a></li>
+</ul>
+<h2>Cities and provinces</h2><ul class="cities">${[...cities].sort((a, b) => a.name.localeCompare(b.name)).map((c) => `<li><a href="/city/${c.slug}/">${esc(c.name)}</a></li>`).join("")}</ul>
+<script>(function(){var q=document.getElementById("q"),li=[].slice.call(document.querySelectorAll("#all li")),n=document.getElementById("n"),none=document.getElementById("none");
+function go(){var t=q.value.trim().toLowerCase().split(/\\s+/).filter(Boolean),c=0;li.forEach(function(x){var f=x.getAttribute("data-f"),ok=t.every(function(w){return f.indexOf(w)>-1});x.hidden=!ok;if(ok)c++});
+n.textContent=t.length?c+" of "+li.length+" stations match":"";none.hidden=c>0}q.addEventListener("input",go);if(location.hash.length>1){q.value=decodeURIComponent(location.hash.slice(1));go()}})();</script>`;
+  fs.writeFileSync(path.join(DIST, "sitemap.html"), page({
+    url: "/sitemap.html", title: "Sitemap: All Philippine Radio Stations on FilRadio (FM, AM, Online)",
+    desc: `Search all ${all.length} Philippine FM, AM and online radio stations on FilRadio, A to Z, with frequency and city. New stations are added every week.`,
+    body, jsonld: { "@context": "https://schema.org", "@graph": [{ "@type": "CollectionPage", name: "FilRadio sitemap", url: `${SITE}/sitemap.html` }, crumbs(trail)] },
+  }));
+}
+
 // ----- Sitemap: keep the site's own pages, add these -----
 const smPath = path.join(DIST, "sitemap.xml");
-let sm = fs.readFileSync(smPath, "utf8").replace(/\s*<url>\s*<loc>https:\/\/filradio\.xyz\/(station|city|stations|games)\/[\s\S]*?<\/url>/g, "");
+let sm = fs.readFileSync(smPath, "utf8").replace(/\s*<url>\s*<loc>https:\/\/filradio\.xyz\/(station\/|city\/|stations\/|games\/|sitemap\.html)[\s\S]*?<\/url>/g, "");
 const entry = (u, pri) => `  <url>\n    <loc>${SITE}${u}</loc>\n    <lastmod>${TODAY}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${pri}</priority>\n  </url>\n`;
-const extra = gamePages.map((u) => entry(u, u === "/games/" ? "0.7" : "0.6")).join("") + entry("/stations/", "0.8") + cities.map((c) => entry(`/city/${c.slug}/`, "0.7")).join("") + stations.map((s) => entry(`/station/${s.slug}/`, "0.6")).join("");
+const extra = gamePages.map((u) => entry(u, u === "/games/" ? "0.7" : "0.6")).join("") + entry("/stations/", "0.8") + entry("/sitemap.html", "0.7") + cities.map((c) => entry(`/city/${c.slug}/`, "0.7")).join("") + stations.map((s) => entry(`/station/${s.slug}/`, "0.6")).join("");
 sm = sm.replace("</urlset>", extra + "</urlset>");
 fs.writeFileSync(smPath, sm);
 

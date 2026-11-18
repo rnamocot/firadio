@@ -65,5 +65,11 @@ name = "PLAY_LIMIT"
 namespace_id = "7107"
 simple = { limit = 20, period = 60 }
 
+# Page views (a 1x1 image on every page load).
+[[ratelimits]]
+name = "PV_LIMIT"
+namespace_id = "7108"
+simple = { limit = 60, period = 60 }
+
 [observability]
 enabled = false
