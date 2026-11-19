@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
+    .fb-follow{display:inline-flex;align-items:center;gap:8px;padding:7px 16px 7px 7px;border-radius:999px;background:#1877f2;color:#fff !important;font-weight:800;font-size:14px;line-height:1.2;text-decoration:none;box-shadow:0 6px 16px -6px rgba(24,119,242,.6)}.fb-follow:hover{filter:brightness(1.08)}.fb-follow svg{width:26px;height:26px;flex:none}.fb-row{margin:18px 0;text-align:center}
     :root { --paper: #f4f1ea; --panel: #fffdf8; --panel-2: #f0ebe0; --ink: #10182b; --text: #10182b; --muted: #6b6f7b; --line: #e6e0d2; --sun: #ffc93c; --mono: "Share Tech Mono", ui-monospace, monospace; color-scheme: light; }
     @media (prefers-color-scheme: dark) {
       :root { --paper: #0b1020; --panel: #141b2e; --panel-2: #1b2440; --text: #eef0f5; --muted: #8f97ab; --line: #232c44; color-scheme: dark; }
@@ -141,6 +142,7 @@
       </div>
     </div>
 
+    <p class="fb-row"><a class="fb-follow" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#fff"/><path fill="#1877f2" d="M13.4 24v-8.6h2.9l.4-3.4h-3.3V9.9c0-1 .3-1.6 1.7-1.6h1.7v-3a23 23 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.3V12H7.3v3.4h2.8V24h3.3Z"/></svg><span>Follow us on Facebook</span></a></p>
     <footer>
       Closing the player keeps the radio playing. Want to show what's on in your own app? Listen for the
       <code>filradio:state</code> event: <code>{ playing, station }</code>.

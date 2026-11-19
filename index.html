@@ -22,7 +22,7 @@
   <meta property="og:title" content="FilRadio: Philippine Radio, Live Anywhere" />
   <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations, plus a listener chat." />
   <meta property="og:url" content="https://filradio.xyz/" />
-  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=103" />
+  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=105" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
@@ -30,7 +30,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="FilRadio: Philippine Radio, Live Anywhere" />
   <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations, plus a listener chat." />
-  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=103" />
+  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=105" />
   <meta name="twitter:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:image:type" content="image/png" />
   <meta name="application-name" content="FilRadio" />
@@ -60,6 +60,7 @@
         "inLanguage": ["en", "fil"],
         "isAccessibleForFree": true,
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PHP" },
+        "sameAs": ["https://www.facebook.com/filradio.xyz"],
         "author": { "@id": "https://filradio.xyz/#author" },
         "creator": { "@id": "https://filradio.xyz/#author" },
         "publisher": { "@id": "https://filradio.xyz/#author" },
@@ -100,12 +101,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FilRadio" />
   <meta name="google-adsense-account" content="ca-pub-8135151574386158" />
-  <script src="js/theme.js?v=103"></script>
-  <script src="js/gtm.js?v=103"></script>
+  <script src="js/theme.js?v=105"></script>
+  <script src="js/gtm.js?v=105"></script>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon.svg?v=103" type="image/svg+xml" />
-  <link rel="icon" href="icons/favicon-64.png?v=103" sizes="64x64" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=103" />
+  <link rel="icon" href="icon.svg?v=105" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-64.png?v=105" sizes="64x64" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=105" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -114,8 +115,8 @@
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css?v=103" />
-  <link rel="stylesheet" href="css/christmas.css?v=103" />
+  <link rel="stylesheet" href="css/style.css?v=105" />
+  <link rel="stylesheet" href="css/christmas.css?v=105" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo: rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -161,6 +162,13 @@
       <symbol id="i-offair" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M4.6 9.3a10.6 10.6 0 0 1 4-2.3M14 6.6a10.6 10.6 0 0 1 5.4 2.7M7.6 12.4a6.4 6.4 0 0 1 2.2-1.4M15.6 12a6.4 6.4 0 0 1 .8.6"/><circle cx="12" cy="16.6" r="2" fill="currentColor" stroke="none"/><path d="M4 4l16 16" style="stroke:var(--red)" stroke-width="2.4"/></symbol>
       <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M12 3.5 21 8.5l-9 5-9-5 9-5Z" style="fill:var(--sun);stroke:currentColor"/><path d="m3 12.5 9 5 9-5M3 16.5l9 5 9-5"/></symbol>
       <symbol id="i-heart" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M12 20.3s-7.8-4.7-7.8-10.4A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.4-7.8 10.4Z"/></symbol>
+      <symbol id="i-fb" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H7.8v3h2.6V21h3.1Z"/></symbol>
+      <symbol id="i-fblogo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1877f2"/><path fill="#fff" d="M13.4 24v-8.6h2.9l.4-3.4h-3.3V9.9c0-1 .3-1.6 1.7-1.6h1.7v-3a23 23 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.3V12H7.3v3.4h2.8V24h3.3Z"/></symbol>
+      <symbol id="i-fbwhite" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#fff"/><path fill="#1877f2" d="M13.4 24v-8.6h2.9l.4-3.4h-3.3V9.9c0-1 .3-1.6 1.7-1.6h1.7v-3a23 23 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.3V12H7.3v3.4h2.8V24h3.3Z"/></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m8.5 7.5-5 4.5 5 4.5M15.5 7.5l5 4.5-5 4.5"/><circle cx="12" cy="12" r="1.9" style="fill:var(--sun);stroke:none"/></symbol>
+      <symbol id="i-addst" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="7.2" width="13.5" height="12.5" rx="2.4"/><circle cx="7.6" cy="13.4" r="2.3"/><path d="M12.6 11.4h.01M12.6 15.4h.01M14.5 7.2 17 4.6"/><path d="M19.6 13.5v6M16.6 16.5h6" style="stroke:var(--red)"/></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.4"/><path d="m3.8 7 8.2 6 8.2-6"/><circle cx="19.5" cy="5.6" r="2.2" style="fill:var(--sun);stroke:none"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.8 6v5.6c0 4.4 3 7.7 7.2 9.2 4.2-1.5 7.2-4.8 7.2-9.2V6L12 3.2Z"/><path d="m9 12 2.2 2.2L15.3 10" style="stroke:var(--ok, #2fb36d)"/></symbol>
       <symbol id="i-fit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/><circle cx="12" cy="12" r="2.6" style="fill:var(--sun);stroke:currentColor" stroke-width="1.6"/></symbol>
       <symbol id="i-headphones" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.6"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.6"/></symbol>
       <symbol id="i-joy" viewBox="0 0 40 40"><defs><radialGradient id="jy-ball" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ff9aa2"/><stop offset=".5" stop-color="#e63946"/><stop offset="1" stop-color="#8e1520"/></radialGradient><linearGradient id="jy-stick" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7d8594"/><stop offset=".45" stop-color="#f4f6f9"/><stop offset="1" stop-color="#7d8594"/></linearGradient><linearGradient id="jy-base" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f86ff"/><stop offset=".5" stop-color="#2347d6"/><stop offset="1" stop-color="#11287f"/></linearGradient><radialGradient id="jy-y" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff1b8"/><stop offset=".5" stop-color="#ffc93c"/><stop offset="1" stop-color="#b8860b"/></radialGradient><radialGradient id="jy-g" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#c9f2a6"/><stop offset=".5" stop-color="#4cbf5a"/><stop offset="1" stop-color="#226b2d"/></radialGradient></defs><ellipse cx="20" cy="35" rx="16" ry="3.6" fill="#000" opacity=".3"/><rect x="5" y="25" width="30" height="10" rx="5" fill="#0d1d5c"/><rect x="5" y="22.5" width="30" height="10" rx="5" fill="url(#jy-base)"/><ellipse cx="20" cy="23.6" rx="12.5" ry="2.6" fill="#8aa6ff" opacity=".55"/><ellipse cx="20" cy="24.4" rx="5" ry="1.8" fill="#0d1d5c"/><circle cx="10.5" cy="28" r="2.4" fill="url(#jy-y)"/><circle cx="29.5" cy="28" r="2.4" fill="url(#jy-g)"/><rect x="18.3" y="10" width="3.4" height="15" rx="1.7" fill="url(#jy-stick)"/><circle cx="20" cy="9.5" r="6.6" fill="url(#jy-ball)"/><ellipse cx="17.6" cy="7" rx="2.4" ry="1.6" fill="#fff" opacity=".75" transform="rotate(-30 17.6 7)"/></symbol>
@@ -173,7 +181,7 @@
   <div class="splash" id="splash" aria-hidden="true">
     <div class="splash-mark">
       <span class="splash-wave"></span><span class="splash-wave"></span><span class="splash-wave"></span>
-      <img src="icon.svg?v=103" alt="" width="104" height="104" />
+      <img src="icon.svg?v=105" alt="" width="104" height="104" />
     </div>
     <p class="splash-name">Fil<b>Radio</b></p>
     <div class="splash-dial"><span class="splash-needle"></span></div>
@@ -260,8 +268,12 @@
             <svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>
           </button>
           <div class="credit-pop" id="creditPop" hidden>
-            <div class="cp-head"><img src="icon.svg?v=103" alt="" width="40" height="40" /><p><b>FilRadio</b><span>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span></p></div>
-            <a class="cp-bmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a>
+            <div class="cp-head"><img src="icon.svg?v=105" alt="" width="40" height="40" /><p><b>FilRadio</b><span>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span></p></div>
+            <div class="cp-row">
+              <a class="cp-bmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a>
+              <a class="fb-btn" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-fbwhite"/></svg>Follow us on Facebook</a>
+            </div>
+            <button type="button" class="cp-link fb-open">Send feedback</button>
             <a class="cp-link" href="#install" id="cpInstall">How to install the app</a>
             <a class="cp-osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Map data © OpenStreetMap</a>
             <a class="cp-osm" href="sitemap.html">All stations (sitemap)</a>
@@ -275,7 +287,7 @@
     <aside class="sidebar open" id="sidebar">
       <div class="topbar">
         <header class="brand">
-          <img class="logo" src="icon.svg?v=103" alt="FilRadio logo" width="40" height="40" />
+          <img class="logo" src="icon.svg?v=105" alt="FilRadio logo" width="40" height="40" />
           <div class="brand-text">
             <h1>Fil<span>Radio</span></h1>
             <p class="sub" id="summary">Tuning in…</p>
@@ -292,7 +304,7 @@
         <div class="controls">
           <div class="search" id="searchBox">
             <span class="search-lead">
-              <img class="search-mark" src="icon.svg?v=103" alt="" width="32" height="32" />
+              <img class="search-mark" src="icon.svg?v=105" alt="" width="32" height="32" />
               <button class="search-back" id="searchBack" type="button" aria-label="Close search" tabindex="-1">
                 <svg class="i" aria-hidden="true"><use href="#i-back"/></svg>
               </button>
@@ -347,29 +359,20 @@
             <span class="nt-view"><span class="nt-track" id="newsTrack"></span></span>
           </button>
           <div class="sheet-filters" role="group" aria-label="Filters">
-            <label class="fchip" id="directWrap" title="Only stations that play inside FilRadio">
-              <input type="checkbox" id="directOnly" checked autocomplete="off" />
-              <svg class="i" aria-hidden="true"><use href="#i-play"/></svg><span>Plays here</span>
+            <label class="fselect" title="Choose which stations to show">
+              <select id="showFilter" autocomplete="off" aria-label="Show">
+                <option value="all" selected>All stations</option>
+                <option value="direct">Plays here</option>
+                <option value="onair">On air</option>
+                <option value="top">Top</option>
+                <option value="new">New</option>
+                <option value="unknown">Unknown city</option>
+              </select>
+              <svg class="i chev" aria-hidden="true"><use href="#i-down"/></svg>
             </label>
-            <label class="fchip" title="Only stations that answered at our last check">
-              <input type="checkbox" id="onAirOnly" checked autocomplete="off" />
-              <i class="live-mark" aria-hidden="true"></i><span>On air</span>
-            </label>
-            <label class="fchip" title="Most played on FilRadio in the last 30 days">
-              <input type="checkbox" id="topOnly" autocomplete="off" />
-              <svg class="i" aria-hidden="true"><use href="#i-onair"/></svg><span>Top</span>
-            </label>
-            <label class="fchip" title="Stations added to FilRadio recently, newest first">
-              <input type="checkbox" id="newOnly" autocomplete="off" />
-              <svg class="i" aria-hidden="true"><use href="#i-radio"/></svg><span>New</span>
-            </label>
-            <label class="fchip" title="Only your saved stations">
+            <label class="fchip fav-chip" title="Only your saved stations">
               <input type="checkbox" id="favOnly" autocomplete="off" />
               <svg class="i heart" aria-hidden="true"><use href="#i-heart"/></svg><span>Favorites</span><b id="favCount"></b>
-            </label>
-            <label class="fchip" title="Show only stations whose city isn't known (grey pins near Manila)">
-              <input type="checkbox" id="showUnknown" autocomplete="off" />
-              <svg class="i" aria-hidden="true"><use href="#i-pin"/></svg><span>Unknown city</span>
             </label>
             <button class="info-btn" id="filterInfo" type="button" aria-expanded="false" aria-controls="filterHelp" title="What do these filters mean?" aria-label="What do these filters mean?">
               <svg class="i" aria-hidden="true"><use href="#i-info"/></svg>
@@ -377,17 +380,20 @@
           </div>
           <div class="filter-help" id="filterHelp" hidden>
             <dl>
-              <div id="helpDirect"><dt>Plays here</dt><dd>Shows only stations that play right inside FilRadio. Turn it off to also see older stations that open in your browser's own player instead (marked <b>↗ Browser</b>).</dd></div>
-              <div><dt>On air</dt><dd>Shows only stations that were broadcasting at our last check (<span id="checkedAt">recently</span>). Stations come and go, so turn it off to see all of them; off-air ones are marked <b>Off air</b>.</dd></div>
+              <div><dt>All stations</dt><dd>Every station on FilRadio. Older ones that open in your browser's own player are marked <b>↗ Browser</b>, and ones that weren't broadcasting at our last check are marked <b>Off air</b>. Pick something else in the list to narrow it down.</dd></div>
+              <div><dt>Plays here</dt><dd>Only stations that play right inside FilRadio.</dd></div>
+              <div><dt>On air</dt><dd>Only stations that were broadcasting at our last check (<span id="checkedAt">recently</span>).</dd></div>
               <div><dt>Top</dt><dd>The stations FilRadio listeners played most in the last 30 days, ranked by total listening time.</dd></div>
               <div><dt>New</dt><dd>Stations added to FilRadio in the last 60 days, newest first. Run a station? Tap <b>Add your station</b> to get it listed for free.</dd></div>
-              <div><dt>Favorites</dt><dd>Tap the <b>♡</b> on any station to save it. Turn on Favorites to see only your saved stations. They're kept on this device.</dd></div>
-              <div><dt>Unknown city</dt><dd>Some stations don't say where they broadcast from. They're listed with everything else and shown as grey pins near Manila. Turn this on to see only those stations.</dd></div>
+              <div><dt>Unknown city</dt><dd>Stations that don't say where they broadcast from. They're shown as grey pins near Manila.</dd></div>
+              <div><dt>♡ Favorites</dt><dd>Tap the <b>♡</b> on any station to save it. Turn on Favorites to see only your saved stations, together with the choice in the list (for example only your favorites that are on air). They're kept on this device.</dd></div>
             </dl>
             <button class="help-ok" id="filterHelpOk" type="button">Got it</button>
           </div>
         </div>
-        <p class="mob-credit"><span>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span>
+        <p class="mob-credit"><span><img class="by-ico" src="icon.svg?v=105" alt="" width="16" height="16" />Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span>
+          <button type="button" class="mob-fb fb-open">Feedback</button>
+          <a class="fb-btn" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-fbwhite"/></svg>Follow us on Facebook</a>
           <a class="mob-bmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a></p>
         <ul class="list" id="list">
           <li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>
@@ -413,6 +419,11 @@
               (contains modified Copernicus Sentinel data 2016).
             </p>
           </details>
+          <a class="widget-promo fbpage-promo" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener">
+            <span class="wp-ico fb-logo"><svg class="i" aria-hidden="true"><use href="#i-fblogo"/></svg></span>
+            <span class="wp-text"><b>Follow FilRadio on Facebook</b><small>New stations, updates and games. Say hi to other listeners.</small></span>
+            <span class="wp-go">Follow</span>
+          </a>
           <a class="widget-promo" href="widget.html" target="_blank" rel="noopener">
             <span class="wp-ico"><svg class="i" aria-hidden="true"><use href="#i-radio"/></svg></span>
             <span class="wp-text"><b>Put FilRadio on your website or app</b><small>Free radio player for shops, blogs and chats. One line of code.</small></span>
@@ -422,11 +433,12 @@
             <p class="visits" id="visits" hidden><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg><b>0</b> visits</p>
             <p class="visits listening" id="listening" hidden title="People playing a station on FilRadio right now"><span class="live-dot" aria-hidden="true"></span><b>0</b> listening now</p>
             <a class="osm-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
-            <a href="#install" id="howInstall">How to install</a>
-            <a href="widget.html" target="_blank" rel="noopener">Add to your site</a>
-            <a href="add-station.html">Add your station</a>
-            <a href="#contact" data-mail="zendzdev|gmail.com" data-subject="FilRadio Inquiry">Contact</a>
-            <a href="privacy.html">Privacy</a>
+            <a href="#install" id="howInstall"><svg class="i" aria-hidden="true"><use href="#i-install"/></svg>How to install</a>
+            <a class="foot-fb" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-fblogo"/></svg>Follow us on Facebook</a>
+            <a href="widget.html" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Add to your site</a>
+            <a href="add-station.html"><svg class="i" aria-hidden="true"><use href="#i-addst"/></svg>Add your station</a>
+            <a href="#contact" data-mail="zendzdev|gmail.com" data-subject="FilRadio Inquiry"><svg class="i" aria-hidden="true"><use href="#i-mail"/></svg>Contact</a>
+            <a href="privacy.html"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>Privacy</a>
           </div>
           <!-- Shopee affiliate product (set in promo.json) -->
           <a class="promo" id="promo" hidden target="_blank" rel="sponsored noopener">
@@ -438,7 +450,7 @@
             </span>
           </a>
           <a class="bmc" id="footBmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a>
-          <p id="footBy">FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></p>
+          <p id="footBy"><img class="by-ico" src="icon.svg?v=105" alt="" width="16" height="16" />FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></p>
         </footer>
       </section>
     </aside>
@@ -605,6 +617,7 @@
           </div>
           <small>2 to 20 letters or numbers. Rude names are blocked.</small>
           <label class="cn-flag"><input type="checkbox" id="chatFlagOpt" checked /> Show my country flag</label>
+          <label class="cn-flag"><input type="checkbox" id="chatPokeOpt" checked /> Allow kalabit and scratches</label>
         </form>
       </div>
       <form class="chat-form" id="chatForm">
@@ -758,6 +771,44 @@
         </div>
       </div>
     </dialog>
+    <dialog class="offdlg fbdlg" id="fbDlg" aria-labelledby="fbTitle">
+      <div class="off-card">
+        <span class="off-grip" aria-hidden="true"></span>
+        <form id="fbForm" novalidate>
+          <h3 id="fbTitle">Send feedback</h3>
+          <p class="fb-sub">Tell us what to fix or add. Every message is read by the person who makes FilRadio.</p>
+          <div class="fb-faces" role="radiogroup" aria-label="How do you like FilRadio?">
+            <button type="button" class="fb-face" data-r="1" role="radio" aria-checked="false" aria-label="Bad">😞</button>
+            <button type="button" class="fb-face" data-r="2" role="radio" aria-checked="false" aria-label="Not great">😕</button>
+            <button type="button" class="fb-face" data-r="3" role="radio" aria-checked="false" aria-label="Okay">😐</button>
+            <button type="button" class="fb-face" data-r="4" role="radio" aria-checked="false" aria-label="Good">🙂</button>
+            <button type="button" class="fb-face" data-r="5" role="radio" aria-checked="false" aria-label="Love it">😍</button>
+          </div>
+          <label class="fb-field">Your message
+            <textarea id="fbMsg" rows="4" maxlength="1000" placeholder="A station that doesn't play, a feature you want, anything"></textarea>
+          </label>
+          <label class="fb-field">Email or Facebook name <span class="opt">(optional, if you want a reply)</span>
+            <input id="fbContact" type="text" maxlength="100" autocomplete="email" />
+          </label>
+          <input id="fbHp" class="fb-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <p class="fb-err" id="fbErr" role="alert" hidden></p>
+          <div class="off-actions">
+            <button type="button" class="off-btn ghost" id="fbClose">Not now</button>
+            <button type="submit" class="off-btn" id="fbSend">Send</button>
+          </div>
+        </form>
+        <div class="fb-done" id="fbDone" hidden>
+          <h3>Salamat!</h3>
+          <p class="fb-sub">Your feedback was sent. It helps make FilRadio better for everyone.</p>
+          <a class="widget-promo fbpage-promo in-dlg" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener">
+            <span class="wp-ico fb-logo"><svg class="i" aria-hidden="true"><use href="#i-fblogo"/></svg></span>
+            <span class="wp-text"><b>Follow FilRadio on Facebook</b><small>See what's new, and what we fix from your feedback.</small></span>
+            <span class="wp-go">Follow</span>
+          </a>
+          <div class="off-actions"><button type="button" class="off-btn" id="fbDoneBtn">Close</button></div>
+        </div>
+      </div>
+    </dialog>
   </div>
 
   <noscript>
@@ -767,14 +818,15 @@
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js?v=103" defer></script>
-  <script src="js/station-core.js?v=103" defer></script>
-  <script src="js/traffic.js?v=103" defer></script>
-  <script src="js/install-guide.js?v=103" defer></script>
-  <script src="js/sponsor.js?v=103" defer></script>
-  <script src="js/christmas.js?v=103" defer></script>
-  <script src="js/app.js?v=103" defer></script>
-  <script src="js/chat.js?v=103" defer></script>
-  <script src="js/game-btn.js?v=103" defer></script>
+  <script src="js/places.js?v=105" defer></script>
+  <script src="js/station-core.js?v=105" defer></script>
+  <script src="js/traffic.js?v=105" defer></script>
+  <script src="js/install-guide.js?v=105" defer></script>
+  <script src="js/sponsor.js?v=105" defer></script>
+  <script src="js/christmas.js?v=105" defer></script>
+  <script src="js/app.js?v=105" defer></script>
+  <script src="js/chat.js?v=105" defer></script>
+  <script src="js/game-btn.js?v=105" defer></script>
+  <script src="js/feedback.js?v=105" defer></script>
 </body>
 </html>

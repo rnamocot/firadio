@@ -73,8 +73,62 @@
     }).join("");
     // Widths are set via the DOM (inline style attributes are blocked by this page's CSP).
     el.querySelectorAll(".fill").forEach((f) => (f.style.width = f.dataset.w + "%"));
+    const btn = el.closest(".card")?.querySelector(".expand");
+    if (btn) btn.textContent = shown.length > PREVIEW ? `See all ${shown.length}` : "Expand";
     return total;
   }
+
+  // ---------- feedback messages ----------
+  const FACES = ["", "😞", "😕", "😐", "🙂", "😍"];
+  function feedbackList(items) {
+    const el = $("feedback");
+    el.innerHTML = items.length ? items.map((f) => `<li class="fb-item">
+        <div class="row"><span class="name">${FACES[f.r] || ""} ${esc(new Date(f.t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}</span><span class="num"><i>${esc(f.p || "")}</i></span></div>
+        ${f.m ? `<p class="fb-msg">${esc(f.m)}</p>` : ""}${f.c ? `<p class="fb-contact">Reply to: ${esc(f.c)}</p>` : ""}</li>`).join("")
+      : `<li class="muted">No feedback in this range yet.</li>`;
+    const btn = el.closest(".card").querySelector(".expand");
+    if (btn) btn.textContent = items.length > PREVIEW ? `See all ${items.length}` : "Expand";
+  }
+
+  // ---------- full screen list ----------
+  // Cards show the top PREVIEW rows; "See all" opens the whole list full screen. X, Esc or the phone's Back closes it.
+  const PREVIEW = 10;
+  let openCard = null;
+  function openFull(card) {
+    if (openCard) return;
+    openCard = card;
+    card.classList.add("full");
+    document.body.classList.add("noscroll");
+    card.scrollTop = 0;
+    history.pushState({ fullList: 1 }, "");
+    card.querySelector(".close-full").focus();
+  }
+  function closeFull(fromBack) {
+    if (!openCard) return;
+    const card = openCard;
+    openCard = null;
+    card.classList.remove("full");
+    document.body.classList.remove("noscroll");
+    card.querySelector(".expand").focus();
+    if (!fromBack && history.state?.fullList) history.back();
+  }
+  for (const card of document.querySelectorAll(".card")) {
+    const h2 = card.querySelector(":scope > h2");
+    if (!h2 || !card.querySelector(".bars")) continue;
+    const head = document.createElement("div");
+    head.className = "card-head";
+    h2.replaceWith(head);
+    head.append(h2);
+    const expand = document.createElement("button");
+    expand.type = "button"; expand.className = "ghost small expand"; expand.textContent = "Expand";
+    expand.addEventListener("click", () => openFull(card));
+    const close = document.createElement("button");
+    close.type = "button"; close.className = "close-full"; close.setAttribute("aria-label", "Close full screen"); close.textContent = "✕";
+    close.addEventListener("click", () => closeFull(false));
+    head.append(expand, close);
+  }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeFull(false); });
+  window.addEventListener("popstate", () => closeFull(true));
 
   const title = (slug) => slug.replace(/-/g, " ").replace(/\b([a-z])/g, (m) => m.toUpperCase());
   function pageLabel(p) {
@@ -231,12 +285,14 @@
     $("dayTitle").textContent = days === 1 ? "Visitors today" : days ? `Visitors per day, ${RANGE_TEXT[days]}` : "Visitors per day, last 365 days";
     dayChart(series(r));
 
-    bars($("pages"), (r.pages || []).slice(0, 25).map((x) => ({ n: x.n, html: `${esc(pageLabel(x.p))} <small class="path">${esc(x.p)}</small>` })), { empty: "No page views counted yet. They start with this update." });
+    bars($("pages"), (r.pages || []).map((x) => ({ n: x.n, html: `${esc(pageLabel(x.p))} <small class="path">${esc(x.p)}</small>` })), { empty: "No page views counted yet. They start with this update." });
     const src = rows(T.SOURCES, "src");
     const bySrc = Object.fromEntries(src.map((x, i) => [T.SOURCES[i][0], x.n]));
     bars($("channels"), CHANNELS.map(([label, keys]) => ({ label, n: keys.reduce((a, k) => a + (bySrc[k] || 0), 0) })));
     bars($("sources"), src);
     bars($("refs"), (r.refs || []).map((x) => ({ label: x.h, n: x.n })), { empty: "No referring sites yet. Visits from other websites and apps show here." });
+    feedbackList(r.feedback || []);
+    bars($("wsites"), (r.wsites || []).map((x) => ({ label: x.h, n: x.n })), { empty: "No widget sites yet. Websites that embed the FilRadio player show here." });
     bars($("places"), rows(T.PLACES, "loc"), { hideZero: false });
     bars($("devices"), rows(T.DEVICES, "dev"));
     bars($("systems"), rows(T.SYSTEMS, "os"));
@@ -244,7 +300,7 @@
 
     $("stTitle").textContent = `Most played stations, ${r.topDays === 1 ? "today" : `last ${r.topDays} days`}`;
     const nm = await stationNames();
-    bars($("stations"), (r.stations || []).slice(0, 25).map((x) => ({ label: nm.get(x.s) || x.s, n: x.n })), { empty: "No plays counted in this range yet." });
+    bars($("stations"), (r.stations || []).map((x) => ({ label: nm.get(x.s) || x.s, n: x.n })), { empty: "No plays counted in this range yet." });
     $("refresh").disabled = false;
   }
 

@@ -31,7 +31,11 @@ const LIMITS = {
   emojis: 15,              // most emojis in one message
   reactGapMs: 600,         // reactions: at most 1 every 0.6 s per person
   reactsPerMin: 30,        // and 30 per minute
+  pokeSameMs: 30e3,        // kalabit / scratch: the same person at most once every 30 s
+  pokesPerMin: 4,          // and at most 4 pokes a minute in total
+  pokeBackMs: 5 * 60e3,    // "poke back" works for 5 minutes after being poked
 };
+const POKES = 2;           // 0 = kalabit (poke), 1 = cat scratch
 const REACTIONS = 6;       // the client owns the emoji list (like, love, haha, wow, sad, angry); the server only counts 0..5
 
 const SEC_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" };
@@ -65,7 +69,7 @@ export default {
     }
     if (url.pathname === "/pv") return pageView(req, env, url, ip);
     if (url.pathname === "/stats" || url.pathname === "/stats/login") return statsReport(req, env, ctx, url, ip);
-    if (["/hit", "/count", "/live", "/top", "/game/top", "/game/tops", "/game/score", "/game/play"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
+    if (["/hit", "/count", "/live", "/top", "/game/top", "/game/tops", "/game/score", "/game/play", "/feedback"].includes(url.pathname)) return statsRoute(req, env, ctx, url, ip);
     if (url.pathname !== "/ws" || req.method !== "GET") return deny(404);
     const origin = req.headers.get("Origin") || "";
     if (!ORIGINS.includes(origin)) return deny(403);
@@ -230,6 +234,17 @@ async function statsRoute(req, env, ctx, url, ip) {
     return out(r, { "Cache-Control": "no-store" });
   }
 
+  if (url.pathname === "/feedback") {
+    // Feedback form: from the site only, small body, max 3 a minute per IP (and a daily cap per network in the counter).
+    if (req.method !== "POST" || !okOrigin) return deny(403);
+    if (Number(req.headers.get("Content-Length") || 0) > 2000) return deny(413);
+    if (!(await allowed(env.FEEDBACK_LIMIT, ip))) return deny(429);
+    const body = await req.text();
+    if (body.length > 2000) return deny(413);
+    const who = await hashIp(ip, env.IP_SALT || "filradio");
+    return out(await stub.fetch(new Request("https://stats/feedback", { method: "POST", body, headers: { "X-Who": who } })), { "Cache-Control": "no-store" });
+  }
+
   if (url.pathname === "/game/play") {
     // One count per game start (sorts the games menu by what people play most).
     if (req.method !== "POST" || !okOrigin) return deny(403);
@@ -332,6 +347,8 @@ export class ChatRoom extends DurableObject {
     if (m.t === "flag") { a.fl = !!m.on; ws.serializeAttachment(a); return; }
     if (m.t === "report") return this.onReport(ws, a, String(m.id || ""));
     if (m.t === "react") return this.onReact(ws, a, String(m.id || ""), m.e);
+    if (m.t === "poke") return this.onPoke(ws, a, m);
+    if (m.t === "pokes") { a.np = m.on === false; ws.serializeAttachment(a); return; }
     if (m.t === "name" && typeof m.name === "string") {
       const n = cleanName(m.name);
       if (!n) return err(ws, "name", "Name must be 2 to 20 letters or numbers.");
@@ -447,6 +464,37 @@ export class ChatRoom extends DurableObject {
     const mineMsg = JSON.stringify({ t: "reacted", id, e });
     for (const s of this.ctx.getWebSockets(a.h)) try { s.send(mineMsg); } catch {}
     this.broadcast({ t: "react", id, r: rxCounts(re) });
+  }
+
+  // Kalabit (poke) / cat scratch: a short animation on the other person's screen and a line in the chat
+  // for everyone. Never stored. The target is picked through one of their messages (or "back" = whoever
+  // poked you last). Only people who are online and haven't turned pokes off can be poked.
+  async onPoke(ws, a, m) {
+    const now = Date.now();
+    const k = Number.isInteger(m.k) && m.k >= 0 && m.k < POKES ? m.k : 0;
+    let target = "";
+    if (m.back) target = a.pb && now - (a.pbt || 0) < LIMITS.pokeBackMs ? a.pb : "";
+    else target = this.msgs.find((x) => x.id === String(m.id || ""))?.h || "";
+    if (!target) return err(ws, "poke", m.back ? "Too late to poke back. Find their message to poke them." : "That message is gone.");
+    if (target === a.h) return err(ws, "poke", "You can't poke yourself.");
+    const user = await this.user(a.h);
+    if (user.until > now) return err(ws, "muted", "You're muted for breaking the chat rules.", user.until);
+    const theirs = this.ctx.getWebSockets(target).filter((s) => s.readyState === 1);
+    if (!theirs.length) return err(ws, "poke", "They've left the chat.");
+    const ta = theirs[0].deserializeAttachment() || {};
+    if (theirs.every((s) => (s.deserializeAttachment() || {}).np)) return err(ws, "poke", `${ta.name || "They"} turned pokes off.`);
+    a.pk = (a.pk || []).filter((p) => now - p.t < 60e3);
+    if (a.pk.length >= LIMITS.pokesPerMin) return err(ws, "poke", "That's a lot of pokes. Wait a minute.");
+    if (a.pk.some((p) => p.h === target && now - p.t < LIMITS.pokeSameMs)) return err(ws, "poke", `Give ${ta.name || "them"} a moment before poking again.`);
+    a.pk.push({ h: target, t: now }); ws.serializeAttachment(a);
+    const toThem = JSON.stringify({ t: "poked", n: a.name, k });
+    for (const s of theirs) {
+      const sa = s.deserializeAttachment() || {};
+      if (sa.np) continue;
+      sa.pb = a.h; sa.pbt = now; s.serializeAttachment(sa);
+      try { s.send(toThem); } catch {}
+    }
+    this.broadcast({ t: "pokeline", a: a.name, b: ta.name || "", k });
   }
 
   async onReport(ws, a, id) {

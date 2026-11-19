@@ -1016,6 +1016,23 @@ html.dark .fchip:has(input:checked) { background: var(--sun); color: var(--sun-i
 .fchip svg.heart { fill: none; }
 .fchip:has(input:checked) svg.heart { fill: var(--red); color: var(--red); }
 .live-mark { width: 8px; height: 8px; border-radius: 50%; background: var(--unknown); font-style: normal; }
+/* "Show" dropdown: one choice at a time, looks like a chip */
+.fselect { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; transition: transform .12s var(--ease); }
+.fselect select {
+  appearance: none; -webkit-appearance: none; height: 30px; padding: 0 28px 0 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--text); font: 700 12px var(--display); cursor: pointer;
+}
+.fselect select:focus-visible { outline: 2px solid var(--fm); outline-offset: 2px; }
+.fselect .chev { position: absolute; right: 9px; width: 13px; height: 13px; pointer-events: none; color: var(--muted); }
+.fselect.on select { background: var(--ink); color: var(--paper); border-color: transparent; }
+.fselect.on .chev { color: var(--paper); }
+html.dark .fselect.on select { background: var(--sun); color: var(--sun-ink); }
+html.dark .fselect.on .chev { color: var(--sun-ink); }
+.fselect option { color: #10182b; background: #fff; }
+/* Favorites: its own colour, so it reads as separate from the list */
+.fav-chip { border-color: color-mix(in srgb, var(--red) 45%, var(--line)); color: var(--red); }
+.fav-chip:has(input:checked), html.dark .fav-chip:has(input:checked) { background: var(--red); color: #fff; }
+.fav-chip:has(input:checked) svg.heart { fill: #fff; color: #fff; }
 .fchip:has(input:checked) .live-mark { background: #2fd27a; box-shadow: 0 0 0 3px rgba(47,210,122,.25); }
 
 /* Heart buttons */
@@ -1200,6 +1217,7 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
   .sheet-title h2 { font-size: 14px; }
   .sheet-grip .sheet-filters { margin-top: 6px; }
   .fchip { height: 26px; font-size: 11px; }
+  .fselect select { height: 26px; font-size: 11px; }
   .list li { padding: 5px 8px; }
   .readout { width: 40px; height: 40px; }
   .credit { display: none; }
@@ -1357,11 +1375,11 @@ html.dark .layer-dark input:checked + .switch { background: var(--sun); }
 @keyframes swap-in { from { opacity: 0; transform: translateX(14px); } }
 
 /* Filter chip pop */
-.fchip.pop { animation: chip-pop .35s cubic-bezier(.34,1.56,.64,1); }
+.fchip.pop, .fselect.pop { animation: chip-pop .35s cubic-bezier(.34,1.56,.64,1); }
 @keyframes chip-pop { 40% { transform: scale(1.1); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash-wave, .splash-needle, .now-ring, .now.live .now-art, .p-info.swap-in, .fchip.pop { animation: none !important; }
+  .splash-wave, .splash-needle, .now-ring, .now.live .now-art, .p-info.swap-in, .fchip.pop, .fselect.pop { animation: none !important; }
 }
 .splash { gap: 22px; }
 .splash-name, .splash-dial, .splash-tag { position: relative; z-index: 2; }
@@ -2359,3 +2377,99 @@ html.dark .news-ticker { background: color-mix(in srgb, var(--sun) 14%, var(--pa
   .news-ticker .nt-track { animation: none; }
   .news-ticker .nt-run + .nt-run { display: none; }
 }
+
+/* =========================================================
+   Feedback pop-up (js/feedback.js), built on the off-air pop-up
+   ========================================================= */
+.fbdlg h3 { margin: 2px 0 4px; font-size: 18px; font-weight: 800; font-stretch: 112%; letter-spacing: -.01em; }
+.fb-sub { margin: 0 0 14px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.fb-faces { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 14px; }
+.fb-face { flex: 1; height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font-size: 24px; cursor: pointer;
+  filter: grayscale(.7); opacity: .75; transition: transform .12s var(--ease), filter .15s, opacity .15s, background .15s; }
+.fb-face:hover { filter: none; opacity: 1; }
+.fb-face[aria-checked="true"] { filter: none; opacity: 1; background: color-mix(in srgb, var(--sun) 30%, var(--panel)); border-color: var(--sun); transform: scale(1.06); }
+.fb-field { display: grid; gap: 5px; margin-bottom: 12px; font-size: 13px; font-weight: 700; }
+.fb-field .opt { font-weight: 400; color: var(--muted); }
+.fb-field textarea, .fb-field input { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--paper); color: var(--text); font: 15px/1.4 var(--display); resize: vertical; }
+.fb-field textarea:focus, .fb-field input:focus { outline: 2px solid var(--fm); outline-offset: 1px; }
+.fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.fb-err { margin: 0 0 4px; font-size: 13px; color: var(--red); font-weight: 700; }
+.fb-err[hidden], .fbdlg form[hidden], .fb-done[hidden] { display: none; }
+.cp-link.fb-open { border: 0; background: none; padding: 0; font-family: inherit; cursor: pointer; }
+.mob-fb { margin-left: auto; font-weight: 700; border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
+/* Filters: square-ish corners instead of round pills */
+.fselect select, .fav-chip { border-radius: 6px; }
+
+/* Facebook page: Facebook blue so it's recognised at a glance */
+.fbpage-promo .wp-ico.fb-logo { background: none; }
+.fbpage-promo .wp-ico.fb-logo svg.i { width: 40px; height: 40px; }
+.fbpage-promo .wp-go, html.dark .fbpage-promo .wp-go { background: #1877f2; color: #fff; }
+/* "Follow us on Facebook" right beside "Buy me a coffee" */
+.fb-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 11px 5px 5px; border-radius: 999px; white-space: nowrap;
+  background: #1877f2; color: #fff; font-weight: 800; font-size: 12px; text-decoration: none; transition: filter .15s; }
+.fb-btn:hover { filter: brightness(1.08); }
+.fb-btn svg.i { width: 20px; height: 20px; }
+.cp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cp-row .cp-bmc, .cp-row .fb-btn { padding: 8px 6px; border-radius: 12px; font-size: 12px; white-space: normal; text-align: center; line-height: 1.2; min-width: 0; }
+.cp-row .fb-btn { padding-left: 6px; }
+.credit-pop:has(.cp-row) { width: min(300px, calc(100vw - 96px)); }
+.mob-credit { flex-wrap: wrap; row-gap: 6px; }
+.mob-credit .fb-btn { margin-left: 4px; }
+
+/* =========================================================
+   Chat: kalabit (poke), cat scratch, "listening to" badge (js/chat.js)
+   ========================================================= */
+.chat-who { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: hsl(var(--hue, 220) 65% 72%); cursor: pointer; text-decoration: underline dotted transparent; text-underline-offset: 3px; }
+.chat-who:hover, .chat-who:focus-visible { text-decoration-color: currentColor; outline: none; }
+.chat-pokepick { border-radius: 14px; gap: 4px; }
+.chat-pokepick button { width: auto; height: 34px; padding: 0 12px; border-radius: 10px; display: flex; gap: 6px; font: 700 13px var(--display); color: var(--c-text); }
+.chat-pokepick button span { font-size: 18px; }
+.chat-pokepick button:hover, .chat-pokepick button:focus-visible { transform: none; background: rgba(255, 255, 255, .08); }
+.chat-sys { list-style: none; text-align: center; font-size: 12px; color: var(--c-dim); padding: 4px 8px; }
+
+/* "Listening to" badge: tap to play the same station; little bars move while it's fresh */
+button.chat-st { border: 0; background: rgba(255, 201, 60, .1); border-radius: 6px; padding: 1px 6px 1px 4px; font: inherit; font-size: 11px; color: var(--c-dim); cursor: pointer; gap: 4px; }
+button.chat-st:hover, button.chat-st:focus-visible { color: var(--c-text); background: rgba(255, 201, 60, .2); outline: none; }
+.chat-st .eq { display: inline-flex; align-items: flex-end; gap: 1.5px; width: 10px; height: 10px; flex-shrink: 0; }
+.chat-st .eq i { flex: 1; height: 40%; border-radius: 1px; background: var(--c-sun); }
+.chat-st.live .eq i { animation: eq-bounce .9s ease-in-out infinite; }
+.chat-st.live .eq i:nth-child(2) { animation-delay: -.3s; }
+.chat-st.live .eq i:nth-child(3) { animation-delay: -.6s; }
+@keyframes eq-bounce { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+
+/* Chat button after a poke while the chat is closed: a bounce and a red dot */
+.chat-fab.poked { animation: fab-nudge .9s var(--ease) 2; }
+.chat-fab.poked::after { content: ""; position: absolute; top: -3px; right: -3px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid var(--panel); }
+
+/* Effects layer (never blocks taps) */
+.poke-fx { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+.fx-finger { position: absolute; left: 50%; top: 45%; margin: -40px 0 0 -40px; font-size: 80px; line-height: 1; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .35)); }
+.fx-mark { position: absolute; left: 15%; width: 70%; height: 6px; border-radius: 6px; transform-origin: left center;
+  background: linear-gradient(90deg, transparent, #ff6b78 15%, #ffd2d6 50%, #ff6b78 85%, transparent); box-shadow: 0 0 10px rgba(255, 107, 120, .7); }
+.fx-paw { position: absolute; left: 50%; top: 45%; margin: -36px 0 0 -36px; font-size: 72px; line-height: 1; }
+.fx-meow { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); padding: 8px 16px; border-radius: 16px; background: #fff; color: #10182b; font: 800 20px var(--display);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .3); animation: meow 1.8s var(--ease) forwards; }
+@keyframes meow { 0% { opacity: 0; transform: translateX(-50%) scale(.6); } 20% { opacity: 1; transform: translateX(-50%) scale(1.08); } 30% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* "X kinalabit ka!" bubble with a poke-back button */
+.poke-bubble { position: fixed; left: 50%; bottom: calc(var(--safe-bottom, 0px) + 110px); transform: translateX(-50%); z-index: 61; display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 32px); padding: 10px 10px 10px 16px; border-radius: 16px; background: #10172a; color: #e6e9f1; border: 1px solid #243051;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, .4); font: 700 14px var(--display); animation: bubble-in .35s var(--ease); }
+.poke-bubble span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.poke-bubble button { flex: none; border: 0; cursor: pointer; font: 800 13px var(--display); }
+.poke-bubble button:not(.pb-x) { padding: 8px 12px; border-radius: 10px; background: #ffc93c; color: #10182b; }
+.poke-bubble .pb-x { width: 30px; height: 30px; border-radius: 50%; background: none; color: #8a93a9; }
+@keyframes bubble-in { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) { .chat-st.live .eq i, .poke-bubble, .fx-meow, .chat-fab.poked { animation: none; } }
+.foot-fb { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+.foot-fb svg.i { width: 16px; height: 16px; }
+
+/* Footer links: each with its icon */
+.foot-row > a:not(.osm-credit) { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.foot-row > a:not(.osm-credit):not(.foot-fb) svg.i { width: 15px; height: 15px; flex: none; }
+.page-foot .foot-row > a:not(.osm-credit):not(.foot-fb) svg.i { width: 13px; height: 13px; }
+/* Small FilRadio logo in the credit lines */
+.by-ico { width: 16px; height: 16px; border-radius: 4px; vertical-align: -3px; margin-right: 5px; }
+/* Filter help: scrolls inside when the screen is short (height set by fitFilterHelp in app.js) */
+.filter-help { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }

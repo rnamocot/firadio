@@ -122,7 +122,8 @@ p.lead{margin:14px 0 0}.muted{color:var(--muted);font-size:14px}
 .list a{display:flex;flex-direction:column;padding:10px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line);text-decoration:none}
 .list a b{font-size:15px}.list a span{font-size:13px;color:var(--muted)}.list a:hover{border-color:var(--sun)}
 .cities{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}.cities a{display:block;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);text-decoration:none;font-size:14px}
-footer{max-width:760px;margin:0 auto;padding:20px 16px 40px;font-size:13px;color:var(--muted)}footer a{color:var(--muted)}`;
+footer{max-width:760px;margin:0 auto;padding:20px 16px 40px;font-size:13px;color:var(--muted)}footer a{color:var(--muted)}
+.fb-follow{display:inline-flex;align-items:center;gap:8px;padding:7px 16px 7px 7px;border-radius:999px;background:#1877f2;color:#fff !important;font-weight:800;font-size:14px;line-height:1.2;text-decoration:none;box-shadow:0 6px 16px -6px rgba(24,119,242,.6)}.fb-follow:hover{filter:brightness(1.08)}.fb-follow svg{width:26px;height:26px;flex:none}.fb-row{margin:18px 0;text-align:center}`;
 
 const PLAY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>`;
 
@@ -152,6 +153,7 @@ function page({ url, title, desc, body, jsonld, image }) {
 <main>
 ${body}
 </main>
+<p class="fb-row"><a class="fb-follow" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#fff"/><path fill="#1877f2" d="M13.4 24v-8.6h2.9l.4-3.4h-3.3V9.9c0-1 .3-1.6 1.7-1.6h1.7v-3a23 23 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.3V12H7.3v3.4h2.8V24h3.3Z"/></svg><span>Follow us on Facebook</span></a></p>
 <footer>FilRadio: free Philippine FM, AM and online radio on a map, for Pinoys at home and OFWs abroad.
 <a href="/">Open the radio map</a> · <a href="/stations/">All stations</a> · <a href="/games/">Free games</a> · <a href="/add-station.html">Add your station</a> · <a href="/sitemap.html">Sitemap</a> · <a href="/privacy.html">Privacy</a></footer>
 <img src="https://chat.filradio.xyz/pv?p=${encodeURIComponent(url)}" alt="" width="1" height="1" referrerpolicy="origin" style="position:absolute;left:-9999px" />

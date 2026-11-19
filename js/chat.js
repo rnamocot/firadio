@@ -20,8 +20,13 @@
   const list = $("chatList"), form = $("chatForm"), input = $("chatInput"), send = $("chatSend");
   const note = $("chatNote"), online = $("chatOnline"), nameBtn = $("chatName"), nameForm = $("chatNameForm"), nameInput = $("chatNameInput"), renameBtn = $("chatRename");
   const typingEl = $("chatTyping"), jump = $("chatJump"), count = $("chatCount");
-  const pabatiBtn = $("chatPabati"), flagOpt = $("chatFlagOpt");
-  const FLAG_KEY = "filradio-chat-flag";
+  const pabatiBtn = $("chatPabati"), flagOpt = $("chatFlagOpt"), pokeOpt = $("chatPokeOpt");
+  const FLAG_KEY = "filradio-chat-flag", POKE_KEY = "filradio-chat-pokes";
+  // Kalabit (poke) and cat scratch: [menu label, line in the chat, what the poked person sees]
+  const POKES = [
+    { e: "👉", label: "Kalabit", line: (a, b) => `${a} kinalabit si ${b}`, you: (a) => `${a} kinalabit ka!` },
+    { e: "🐱", label: "Cat scratch", line: (a, b) => `${a} scratched ${b}`, you: (a) => `${a} scratched you! Meow!` },
+  ];
   // Real flag images (open-source flag-icons, ~1 KB SVG each, from jsDelivr; cached by the browser
   // and the service worker). Falls back to a 2-letter badge if an image can't load.
   const FLAG_URL = (c) => `https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/${c.toLowerCase()}.svg`;
@@ -95,6 +100,7 @@
         setNote("");
         // First-timers get a hint on how to pick their own name.
         if (!store.named()) setNote(`You're ${myName}. Tap "Change name" below to pick your own.`, 10000);
+        if (!allowPokes()) sendJson({ t: "pokes", on: false });
         setSendable();
         scrollEnd();
         break;
@@ -142,6 +148,21 @@
       case "reported":
         markReported(d.id);
         break;
+      case "poked":
+        if (allowPokes()) poked(d.n, d.k);
+        break;
+      case "pokeline": {
+        const p = POKES[d.k] || POKES[0];
+        const li = document.createElement("li");
+        li.className = "chat-sys";
+        li.textContent = `${p.e} ${d.b === myName ? p.you(d.a).replace(/!.*$/, "") : p.line(d.a, d.b)}`;
+        const atEnd = isAtEnd();
+        list.querySelector(".chat-empty")?.remove();
+        list.append(li);
+        while (list.children.length > 80) { list.firstChild.remove(); regroup(list.firstChild); }
+        if (atEnd) scrollEnd();
+        break;
+      }
       case "name":
         myName = d.name; store.set(myName); store.setNamed(); nameBtn.textContent = myName;
         setNote(`Name changed to ${myName}.`, 3000);
@@ -174,9 +195,17 @@
     if (m.g) li.classList.add("pabati");
     const head = document.createElement("div");
     head.className = "chat-meta";
-    const who = document.createElement("b");
+    const other = !isMine && m.n !== myName;
+    const who = document.createElement(other ? "button" : "b");
     who.textContent = m.n;
     who.style.setProperty("--hue", hue(m.n));
+    if (other) {
+      who.type = "button";
+      who.className = "chat-who";
+      who.title = `Kalabit or scratch ${m.n}`;
+      who.setAttribute("aria-label", `${m.n}: kalabit or scratch`);
+      who.addEventListener("click", (e) => { e.stopPropagation(); togglePoke(li); });
+    }
     const when = document.createElement("time");
     when.textContent = fmtTime(m.ts);
     if (m.g) { const tag = document.createElement("span"); tag.className = "chat-pb"; tag.textContent = "Pabati"; head.append(tag); }
@@ -185,11 +214,19 @@
     head.append(when);
     if (isMine) { const you = document.createElement("span"); you.className = "chat-tag"; you.textContent = "you"; head.append(you); }
     if (m.s) {
-      const st = document.createElement("span");
+      const st = document.createElement("button");
+      st.type = "button";
       st.className = "chat-st";
-      st.title = `Listening to ${m.s}`;
-      st.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-onair"/></svg>';
+      // Moving bars while the message is fresh (they were most likely still listening).
+      if (Date.now() - m.ts < 15 * 60e3) st.classList.add("live");
+      st.title = `Listening to ${m.s}. Tap to play it too.`;
+      st.setAttribute("aria-label", `${m.n} is listening to ${m.s}. Play it`);
+      st.innerHTML = '<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>';
       st.append(m.s);
+      st.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!window.FilApp?.playByName(m.s)) setNote(`Couldn't find ${m.s} in the station list.`, 3000, false, true);
+      });
       head.append(st);
     }
     if (isMine || m.n === myName) li.classList.add("noflag");
@@ -303,6 +340,119 @@
   }
 
   document.addEventListener("click", (e) => { if (pickFor && !pickFor.contains(e.target)) closePicker(); });
+
+  // ---------- kalabit (poke) & cat scratch ----------
+  function allowPokes() { try { return localStorage.getItem(POKE_KEY) !== "0"; } catch { return true; } }
+
+  function togglePoke(li) {
+    const same = pickFor === li && li.querySelector(".chat-pokepick");
+    closePicker();
+    if (same) return;
+    if (ws?.readyState !== 1) return setNote("Not connected. Try again in a moment.", 3000, false, true);
+    if (mutedUntil > Date.now()) return setNote(`You're muted until ${fmtTime(mutedUntil)}.`, 3000, false, true);
+    const box = document.createElement("div");
+    box.className = "chat-pick chat-pokepick";
+    box.setAttribute("role", "group");
+    box.setAttribute("aria-label", `Poke ${li.dataset.n}`);
+    POKES.forEach((p, k) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = `<span aria-hidden="true">${p.e}</span>`;
+      b.append(p.label);
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sendJson({ t: "poke", id: li.dataset.id, k });
+        closePicker();
+      });
+      box.append(b);
+    });
+    li.append(box);
+    pickFor = li;
+    box.scrollIntoView({ block: "nearest" });
+    box.firstChild.focus({ preventScroll: true });
+  }
+
+  // Someone poked or scratched me: a short effect (none with "reduce motion") and a bubble to poke back.
+  let bubbleT = 0;
+  function poked(name, k) {
+    const p = POKES[k] || POKES[0];
+    if (!reduceMotion.matches && !document.hidden) (k === 1 ? scratchFx : pokeFx)();
+    if (!open) btn.classList.add("poked");
+    document.querySelector(".poke-bubble")?.remove();
+    clearTimeout(bubbleT);
+    const b = document.createElement("div");
+    b.className = "poke-bubble";
+    b.setAttribute("role", "status");
+    const t = document.createElement("span");
+    t.textContent = `${p.e} ${p.you(name)}`;
+    const back = document.createElement("button");
+    back.type = "button";
+    back.textContent = k === 1 ? "Scratch back" : "Kalabit back";
+    back.addEventListener("click", () => { sendJson({ t: "poke", back: 1, k }); b.remove(); });
+    const x = document.createElement("button");
+    x.type = "button"; x.className = "pb-x"; x.textContent = "✕"; x.setAttribute("aria-label", "Close");
+    x.addEventListener("click", () => b.remove());
+    b.append(t, back, x);
+    document.body.append(b);
+    bubbleT = setTimeout(() => b.remove(), 7000);
+  }
+
+  function fxLayer(cls, ms) {
+    const layer = document.createElement("div");
+    layer.className = `poke-fx ${cls}`;
+    layer.setAttribute("aria-hidden", "true");
+    document.body.append(layer);
+    setTimeout(() => layer.remove(), ms);
+    return layer;
+  }
+  // Kalabit: a finger slides in, taps twice, and the chat (or its button) gives a little shake.
+  function pokeFx() {
+    const layer = fxLayer("fx-poke", 1600);
+    const f = document.createElement("span");
+    f.className = "fx-finger"; f.textContent = "👉";
+    layer.append(f);
+    f.animate([
+      { transform: "translate(-120px, 0) rotate(-8deg)", opacity: 0 },
+      { transform: "translate(0, 0) rotate(0)", opacity: 1, offset: 0.3 },
+      { transform: "translate(22px, 0) scale(.9)", offset: 0.42 },
+      { transform: "translate(0, 0)", offset: 0.54 },
+      { transform: "translate(22px, 0) scale(.9)", offset: 0.66 },
+      { transform: "translate(0, 0)", opacity: 1, offset: 0.8 },
+      { transform: "translate(-60px, 0)", opacity: 0 },
+    ], { duration: 1500, easing: "ease-out", fill: "forwards" });
+    const target = open ? panel : btn;
+    setTimeout(() => target.animate?.([
+      { transform: "translateX(0)" }, { transform: "translateX(-6px) rotate(-1deg)" }, { transform: "translateX(6px) rotate(1deg)" },
+      { transform: "translateX(-4px)" }, { transform: "translateX(4px)" }, { transform: "translateX(0)" },
+    ], { duration: 420, composite: "add" }), 520);
+  }
+  // Cat scratch: a paw swipes across and leaves three scratch marks that fade away.
+  function scratchFx() {
+    const layer = fxLayer("fx-scratch", 1900);
+    for (let i = 0; i < 3; i++) {
+      const s = document.createElement("i");
+      s.className = "fx-mark";
+      s.style.top = `${38 + i * 7}%`;
+      layer.append(s);
+      s.animate([
+        { transform: "rotate(-24deg) scaleX(0)", opacity: 1 },
+        { transform: "rotate(-24deg) scaleX(1)", opacity: 1, offset: 0.25 },
+        { transform: "rotate(-24deg) scaleX(1)", opacity: 1, offset: 0.7 },
+        { transform: "rotate(-24deg) scaleX(1)", opacity: 0 },
+      ], { duration: 1700, delay: i * 70, easing: "ease-out", fill: "both" });
+    }
+    const paw = document.createElement("span");
+    paw.className = "fx-paw"; paw.textContent = "🐾";
+    layer.append(paw);
+    paw.animate([
+      { transform: "translate(-30vw, -12vh) rotate(-20deg)", opacity: 0 },
+      { transform: "translate(0, 0) rotate(-20deg)", opacity: 1, offset: 0.35 },
+      { transform: "translate(30vw, 12vh) rotate(-20deg)", opacity: 0 },
+    ], { duration: 900, easing: "ease-in", fill: "forwards" });
+    const meow = document.createElement("span");
+    meow.className = "fx-meow"; meow.textContent = "Meow! 🐱";
+    layer.append(meow);
+  }
 
   function emptyRow() {
     const li = document.createElement("li");
@@ -430,7 +580,7 @@
     btn.setAttribute("aria-expanded", String(v));
     document.documentElement.classList.toggle("chat-open", v);
     clearTimeout(idleT);
-    if (v) { connect(); setTimeout(() => input.focus({ preventScroll: true }), 50); }
+    if (v) { btn.classList.remove("poked"); connect(); setTimeout(() => input.focus({ preventScroll: true }), 50); }
     else idleT = setTimeout(disconnect, IDLE_CLOSE_MS);
   }
 
@@ -542,6 +692,12 @@
     try { localStorage.setItem(FLAG_KEY, flagOpt.checked ? "1" : "0"); } catch {}
     sendJson({ t: "flag", on: flagOpt.checked });
     setNote(flagOpt.checked ? "Your country flag will show on new messages." : "Your country flag is hidden.", 3000);
+  });
+  pokeOpt.checked = allowPokes();
+  pokeOpt.addEventListener("change", () => {
+    try { localStorage.setItem(POKE_KEY, pokeOpt.checked ? "1" : "0"); } catch {}
+    sendJson({ t: "pokes", on: pokeOpt.checked });
+    setNote(pokeOpt.checked ? "Others can kalabit and scratch you." : "Kalabit and scratches are off.", 3000);
   });
   nameBtn.addEventListener("click", openName);
   renameBtn.addEventListener("click", openName);

@@ -435,7 +435,18 @@
     if (Date.now() - last < 24 * 60 * 60 * 1000) return;
     store.set("filradio.embed.visit", Date.now());
     const keys = ["src-widget", `loc-${T.place()}`, `cc-${T.country()}`, `dev-${T.device()}`, `os-${T.system()}`];
-    fetch(`${T.STATS}/hit`, { method: "POST", body: JSON.stringify({ k: keys }), keepalive: true }).catch(() => {});
+    const site = hostSite();
+    fetch(`${T.STATS}/hit`, { method: "POST", body: JSON.stringify(site ? { k: keys, w: site } : { k: keys }), keepalive: true }).catch(() => {});
+  }
+
+  // The website this player is embedded on (site name only, never the page address), or "" if unknown or our own.
+  function hostSite() {
+    try {
+      const anc = location.ancestorOrigins; // Chrome, Edge, Safari: the top-most page is the last one
+      const src = anc && anc.length ? anc[anc.length - 1] : document.referrer;
+      const h = src ? new URL(src).hostname.toLowerCase().replace(/^www\./, "") : "";
+      return h && h !== location.hostname.replace(/^www\./, "") ? h : "";
+    } catch { return ""; }
   }
 
   // ---------- Start ----------

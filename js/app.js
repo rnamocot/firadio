@@ -565,7 +565,7 @@
 
   function focus(st, opts = {}) {
     // "Unknown city" shows only city-less stations; leave it when jumping to a station with a city.
-    if (!st.unknown && $("showUnknown").checked) { $("showUnknown").checked = false; render(); }
+    if (!st.unknown && $("showFilter").value === "unknown") { setShow("all"); render(); }
     map.flyTo({
       center: [st.lng, st.lat], zoom: 12.5, pitch: is3D ? 58 : 0, bearing: is3D ? map.getBearing() : 0,
       padding: mapPadding(), duration: reduceMotion ? 0 : 2200, essential: true,
@@ -731,16 +731,12 @@
   function currentArea() { return nearMe || (query ? findArea(query) : null); }
 
   function render() {
-    // "Plays here": hide stations that can only open in the browser's own player.
-    // Default view lists every station that plays here, including ones with no known city (grey pins
-    // near Manila). The "Unknown city" filter narrows the list to only those city-less stations.
-    const onlyUnk = $("showUnknown").checked;
-    const favOnly = $("favOnly").checked, onAirOnly = $("onAirOnly").checked, directOnly = $("directOnly").checked;
-    const newOnly = $("newOnly").checked, topOnly = $("topOnly").checked;
-    // Favorites shows every saved station regardless of the other filters.
-    let base = favOnly
-      ? stations.filter((st) => favs.has(st.key))
-      : stations.filter((st) => (!directOnly || !st.external) && (!onlyUnk || st.unknown) && (!onAirOnly || st.onAir !== false));
+    // One choice from the "Show" list (starts at All stations), plus Favorites on top of it.
+    const show = $("showFilter").value, favOnly = $("favOnly").checked;
+    const onlyUnk = show === "unknown", onAirOnly = show === "onair", directOnly = show === "direct";
+    const newOnly = show === "new", topOnly = show === "top";
+    let base = stations.filter((st) => (!favOnly || favs.has(st.key)) && (!directOnly || !st.external)
+      && (!onlyUnk || st.unknown) && (!onAirOnly || st.onAir !== false));
     // New: recently listed stations, newest first.
     if (newOnly) base = base.filter(isNew).sort((a, b) => b.added - a.added);
     // Top: most played by FilRadio listeners, by rank.
@@ -852,7 +848,7 @@
       (Array.isArray(top) ? top : []).forEach((r, i) => { if (r && typeof r.s === "string") topRank.set(r.s, i + 1); });
       topState = "ok";
     } catch { topState = "error"; }
-    if ($("topOnly").checked) render();
+    if ($("showFilter").value === "top") render();
   }
 
   // News strip above the filters: shows that the station list keeps growing. Tapping it opens the New filter.
@@ -873,8 +869,8 @@
     track.style.setProperty("--nt-dur", `${Math.max(30, Math.round(items.join(" ").length / 6))}s`);
     box.hidden = false;
     box.onclick = () => {
-      const n = $("newOnly");
-      if (!n.checked) { n.checked = true; n.dispatchEvent(new Event("change")); }
+      const f = $("showFilter");
+      if (f.value !== "new") { f.value = "new"; f.dispatchEvent(new Event("change")); }
     };
   }
 
@@ -893,6 +889,17 @@
 
   // Every tap on a station goes through here. Stations that only have an old http stream are opened in the
   // browser's own player right away: it must happen inside the tap, or the browser blocks the new tab.
+  // The chat's "Listening to" badge plays the same station (matched by name).
+  window.FilApp = {
+    playByName(name) {
+      const n = String(name || "").trim().toLowerCase();
+      const st = n && (stations.find((s) => s.name.toLowerCase() === n) || stations.find((s) => s.name.toLowerCase().startsWith(n)));
+      if (!st) return false;
+      tapStation(st);
+      return true;
+    },
+  };
+
   function tapStation(st) {
     if (st.external) {
       const win = window.open(st.insecureUrl, "_blank", "noopener,noreferrer");
@@ -1394,19 +1401,31 @@
     band = b.dataset.band;
     render();
   });
-  $("showUnknown").addEventListener("change", render);
-  // "Plays here" only matters on https (where old http streams are blocked).
-  // It always starts ON; switching it off only lasts for the current visit.
-  $("directOnly").checked = true;
-  $("showUnknown").checked = false; // always starts off
+  // Every visit starts with All stations and Favorites off.
+  function setShow(v) {
+    $("showFilter").value = v;
+    $("showFilter").closest(".fselect").classList.toggle("on", v !== "all");
+  }
+  setShow("all");
+  $("favOnly").checked = false;
   try { localStorage.removeItem("filradio.direct"); } catch {}
   // Filter definitions: open on a first visit, then only when the (i) button is tapped.
   function showFilterHelp(open) {
     $("filterInfo").classList.remove("hint");
     $("filterHelp").hidden = !open;
     $("filterInfo").setAttribute("aria-expanded", String(open));
+    if (open) fitFilterHelp();
+  }
+  // Keep the whole help box on screen: it gets the space left below it and scrolls inside if that's not enough.
+  function fitFilterHelp() {
+    const box = $("filterHelp");
+    if (box.hidden) return;
+    box.style.maxHeight = "";
+    const room = Math.floor((window.visualViewport?.height || window.innerHeight) - box.getBoundingClientRect().top - 12);
+    box.style.maxHeight = `${Math.max(160, room)}px`;
   }
   $("filterInfo").addEventListener("click", () => showFilterHelp($("filterHelp").hidden));
+  window.addEventListener("resize", fitFilterHelp);
   $("filterHelpOk").addEventListener("click", () => {
     showFilterHelp(false);
     try { localStorage.setItem("filradio.filterHelp", "seen"); } catch {}
@@ -1418,18 +1437,15 @@
     if (!$("filterHelp").hidden && !e.target.closest("#filterHelp, #filterInfo")) showFilterHelp(false);
   });
 
-  $("directOnly").addEventListener("change", render);
-  document.querySelectorAll(".fchip input").forEach((inp) => inp.addEventListener("change", () => {
-    const chip = inp.closest(".fchip");
+  for (const inp of document.querySelectorAll(".fchip input, .fselect select")) inp.addEventListener("change", () => {
+    const chip = inp.closest(".fchip, .fselect");
     chip.classList.remove("pop"); void chip.offsetWidth; chip.classList.add("pop");
-  }));
-  $("onAirOnly").checked = SECURE; // on-air data is about the https links the live site uses
-  $("onAirOnly").addEventListener("change", render);
+  });
   $("favOnly").addEventListener("change", render);
-  // New and Top each sort the list their own way, so only one is on at a time.
-  $("newOnly").addEventListener("change", () => { if ($("newOnly").checked) $("topOnly").checked = false; render(); });
-  $("topOnly").addEventListener("change", () => {
-    if ($("topOnly").checked) { $("newOnly").checked = false; if (topState !== "ok") { if (topState === "error") topState = ""; loadTop(); } }
+  $("showFilter").addEventListener("change", () => {
+    const v = $("showFilter").value;
+    setShow(v);
+    if (v === "top" && topState !== "ok") { if (topState === "error") topState = ""; loadTop(); }
     render();
   });
   updateFavCount();

@@ -149,3 +149,24 @@ img.pv { position: absolute; left: -9999px; }
 .top { flex-wrap: wrap; row-gap: 10px; }
 .hero > *, .grid > *, .card { min-width: 0; }
 @media (max-width: 480px) { .top h1 { display: none; } .hero .lcd { padding: 12px 14px; } .hero .lcd b { font-size: 26px; } }
+
+/* Lists: top 10 in the card, everything in full screen */
+.card:not(.full) .bars li:nth-child(n+11) { display: none; }
+.card-head .expand { flex: none; }
+.close-full { display: none; flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: 700 16px var(--display); cursor: pointer; }
+.card.full { position: fixed; inset: 0; z-index: 50; margin: 0; border: 0; border-radius: 0; overflow: auto; overscroll-behavior: contain;
+  padding: env(safe-area-inset-top, 0px) max(16px, calc((100vw - 860px) / 2)) calc(env(safe-area-inset-bottom, 0px) + 24px); }
+.card.full .card-head { position: sticky; top: 0; z-index: 1; background: var(--panel); margin: 0 -4px 12px; padding: 8px 4px; border-bottom: 1px solid var(--line); }
+.card.full .card-head h2 { font-size: 19px; }
+.card.full .expand { display: none; }
+.card.full .close-full { display: grid; place-items: center; }
+body.noscroll { overflow: hidden; }
+
+/* Feedback messages */
+.fb-item { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.fb-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.fb-msg { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fb-contact { margin: 4px 0 0; font: 13px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+
+/* Facebook page button (every page) */
+.fb-follow{display:inline-flex;align-items:center;gap:8px;padding:7px 16px 7px 7px;border-radius:999px;background:#1877f2;color:#fff !important;font-weight:800;font-size:14px;line-height:1.2;text-decoration:none;box-shadow:0 6px 16px -6px rgba(24,119,242,.6)}.fb-follow:hover{filter:brightness(1.08)}.fb-follow svg{width:26px;height:26px;flex:none}.fb-row{margin:18px 0;text-align:center}

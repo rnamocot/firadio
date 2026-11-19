@@ -71,5 +71,11 @@ name = "PV_LIMIT"
 namespace_id = "7108"
 simple = { limit = 60, period = 60 }
 
+# Feedback form (a visitor sends one now and then).
+[[ratelimits]]
+name = "FEEDBACK_LIMIT"
+namespace_id = "7109"
+simple = { limit = 3, period = 60 }
+
 [observability]
 enabled = false
