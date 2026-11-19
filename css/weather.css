@@ -1,0 +1,143 @@
+/* FilRadio sky: time of day + random weather over the map (js/weather.js) */
+.wx { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.wx > * { position: absolute; pointer-events: none; }
+.wx-tint, .wx-fx, .wx-flash, .wx-stars, .wx-clouds { inset: 0; width: 100%; height: 100%; }
+.wx-tint, .wx-tint::after { transition: background 2s ease, opacity 2s ease; }
+.wx-tint::after { content: ""; position: absolute; inset: 0; opacity: 0; }
+
+/* ---- Time of day ---- */
+.wx-morning .wx-tint { background: linear-gradient(180deg, rgba(255,166,120,.30), rgba(255,206,160,.10) 45%, transparent 75%); }
+.wx-noon .wx-tint { background: radial-gradient(120% 70% at 70% 0%, rgba(255,244,190,.30), transparent 65%); }
+.wx-afternoon .wx-tint { background: linear-gradient(180deg, rgba(255,148,54,.28), rgba(255,186,90,.12) 50%, rgba(255,170,80,.06)); }
+.wx-night .wx-tint { background: linear-gradient(180deg, rgba(8,16,52,.56), rgba(10,20,60,.32) 55%, rgba(10,20,60,.22)); }
+html.dark .wx-night .wx-tint { background: linear-gradient(180deg, rgba(4,8,30,.35), rgba(4,8,30,.12) 60%, transparent); }
+/* Evening: dusk, purple on top and a warm glow low down */
+.wx-evening .wx-tint { background: linear-gradient(180deg, rgba(92,56,150,.40), rgba(220,100,120,.20) 45%, rgba(255,150,80,.14)); }
+html.dark .wx-morning .wx-tint, html.dark .wx-afternoon .wx-tint, html.dark .wx-noon .wx-tint, html.dark .wx-evening .wx-tint { opacity: .7; }
+
+/* Grey sky when cloudy, darker when it rains */
+.wx-cloudy .wx-tint::after { background: rgba(120,132,152,.14); opacity: 1; }
+.wx-rainy .wx-tint::after { background: linear-gradient(180deg, rgba(52,66,92,.32), rgba(52,66,92,.16)); opacity: 1; }
+.wx-stormy .wx-tint::after { background: linear-gradient(180deg, rgba(28,34,56,.52), rgba(36,44,70,.30)); opacity: 1; }
+.wx-typhoon .wx-tint::after { background: linear-gradient(180deg, rgba(30,40,58,.55), rgba(44,58,74,.34)); opacity: 1; }
+
+/* ---- Sun ---- */
+.wx-sun { right: 290px; top: 18px; width: 92px; height: 92px; opacity: 0; transition: opacity 2s ease, transform 2s ease; }
+.wx-disc { position: absolute; inset: 26px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 38%, #fffbe0, #ffd84a 55%, #ffb21e);
+  box-shadow: 0 0 24px 8px rgba(255,214,74,.55), 0 0 70px 26px rgba(255,200,60,.25); }
+.wx-rays { position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255,214,90,.42) 0 7deg, transparent 7deg 22.5deg);
+  -webkit-mask: radial-gradient(circle, transparent 30%, #000 34%, transparent 70%); mask: radial-gradient(circle, transparent 30%, #000 34%, transparent 70%);
+  animation: wx-spin 60s linear infinite; }
+.wx-sunny:not(.wx-night) .wx-sun, .wx-windy:not(.wx-night) .wx-sun { opacity: 1; }
+.wx-cloudy:not(.wx-night) .wx-sun { opacity: .55; }
+.wx-morning .wx-sun { transform: translate(-18px, 46px) scale(.9); }
+.wx-morning .wx-disc { background: radial-gradient(circle at 40% 38%, #fff3d6, #ffb45a 55%, #ff8a3d); box-shadow: 0 0 24px 8px rgba(255,150,70,.5), 0 0 70px 26px rgba(255,140,60,.22); }
+.wx-afternoon .wx-sun { transform: translate(10px, 30px); }
+.wx-afternoon .wx-disc { background: radial-gradient(circle at 40% 38%, #fff6d0, #ffc23a 55%, #ff9a1e); }
+.wx-evening .wx-sun { transform: translate(-30px, 70px) scale(.85); }
+.wx-evening .wx-disc { background: radial-gradient(circle at 40% 38%, #ffe2c4, #ff8a4a 55%, #e2483a); box-shadow: 0 0 26px 10px rgba(255,110,70,.5), 0 0 80px 30px rgba(230,80,90,.25); }
+
+/* ---- Moon and stars ---- */
+.wx-moon { right: 316px; top: 40px; width: 44px; height: 44px; opacity: 0; transition: opacity 2s ease; }
+.wx-moon span { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 38% 36%, #fffdf2, #ece6c8 60%, #cfc6a0);
+  box-shadow: 0 0 22px 6px rgba(255,250,220,.35); }
+.wx-moon span::after { content: ""; position: absolute; left: 22%; top: 52%; width: 9px; height: 9px; border-radius: 50%; background: rgba(160,150,110,.35);
+  box-shadow: 14px -12px 0 -2px rgba(160,150,110,.3), 10px 6px 0 -3px rgba(160,150,110,.3); }
+.wx-night.wx-sunny .wx-moon, .wx-night.wx-windy .wx-moon { opacity: 1; }
+.wx-night.wx-cloudy .wx-moon { opacity: .45; }
+.wx-stars { opacity: 0; transition: opacity 2s ease; }
+.wx-stars i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 4px rgba(255,255,255,.8); animation: wx-twinkle 3s ease-in-out infinite; animation-delay: var(--d); }
+.wx-night.wx-sunny .wx-stars, .wx-night.wx-windy .wx-stars { opacity: .9; }
+.wx-night.wx-cloudy .wx-stars { opacity: .3; }
+
+/* ---- Clouds ---- */
+.wx-clouds { opacity: 0; transition: opacity 2s ease; }
+.wx-cloud { position: absolute; left: 0; animation: wx-drift 140s linear infinite; }
+.wx-cloud canvas { display: block; width: 100%; height: auto; }
+.wx-cloud { opacity: .95; transition: filter 2s ease; }
+.wx-cloud.c1 { top: 4%; width: 300px; animation-delay: -20s; }
+.wx-cloud.c2 { top: 17%; width: 230px; animation-duration: 170s; animation-delay: -95s; }
+.wx-cloud.c3 { top: 28%; width: 340px; animation-duration: 200s; animation-delay: -150s; opacity: .8; }
+.wx-cloud.c4 { top: 10%; width: 190px; animation-duration: 120s; animation-delay: -60s; opacity: .9; }
+.wx-cloud.c5 { top: 0; width: 420px; animation-duration: 180s; animation-delay: -120s; display: none; }
+.wx-stormy .wx-cloud.c5, .wx-typhoon .wx-cloud.c5 { display: block; }
+.wx-sunny .wx-clouds { opacity: .5; }
+.wx-sunny .wx-cloud.c3, .wx-sunny .wx-cloud.c2 { display: none; }
+.wx-cloudy .wx-clouds, .wx-wet .wx-clouds { opacity: 1; }
+.wx-stormy .wx-cloud { animation-duration: 70s; }
+.wx-typhoon .wx-cloud { animation-duration: 16s; }
+.wx-typhoon .wx-cloud.c3, .wx-typhoon .wx-cloud.c5 { animation-duration: 22s; }
+.wx-windy .wx-clouds { opacity: .8; }
+.wx-windy .wx-cloud { animation-duration: 38s; }
+.wx-windy .wx-cloud.c2 { animation-duration: 46s; }
+.wx-windy .wx-cloud.c3 { animation-duration: 55s; }
+
+/* Cloud colours: grey rain, dark storm, pink-gold dusk and dawn, dim at night */
+.wx-morning .wx-cloud { filter: sepia(.25) saturate(1.5) hue-rotate(-15deg); }
+.wx-evening .wx-cloud { filter: sepia(.5) saturate(2) hue-rotate(-35deg) brightness(.9); }
+.wx-rainy .wx-cloud { filter: grayscale(.6) brightness(.72); }
+.wx-stormy .wx-cloud, .wx-typhoon .wx-cloud { filter: grayscale(.7) brightness(.45) contrast(1.15); }
+.wx-night .wx-cloud { filter: grayscale(.5) brightness(.5) opacity(.75); }
+.wx-night.wx-wet .wx-cloud { filter: grayscale(.7) brightness(.32); }
+html.dark .wx-cloud { opacity: .6; }
+
+/* ---- Lightning ---- */
+.wx-flash { background: #fff; opacity: 0; }
+.wx.flash .wx-flash { animation: wx-flash 1s ease-out; }
+.wx-stormy.flash .wx-flash, .wx-typhoon.flash .wx-flash { animation-name: wx-flash-big; }
+/* Thunder: the storm clouds rumble for a moment */
+.wx.rumble .wx-clouds { animation: wx-rumble .7s ease-out .15s; }
+
+@keyframes wx-spin { to { transform: rotate(360deg); } }
+@keyframes wx-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+@keyframes wx-drift { from { transform: translateX(-440px); } to { transform: translateX(calc(100vw + 40px)); } }
+@keyframes wx-flash { 0% { opacity: 0; } 6% { opacity: .32; } 12% { opacity: 0; } 20% { opacity: .22; } 100% { opacity: 0; } }
+@keyframes wx-flash-big { 0% { opacity: 0; } 5% { opacity: .5; } 10% { opacity: .05; } 16% { opacity: .38; } 100% { opacity: 0; } }
+@keyframes wx-rumble { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-3px, 1px); } 40% { transform: translate(3px, -1px); } 60% { transform: translate(-2px, 1px); } 80% { transform: translate(2px, 0); } }
+
+/* Phones: the search bar covers the top, so the sun and moon sit just below it on the left */
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  .wx-sun { right: auto; left: 8px; top: calc(var(--safe-top, 0px) + 132px); width: 76px; height: 76px; }
+  .wx-disc { inset: 22px; }
+  .wx-moon { right: auto; left: 22px; top: calc(var(--safe-top, 0px) + 142px); width: 36px; height: 36px; }
+  .wx-morning .wx-sun, .wx-afternoon .wx-sun, .wx-evening .wx-sun { transform: none; }
+  .wx-cloud.c1 { top: calc(var(--safe-top, 0px) + 120px); width: 220px; }
+  .wx-cloud.c2 { top: 30%; width: 160px; }
+  .wx-cloud.c3 { top: 42%; width: 230px; }
+  .wx-cloud.c4 { top: 22%; width: 140px; }
+  .wx-cloud.c5 { width: 280px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-rays, .wx-stars i, .wx-cloud, .wx.flash .wx-flash, .wx.rumble .wx-clouds { animation: none; }
+  .wx-cloud { transform: translateX(30vw); }
+  .wx-cloud.c2 { transform: translateX(60vw); }
+  .wx-cloud.c4 { transform: translateX(8vw); }
+}
+
+/* No Christmas snow while it rains */
+html.wx-rain .xmas-snow { display: none; }
+
+/* Weather button beside the clock, its list drops down under it */
+.clock-row { position: absolute; z-index: 6; top: 12px; right: 56px; display: flex; align-items: center; gap: 8px; }
+.clock-row .clock { position: static; }
+.clock-row:has(.wx-menu:not([hidden])) { z-index: 30; }
+.wx-wrap { position: relative; }
+.wx-btn { display: flex; align-items: center; gap: 7px; height: 44px; padding: 0 14px 0 11px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--text); box-shadow: var(--shadow-sm); font: 700 13px var(--display); cursor: pointer; white-space: nowrap; }
+.wx-btn:hover { background: var(--panel-2, var(--panel)); }
+.wx-btn[aria-expanded="true"] { outline: 2px solid var(--sun); outline-offset: 1px; }
+.wx-btn .wx-ico { font-size: 20px; line-height: 1; }
+.clock-row .wx-menu { right: 0; left: auto; top: calc(100% + 8px); transform-origin: top right; }
+.wx-menu .wx-now { margin: -2px 6px 4px; font: 600 11px var(--display); color: var(--muted); }
+.wx-menu .wx-e { width: 20px; text-align: center; font-size: 15px; }
+@media (min-width: 761px), (min-width: 481px) and (max-height: 500px) { .app:has(.sidebar.grid) .clock-row { display: none; } }
+@media (max-width: 760px) and (min-height: 501px), (max-width: 480px) {
+  /* Phones: a round button just left of the compact clock */
+  .clock-row { top: calc(var(--safe-top) + 132px); right: 10px; align-items: flex-start; gap: 6px; }
+  .wx-btn { width: 42px; height: 42px; padding: 0; justify-content: center; border: 0; box-shadow: var(--shadow); }
+  .wx-btn .wx-lbl { display: none; }
+  .wx-menu { width: 172px; }
+}

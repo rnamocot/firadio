@@ -22,7 +22,7 @@
   <meta property="og:title" content="FilRadio: Philippine Radio, Live Anywhere" />
   <meta property="og:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations, plus a listener chat." />
   <meta property="og:url" content="https://filradio.xyz/" />
-  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=105" />
+  <meta property="og:image" content="https://filradio.xyz/og-image.png?v=106" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
@@ -30,7 +30,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="FilRadio: Philippine Radio, Live Anywhere" />
   <meta name="twitter:description" content="Tap a pin anywhere in the Philippines and listen live, at home or abroad. 600+ FM, AM and online stations, plus a listener chat." />
-  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=105" />
+  <meta name="twitter:image" content="https://filradio.xyz/og-image.png?v=106" />
   <meta name="twitter:image:alt" content="FilRadio app showing Philippine radio stations on a 3D map" />
   <meta property="og:image:type" content="image/png" />
   <meta name="application-name" content="FilRadio" />
@@ -101,12 +101,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FilRadio" />
   <meta name="google-adsense-account" content="ca-pub-8135151574386158" />
-  <script src="js/theme.js?v=105"></script>
-  <script src="js/gtm.js?v=105"></script>
+  <script src="js/theme.js?v=106"></script>
+  <script src="js/gtm.js?v=106"></script>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon.svg?v=105" type="image/svg+xml" />
-  <link rel="icon" href="icons/favicon-64.png?v=105" sizes="64x64" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=105" />
+  <link rel="icon" href="icon.svg?v=106" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-64.png?v=106" sizes="64x64" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=106" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -115,8 +115,9 @@
   <link rel="dns-prefetch" href="https://s3.amazonaws.com" />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="css/style.css?v=105" />
-  <link rel="stylesheet" href="css/christmas.css?v=105" />
+  <link rel="stylesheet" href="css/style.css?v=106" />
+  <link rel="stylesheet" href="css/christmas.css?v=106" />
+  <link rel="stylesheet" href="css/weather.css?v=106" />
 </head>
 <body>
   <!-- FilRadio icon set: drawn from the logo: rounded "ray" strokes, hollow sun core, red on-air dot, tuner ticks -->
@@ -181,7 +182,7 @@
   <div class="splash" id="splash" aria-hidden="true">
     <div class="splash-mark">
       <span class="splash-wave"></span><span class="splash-wave"></span><span class="splash-wave"></span>
-      <img src="icon.svg?v=105" alt="" width="104" height="104" />
+      <img src="icon.svg?v=106" alt="" width="104" height="104" />
     </div>
     <p class="splash-name">Fil<b>Radio</b></p>
     <div class="splash-dial"><span class="splash-needle"></span></div>
@@ -205,6 +206,17 @@
       </div>
 
       <!-- Analog clock + date (Philippine time; tap to switch to local time when abroad) -->
+      <!-- Clock with the weather button beside it -->
+      <div class="clock-row">
+          <div class="wx-wrap">
+            <button type="button" class="wx-btn" id="wxBtn" aria-expanded="false" aria-controls="wxMenu" title="Weather" aria-label="Weather">
+              <span class="wx-ico" id="wxIco" aria-hidden="true">🌤️</span><span class="wx-lbl" id="wxLbl">Weather</span>
+            </button>
+            <div class="layer-menu wx-menu" id="wxMenu" hidden>
+              <p>Weather</p>
+              <span class="wx-now" id="wxNow"></span>
+            </div>
+          </div>
       <button type="button" class="clock" id="clock" aria-label="Philippine time">
         <svg class="clock-face" viewBox="0 0 100 100" aria-hidden="true">
           <circle cx="50" cy="50" r="48" class="c-rim"/>
@@ -222,6 +234,7 @@
           <small id="clockZone">PH time</small>
         </span>
       </button>
+      </div>
 
       <!-- Sponsor card under the clock (sponsor.json; js/sponsor.js slides it; the embedded player shows the same) -->
       <aside class="sponsor-card" id="sponsor" hidden>
@@ -268,7 +281,7 @@
             <svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>
           </button>
           <div class="credit-pop" id="creditPop" hidden>
-            <div class="cp-head"><img src="icon.svg?v=105" alt="" width="40" height="40" /><p><b>FilRadio</b><span>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span></p></div>
+            <div class="cp-head"><img src="icon.svg?v=106" alt="" width="40" height="40" /><p><b>FilRadio</b><span>Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span></p></div>
             <div class="cp-row">
               <a class="cp-bmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a>
               <a class="fb-btn" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-fbwhite"/></svg>Follow us on Facebook</a>
@@ -287,7 +300,7 @@
     <aside class="sidebar open" id="sidebar">
       <div class="topbar">
         <header class="brand">
-          <img class="logo" src="icon.svg?v=105" alt="FilRadio logo" width="40" height="40" />
+          <img class="logo" src="icon.svg?v=106" alt="FilRadio logo" width="40" height="40" />
           <div class="brand-text">
             <h1>Fil<span>Radio</span></h1>
             <p class="sub" id="summary">Tuning in…</p>
@@ -304,7 +317,7 @@
         <div class="controls">
           <div class="search" id="searchBox">
             <span class="search-lead">
-              <img class="search-mark" src="icon.svg?v=105" alt="" width="32" height="32" />
+              <img class="search-mark" src="icon.svg?v=106" alt="" width="32" height="32" />
               <button class="search-back" id="searchBack" type="button" aria-label="Close search" tabindex="-1">
                 <svg class="i" aria-hidden="true"><use href="#i-back"/></svg>
               </button>
@@ -391,7 +404,7 @@
             <button class="help-ok" id="filterHelpOk" type="button">Got it</button>
           </div>
         </div>
-        <p class="mob-credit"><span><img class="by-ico" src="icon.svg?v=105" alt="" width="16" height="16" />Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span>
+        <p class="mob-credit"><span><img class="by-ico" src="icon.svg?v=106" alt="" width="16" height="16" />Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></span>
           <button type="button" class="mob-fb fb-open">Feedback</button>
           <a class="fb-btn" href="https://www.facebook.com/filradio.xyz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-fbwhite"/></svg>Follow us on Facebook</a>
           <a class="mob-bmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a></p>
@@ -450,7 +463,7 @@
             </span>
           </a>
           <a class="bmc" id="footBmc" href="https://www.buymeacoffee.com/zendz" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-coffee"/></svg>Buy me a coffee</a>
-          <p id="footBy"><img class="by-ico" src="icon.svg?v=105" alt="" width="16" height="16" />FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></p>
+          <p id="footBy"><img class="by-ico" src="icon.svg?v=106" alt="" width="16" height="16" />FilRadio · Created by <a href="https://www.renienamocot.com/" target="_blank" rel="noopener">Zendz</a></p>
         </footer>
       </section>
     </aside>
@@ -818,15 +831,16 @@
   <audio id="audio" preload="none"></audio>
 
   <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
-  <script src="js/places.js?v=105" defer></script>
-  <script src="js/station-core.js?v=105" defer></script>
-  <script src="js/traffic.js?v=105" defer></script>
-  <script src="js/install-guide.js?v=105" defer></script>
-  <script src="js/sponsor.js?v=105" defer></script>
-  <script src="js/christmas.js?v=105" defer></script>
-  <script src="js/app.js?v=105" defer></script>
-  <script src="js/chat.js?v=105" defer></script>
-  <script src="js/game-btn.js?v=105" defer></script>
-  <script src="js/feedback.js?v=105" defer></script>
+  <script src="js/places.js?v=106" defer></script>
+  <script src="js/station-core.js?v=106" defer></script>
+  <script src="js/traffic.js?v=106" defer></script>
+  <script src="js/install-guide.js?v=106" defer></script>
+  <script src="js/sponsor.js?v=106" defer></script>
+  <script src="js/christmas.js?v=106" defer></script>
+  <script src="js/weather.js?v=106" defer></script>
+  <script src="js/app.js?v=106" defer></script>
+  <script src="js/chat.js?v=106" defer></script>
+  <script src="js/game-btn.js?v=106" defer></script>
+  <script src="js/feedback.js?v=106" defer></script>
 </body>
 </html>
